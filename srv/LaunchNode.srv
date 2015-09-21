@@ -1,0 +1,5 @@
+string namespace_base
+string launch_file
+float32 frequency
+---
+string created_namespace

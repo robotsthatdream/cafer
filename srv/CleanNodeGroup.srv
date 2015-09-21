@@ -1,0 +1,4 @@
+string namespace_base
+bool availableOnly
+---
+bool ack
