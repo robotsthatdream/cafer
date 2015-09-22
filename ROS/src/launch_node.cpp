@@ -39,8 +39,8 @@
 #include <sstream>
 #include <std_msgs/String.h>
 #include "ros/ros.h"
-#include "ros_sferes/LaunchNode.h"
-#include "ros_sferes/GetID.h"
+#include "cafer/LaunchNode.h"
+#include "cafer/GetID.h"
 #include <boost/unordered_map.hpp>
 #include <boost/shared_ptr.hpp>
 #include <unistd.h>
@@ -55,13 +55,13 @@ boost::shared_ptr<ros::NodeHandle> n;
 
 
 bool launch_node(
-        ros_sferes::LaunchNode::Request  &req,
-        ros_sferes::LaunchNode::Response &res)
+        cafer::LaunchNode::Request  &req,
+        cafer::LaunchNode::Response &res)
 {
 
-  ros_sferes::GetID v;
+  cafer::GetID v;
   v.request.name = req.namespace_base;
-  static ros::ServiceClient client = n->serviceClient<ros_sferes::GetID>("get_id");
+  static ros::ServiceClient client = n->serviceClient<cafer::GetID>("get_id");
   if (client.call(v))
     {
       std::ostringstream os, osf;
