@@ -30,7 +30,9 @@ cd ~/catkin_ws/src
 ln -s ~/git/cafer/ROS cafer
 ```
 
-then compile it:
+To create a catkin workspace: http://wiki.ros.org/catkin/Tutorials/create_a_workspace
+
+To compile the package:
 ```
 cd ~/catkin_ws/
 catkin_make
