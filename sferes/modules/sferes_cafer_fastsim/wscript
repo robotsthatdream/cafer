@@ -1,0 +1,24 @@
+#! /usr/bin/env python
+
+import sferes
+import os
+
+def set_options(opt):
+    pass
+
+def configure(conf):
+    pass
+
+def build(bld):
+    pass
+
+    # print ("Entering directory `" + os.getcwd() + "/modules/'")
+    # uselib = 'BOOST'
+    # cafer_fastsim = bld.new_task_gen('cxx', 'staticlib')
+    # cafer_fastsim.source = 'cafer_fastsim.cpp'
+    # cafer_fastsim.includes = '. ../../'
+    # cafer_fastsim.target = 'cafer_fastsim'
+    # cafer_fastsim.uselib = 'BOOST'
+
+
+

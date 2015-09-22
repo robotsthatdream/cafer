@@ -36,41 +36,59 @@
 //| had knowledge of the CeCILL license and that you accept its terms.
 
 #include <string>
+#include <sstream>
 #include <std_msgs/String.h>
 #include "ros/ros.h"
+#include "ros_sferes/LaunchNode.h"
 #include "ros_sferes/GetID.h"
-#include  <boost/unordered_map.hpp>
+#include <boost/unordered_map.hpp>
+#include <boost/shared_ptr.hpp>
+#include <unistd.h>
 /** 
-  Service to get a unique ID associated to a string.
+  Service to launch an instance of a ROS node
 */
 
 typedef boost::unordered_map<std::string, int> map_ID_t;
 map_ID_t map_ID;
 
-bool get_id(
-        ros_sferes::GetID::Request  &req,
-        ros_sferes::GetID::Response &res)
+boost::shared_ptr<ros::NodeHandle> n;
+
+
+bool launch_node(
+        ros_sferes::LaunchNode::Request  &req,
+        ros_sferes::LaunchNode::Response &res)
 {
 
-  if (map_ID.find(req.name) == map_ID.end()) {
-    map_ID[req.name]=0;
-  }
-  else {
-    map_ID[req.name]++;
-  }
-  res.id=map_ID[req.name];
-  ROS_INFO("request: name=%s", req.name.c_str());
-  ROS_INFO("sending back response: [%ld]", (long int)res.id);
+  ros_sferes::GetID v;
+  v.request.name = req.namespace_base;
+  static ros::ServiceClient client = n->serviceClient<ros_sferes::GetID>("get_id");
+  if (client.call(v))
+    {
+      std::ostringstream os, osf;
+      os<<"/"<<req.namespace_base<<"_"<<v.response.id;
+      res.created_namespace=os.str();
+      std::string ns="namespace:="+os.str();
+      osf<<"frequency:="<<req.frequency;
+      std::string cmd="roslaunch "+req.launch_file+" "+ns+" "+osf.str()+"&";
+      system(cmd.c_str());
+      ROS_INFO("Launch node(s): namespace=%s launch file=%s frequency=%f", res.created_namespace.c_str(), req.launch_file.c_str(), (float)req.frequency );
+    }
+  else
+    {
+      ROS_ERROR("Failed to call service get_id");
+      return false;
+    }
+
   return true;
 }
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "getID_server");
-  ros::NodeHandle n;
+  ros::init(argc, argv, "launch_node_server");
 
-  ros::ServiceServer service = n.advertiseService("/ros_sferes/get_id", get_id);
-  ROS_INFO("Ready to provide new ID for SFERES nodes.");
+  n.reset(new ros::NodeHandle);
+  ros::ServiceServer service = n->advertiseService("launch_node", launch_node);
+  ROS_INFO("Ready to launch new nodes on demand.");
   ros::spin();
 
   return 0;

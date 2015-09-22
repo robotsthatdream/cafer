@@ -111,7 +111,7 @@ bool get_node_group(
   v.request.namespace_base = req.namespace_base;
   v.request.launch_file = req.launch_file;
   v.request.frequency = req.frequency;
-  ros::ServiceClient client = n->serviceClient<cafer::LaunchNode>("/cafer/launch_node");
+  ros::ServiceClient client = n->serviceClient<cafer::LaunchNode>("launch_node");
   std::string ns="<Failed>";
   if (client.call(v))
     {
@@ -209,7 +209,7 @@ bool kill_node_group(
   for (std::list<node_group>::iterator it=l.begin();it!=l.end();) {
     if(!it->gr_namespace.compare(req.gr_namespace)){
       // kill the nodes in the corresponding namespace
-      std::string nodes=exec(std::string("rosnode list /"+it->gr_namespace).c_str());
+      std::string nodes=exec(std::string("rosnode list "+it->gr_namespace).c_str());
       std::istringstream iss(nodes);
       std::string node;
       while (std::getline(iss, node)) {
