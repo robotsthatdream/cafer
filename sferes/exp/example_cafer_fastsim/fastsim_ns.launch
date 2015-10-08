@@ -1,0 +1,11 @@
+<launch>
+  <arg name="namespace" />
+  <arg name="frequency" default="30"/>
+  <group ns="$(arg namespace)">
+    <node pkg="fastsim" type="simu_fastsim" name="simu_fastsim" output="screen">
+      <param name="settings" type="str" value="$(find fastsim)/envs/example.xml"/>
+      <param name="path" type="str" value="$(find fastsim)/envs" />
+      <param name="frequency" type="double" value="$(arg frequency)" />
+    </node>
+  </group>
+</launch>
