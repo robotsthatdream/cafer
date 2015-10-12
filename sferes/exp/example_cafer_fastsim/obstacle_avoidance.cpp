@@ -78,7 +78,9 @@ struct Params
   struct ros
   {
     static const float frequency      = 30;
-    SFERES_STRING(launch_file, "/home/doncieux/catkin_ws/src/ros_fastsim/envs/fastsim_ns.launch");
+    //    SFERES_STRING(launch_file, "/home/doncieux/catkin_ws/src/ros_fastsim/envs/fastsim_ns.launch");
+    SFERES_STRING(launch_file, SFERES_ROOT "/exp/example_cafer_fastsim/fastsim_ns.launch");
+
   };
 
   struct dnn
@@ -206,7 +208,7 @@ namespace sferes
 	  // loop forever if we are in the visualization mode
 	  if (this->mode() != fit::mode::view)
 	    i++;
-	  std::cout<<"Eval, i="<<i<<std::endl;
+	  //std::cout<<"Eval, i="<<i<<std::endl;
 	  _cafer_fastsim->update();
 	  loop_rate.sleep();
 	} 
@@ -217,13 +219,14 @@ namespace sferes
       this->_value = (speed/(float)Params::simu::nb_steps)*1.0/(float)(1+nb_coll);
 
 
-#ifdef VERBOSE
+      //#ifdef VERBOSE
       static int nbeval=0;
       std::cout<<"fit="<<this->_objs[0]<<" nbeval="<<nbeval<<std::endl;
       nbeval++;
-#endif
+      //#endif
 
       // Don't forget it to release the cafer node group and force this instance to disconnect from ROS.
+      _cafer_fastsim->disconnect_from_ros();
       _cafer_fastsim.reset();
       
       
@@ -232,7 +235,7 @@ namespace sferes
     
       void init_simu()
     {
-
+      stand_still=0;
 
       this->_objs.resize(1);
       inputs.resize(Params::dnn::nb_inputs);
@@ -251,8 +254,10 @@ namespace sferes
       void get_inputs(void) 
     {
       // Update of the sensors
-      size_t nb_lasers = _cafer_fastsim->lasers_current.ranges.size();
-	  
+      size_t nb_lasers = _cafer_fastsim->lasers_current.ranges.size()<Params::dnn::nb_inputs?_cafer_fastsim->lasers_current.ranges.size():Params::dnn::nb_inputs;
+
+      if (_cafer_fastsim->lasers_current.ranges.size()<Params::dnn::nb_inputs)
+	std::cerr<<"[WARNING]: nb_laser != inputs.size"<<std::endl;
       // *** set inputs ***
 
       // inputs from sensors

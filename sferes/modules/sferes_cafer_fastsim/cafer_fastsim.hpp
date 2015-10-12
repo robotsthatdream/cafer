@@ -96,19 +96,16 @@ namespace sferes_cafer {
 
 
     ~cafer_fastsim(void) {
+      //std::cout<<" Function: "<<__func__<<" Line: "<<__LINE__<<" "<<this<<std::endl;
       disconnect_from_ros();
     }
 
     void disconnect_from_ros(void) {
-      laser_s->shutdown();
+      //std::cout<<" Function: "<<__func__<<" Line: "<<__LINE__<<" "<<this<<std::endl;
       laser_s.reset();
-      odom_s->shutdown();
       odom_s.reset();
-      collision_s->shutdown();
       collision_s.reset();
-      speed_left_p->shutdown();
       speed_left_p.reset();
-      speed_right_p->shutdown();
       speed_right_p.reset();
       sferes_cafer::release_node_group(namespace_base,_ros_namespace);
     }
@@ -137,27 +134,27 @@ namespace sferes_cafer {
       ros::Rate loop_rate(sferes_cafer::ros_frequency);
 
       while(!is_initialized()) {
-	std::cout<<"Waiting for initialization..."<<std::endl;
+	//std::cout<<"Waiting for initialization..."<<std::endl;
 	ros::spinOnce();
 	loop_rate.sleep();
 	
       }
-      std::cout<<"Initialization done !"<<std::endl;
+      //std::cout<<"Initialization done !"<<std::endl;
       update();
     }
     
     void collision_cb(const std_msgs::Bool &coll) {
-      std::cout<<" Function: "<<__func__<<" Line: "<<__LINE__<<" "<<this<<std::endl;
+      //std::cout<<" Function: "<<__func__<<" Line: "<<__LINE__<<" "<<this<<std::endl;
       collision.push(coll.data);
     }
 
     void laser_cb(const sensor_msgs::LaserScan &laser_msg){
-      std::cout<<" Function: "<<__func__<<" Line: "<<__LINE__<<" "<<this<<std::endl;
+      //std::cout<<" Function: "<<__func__<<" Line: "<<__LINE__<<" "<<this<<std::endl;
       lasers.push(laser_msg);
     }
 
     void odom_cb(const nav_msgs::Odometry &odom_msg) {
-      std::cout<<" Function: "<<__func__<<" Line: "<<__LINE__<<" "<<this<<std::endl;
+      //std::cout<<" Function: "<<__func__<<" Line: "<<__LINE__<<" "<<this<<std::endl;
       odom.push(odom_msg);
     }
 
@@ -169,12 +166,12 @@ namespace sferes_cafer {
       init=init && (os>0);
       init=init && (ls>0);
       init=init && (cs>0);
-      std::cout<<" Function: "<<__func__<<" Line: "<<__LINE__<<" odom.size="<<os<<" lasers.size="<<ls<<" coll.size="<<cs<<" "<<this<<std::endl;
+      //std::cout<<" Function: "<<__func__<<" Line: "<<__LINE__<<" odom.size="<<os<<" lasers.size="<<ls<<" coll.size="<<cs<<" "<<this<<std::endl;
       return init;
     }
 
     void update(void) {
-      std::cout<<" Function: "<<__func__<<" Line: "<<__LINE__<<" "<<this<<std::endl;
+      //std::cout<<" Function: "<<__func__<<" Line: "<<__LINE__<<" "<<this<<std::endl;
       ros::spinOnce();
 
       lasers.try_pop(lasers_current);
@@ -183,7 +180,7 @@ namespace sferes_cafer {
     }
 
     void publish_speed(float speed_left, float speed_right) {
-      std::cout<<" Function: "<<__func__<<" Line: "<<__LINE__<<std::endl;
+      //std::cout<<" Function: "<<__func__<<" Line: "<<__LINE__<<std::endl;
       std_msgs::Float32 sl,sr;
       sl.data=speed_left;
       sr.data=speed_right;
@@ -192,7 +189,7 @@ namespace sferes_cafer {
     }
 
     void teleport(float x, float y, float theta) {
-      std::cout<<"Teleporting the robot."<<std::endl;
+      //std::cout<<"Teleporting the robot."<<std::endl;
       fastsim::Teleport v;
       v.request.x=x;
       v.request.y=y;
@@ -204,7 +201,7 @@ namespace sferes_cafer {
 	  std::cerr<<"cafer_fastsim: teleport failed ! Position: "<<x<<" "<<y<<" "<<theta<<std::endl;
 	}
       }
-      std::cout<<"== END == Teleporting the robot."<<std::endl;
+      //std::cout<<"== END == Teleporting the robot."<<std::endl;
     }
 
     Posture get_pos(void) {
