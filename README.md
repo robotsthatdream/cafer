@@ -52,6 +52,7 @@ You will need to download SFERES first: https://github.com/sferes2
 
 Assuming that sferes is in ~/git/sferes2, you will need to create symlinks pointing to each dir in cafer/sferes/modules in sferes2/modules. If you want to test the provided examples, you will also need to  create symlinks pointing to dirs in cafer/sferes/exp in sferes2/exp.
 
+Go in your git folder and do the folowing instructions.
 
 And, you need some sferes's modules :
 ```
@@ -90,7 +91,6 @@ ln -s ~/git/cafer/sferes/exp/example_cafer_fastsim
 
 To install sferes2 :
 ```
-cd git
 git clone https://github.com/sferes2/sferes2.git
 cd sferes2
 ./waf configure
