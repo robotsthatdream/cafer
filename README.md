@@ -40,9 +40,9 @@ Organisation of CAFER
 ---------------------
 
 There are two ROS packages cafer_server and cafer_client.
-cafer_server define the services of cafer and
-cafer_client is a library which provide implemention of ROS client to help to use the cafer's services.
-For future contribution please follow this structure.
+cafer_server define the services of CAFER and
+cafer_client is a library which provide implementations of ROS clients to help the use the cafer's services.
+For future contributions please follow this structure.
 
 SFERES Usage
 ------------
