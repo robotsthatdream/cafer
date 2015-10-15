@@ -52,8 +52,9 @@ def detect_ros(conf,pack):
         conf.check_message_2('not found', 'RED')
         return 0
     rosversion = commands.getoutput('rosversion -d')
+    home_directory = commands.getoutput('echo ~')
     conf.check_message_2('ok distribution='+rosversion)
-    config_c.parse_flags('-I/opt/ros/'+rosversion+'/include -L/opt/ros/'+rosversion+'/lib -lroscpp -lrosconsole -lxmlrpcpp -lroscpp_serialization -lrostime -lpthread -lcpp_common', 'ROS', env)
+    config_c.parse_flags('-I/opt/ros/'+rosversion+'/include -L/opt/ros/'+rosversion+'/lib -lroscpp -lrosconsole -lxmlrpcpp -lroscpp_serialization -lrostime -lpthread -lcpp_common -L'+home_directory+'/git/cafer/devel/lib -lcafer_client ', 'ROS', env)
     for obj in pack:
         res = commands.getoutput('rospack depends '+ obj)    	
         config_c.parse_flags(res, 'ROS', env)

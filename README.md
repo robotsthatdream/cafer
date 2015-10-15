@@ -14,34 +14,35 @@ Content
 Authors
 -------
 - Stephane Doncieux stephane.doncieux@isir.upmc.fr
-- Leni Legoff
+- Leni Legoff le_goff@isir.upmc.fr
 - Carlos Maestre carlos.maestre@isir.upmc.fr
 
-ROS Usage
----------
+How to build and configure CAFER
+--------------------------------
 
-Create a link from the ROS dir to your ROS catkin environment. 
-
-WARNING: the ROS package name should be cafer
-
-This should be done with something like this (to adapt to the directories where you have put the source files):
+CAFER is a catkin workspace. To build the project you must simply do (in the cafer directory) :
 ```
-cd ~/catkin_ws/src
-ln -s ~/git/cafer/ROS cafer
-```
-
-To create a catkin workspace: http://wiki.ros.org/catkin/Tutorials/create_a_workspace
-
-To compile the package:
-```
-cd ~/catkin_ws/
 catkin_make
+catkin_make install
+```
+And to set up the environment :
+```
+echo "source ~/git/cafer/devel/setup.bash" >> ~/.bashrc 
+echo "source ~/git/cafer/install/setup.bash" >> ~/.bashrc
 ```
 
-To launch the CAFER modules:
+Finally, to launch the CAFER modules:
 ```
 roslaunch cafer cafer.launch
 ```
+
+Organisation of CAFER
+---------------------
+
+There are two ROS packages cafer_server and cafer_client.
+cafer_server define the services of cafer and
+cafer_client is a library which provide implemention of ROS client to help to use the cafer's services.
+For future contribution please follow this structure.
 
 SFERES Usage
 ------------
@@ -83,8 +84,10 @@ cd ros_fastsim
 You should then do something like this:
 ```
 cd ~/git/sferes2/modules
-ln -s ~/git/cafer/sferes/modules/sferes_cafer
+ln -s ~/git/cafer/sferes/modules/ros_binding
 ln -s ~/git/cafer/sferes/modules/sferes_cafer_fastsim
+echo ros_binding >> modules.conf
+echo sferes_cafer_fastsim >> modules.conf
 cd ~/git/sferes2/exp
 ln -s ~/git/cafer/sferes/exp/example_cafer_fastsim
 ```
@@ -95,17 +98,12 @@ git clone https://github.com/sferes2/sferes2.git
 cd sferes2
 ./waf configure
 ./waf build
-./waf install
+sudo ./waf install
 ```
 
 
 To compile the experiment:
 ```
-# To take into account cafer modules
-echo sferes_cafer >> ~/git/sferes2/modules.conf
-echo sferes_cafer_fastsim >> ~/git/sferes2/modules.conf
-
-# To compile the exp
 ./waf build --exp=example_cafer_fastsim
 ```
  

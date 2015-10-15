@@ -8,7 +8,7 @@ def build(bld):
 
     sferes.create_variants(bld,
 		source='obstacle_avoidance.cpp',
-                uselib_local = 'sferes2 fastsim sferes_cafer',
+                uselib_local = 'sferes2 fastsim  ',
                 uselib = 'EIGEN3 SDL BOOST_GRAPH BOOST_THREAD TBB ROS',
                 target = 'obstacle_avoidance',
                 cxxflags = bld.get_env()['CXXFLAGS'] + ['-Wno-unknown-pragmas'],

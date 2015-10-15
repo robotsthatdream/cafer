@@ -39,7 +39,7 @@
 #define _CAFER_FASTSIM_HPP_
 
 #include <unistd.h>
-#include <modules/sferes_cafer/sferes_cafer.hpp>
+#include <cafer_client/cafer_client.hpp>
 #include <sensor_msgs/LaserScan.h>
 #include <nav_msgs/Odometry.h>
 #include <std_msgs/Bool.h>
@@ -50,7 +50,7 @@
 #include "fastsim/Teleport.h"
 
 
-namespace sferes_cafer {
+namespace cafer_client {
 
 
   const std::string namespace_base="sferes_cafer_fastsim";
@@ -107,11 +107,11 @@ namespace sferes_cafer {
       collision_s.reset();
       speed_left_p.reset();
       speed_right_p.reset();
-      sferes_cafer::release_node_group(namespace_base,_ros_namespace);
+      cafer_client::release_node_group(namespace_base,_ros_namespace);
     }
     
     void init(const char *launch_file) {
-      _ros_namespace = sferes_cafer::get_node_group(namespace_base,launch_file);
+      _ros_namespace = cafer_client::get_node_group(namespace_base,launch_file);
       std::cerr<<"ROS FASTSIM, namespace="<<_ros_namespace<<std::endl;
       if (_ros_namespace.find("<Failed>")!=std::string::npos) {
 	std::cerr<<"ROS initialisation failed."<<std::endl;
@@ -131,7 +131,7 @@ namespace sferes_cafer {
       speed_right_p.reset(new ros::Publisher(ros_nh->advertise<std_msgs::Float32>(topic_speed_right.c_str(),10)));
       
 
-      ros::Rate loop_rate(sferes_cafer::ros_frequency);
+      ros::Rate loop_rate(cafer_client::ros_frequency);
 
       while(!is_initialized()) {
 	//std::cout<<"Waiting for initialization..."<<std::endl;

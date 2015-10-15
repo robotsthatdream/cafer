@@ -131,7 +131,7 @@ struct Params
   { 
     static const int laser_range     = 100.0f;
     //Evalutations
-    static const float nb_steps = 100; // 1000
+    static const float nb_steps = 10; // 1000
 
 #ifdef ENVOA1
     SFERES_STRING(map_name, SFERES_ROOT "/exp/example_cafer_fastsim/arena1.pbm");
@@ -240,7 +240,7 @@ namespace sferes
       this->_objs.resize(1);
       inputs.resize(Params::dnn::nb_inputs);
 
-      _cafer_fastsim.reset(new sferes_cafer::cafer_fastsim());
+      _cafer_fastsim.reset(new cafer_client::cafer_fastsim());
 
       _cafer_fastsim->init(Params::ros::launch_file());
       _cafer_fastsim->teleport(150,150,M_PI/4.0);
@@ -303,7 +303,7 @@ namespace sferes
       lin_speed+=s*(1.0-ds);
 
       // *** To save simulation time, we stop evaluation if the robot is stuck for more than 100 time steps ***
-      sferes_cafer::Posture pos=_cafer_fastsim->get_pos();
+      cafer_client::Posture pos=_cafer_fastsim->get_pos();
       if ((old_pos.dist_to(pos)<0.0001)&&
 	  (fabs(old_pos.get_theta()-pos.get_theta())<0.0001)) {
 	stand_still++;
@@ -330,11 +330,11 @@ namespace sferes
     int nb_coll, time;
     float speed, lin_speed;
     unsigned int stand_still;
-    sferes_cafer::Posture old_pos;
+    cafer_client::Posture old_pos;
     bool stop_eval;                                  // Stops the evaluation
     std::vector<float> outf, inputs;
 
-    boost::shared_ptr<sferes_cafer::cafer_fastsim> _cafer_fastsim;
+    boost::shared_ptr<cafer_client::cafer_fastsim> _cafer_fastsim;
 
   };
 	
@@ -371,7 +371,7 @@ int main(int argc, char **argv)
   ea_t ea;
   res_dir=ea.res_dir();
 
-  sferes_cafer::init(0,NULL,"obstacle_avoidance", Params::ros::frequency);
+  cafer_client::init(0,NULL,"obstacle_avoidance", Params::ros::frequency);
 
   run_ea(argc, argv, ea);
 

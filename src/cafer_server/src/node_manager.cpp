@@ -39,11 +39,11 @@
 #include <sstream>
 #include <std_msgs/String.h>
 #include "ros/ros.h"
-#include "cafer/LaunchNode.h"
-#include "cafer/CleanNodeGroup.h"
-#include "cafer/KillNodeGroup.h"
-#include "cafer/ReleaseNode.h"
-#include "cafer/GetID.h"
+#include "cafer_server/LaunchNode.h"
+#include "cafer_server/CleanNodeGroup.h"
+#include "cafer_server/KillNodeGroup.h"
+#include "cafer_server/ReleaseNode.h"
+#include "cafer_server/GetID.h"
 #include <boost/unordered_map.hpp>
 #include <boost/shared_ptr.hpp>
 #include <unistd.h>
@@ -81,8 +81,8 @@ typedef boost::unordered_map<std::string, std::list<node_group> > node_group_map
 node_group_map_t ngm;
 
 bool get_node_group(
-        cafer::LaunchNode::Request  &req,
-        cafer::LaunchNode::Response &res)
+        cafer_server::LaunchNode::Request  &req,
+        cafer_server::LaunchNode::Response &res)
 {
 
 
@@ -107,11 +107,11 @@ bool get_node_group(
     }
   }
 
-  cafer::LaunchNode v;
+  cafer_server::LaunchNode v;
   v.request.namespace_base = req.namespace_base;
   v.request.launch_file = req.launch_file;
   v.request.frequency = req.frequency;
-  ros::ServiceClient client = n->serviceClient<cafer::LaunchNode>("launch_node");
+  ros::ServiceClient client = n->serviceClient<cafer_server::LaunchNode>("launch_node");
   std::string ns="<Failed>";
   if (client.call(v))
     {
@@ -137,8 +137,8 @@ bool get_node_group(
 }
 
 bool release_node_group(
-        cafer::ReleaseNode::Request  &req,
-        cafer::ReleaseNode::Response &res)
+        cafer_server::ReleaseNode::Request  &req,
+        cafer_server::ReleaseNode::Response &res)
 {
 
   if (ngm.find(req.namespace_base)==ngm.end()) {
@@ -165,8 +165,8 @@ bool release_node_group(
 }
 
 bool clean_node_group(
-        cafer::CleanNodeGroup::Request  &req,
-        cafer::CleanNodeGroup::Response &res)
+        cafer_server::CleanNodeGroup::Request  &req,
+        cafer_server::CleanNodeGroup::Response &res)
 {
   if (ngm.find(req.namespace_base)==ngm.end()) {
     ROS_ERROR("No such node exists: %s",req.namespace_base.c_str());
@@ -197,8 +197,8 @@ bool clean_node_group(
 }
 
 bool kill_node_group(
-        cafer::KillNodeGroup::Request  &req,
-        cafer::KillNodeGroup::Response &res)
+        cafer_server::KillNodeGroup::Request  &req,
+        cafer_server::KillNodeGroup::Response &res)
 {
   if (ngm.find(req.namespace_base)==ngm.end()) {
     ROS_ERROR("No such node exists: %s",req.namespace_base.c_str());

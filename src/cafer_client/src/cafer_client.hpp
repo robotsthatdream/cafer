@@ -35,61 +35,25 @@
 //| The fact that you are presently reading this means that you have
 //| had knowledge of the CeCILL license and that you accept its terms.
 
-#include <string>
-#include <sstream>
-#include <std_msgs/String.h>
-#include "ros/ros.h"
-#include "cafer/LaunchNode.h"
-#include "cafer/GetID.h"
-#include <boost/unordered_map.hpp>
-#include <boost/shared_ptr.hpp>
-#include <unistd.h>
-/** 
-  Service to launch an instance of a ROS node
-*/
+#ifndef _SFERES_CAFER_HPP
+#define _SFERES_CAFER_HPP
 
-typedef boost::unordered_map<std::string, int> map_ID_t;
-map_ID_t map_ID;
-
-boost::shared_ptr<ros::NodeHandle> n;
+#include <ros/ros.h>
+#include "cafer_server/LaunchNode.h"
+#include "cafer_server/ReleaseNode.h"
+#include "cafer_server/KillNodeGroup.h"
+#include <ros/spinner.h>
 
 
-bool launch_node(
-        cafer::LaunchNode::Request  &req,
-        cafer::LaunchNode::Response &res)
-{
+namespace cafer_client {
 
-  cafer::GetID v;
-  v.request.name = req.namespace_base;
-  static ros::ServiceClient client = n->serviceClient<cafer::GetID>("get_id");
-  if (client.call(v))
-    {
-      std::ostringstream os, osf;
-      os<<"/"<<req.namespace_base<<"_"<<v.response.id;
-      res.created_namespace=os.str();
-      std::string ns="namespace:="+os.str();
-      osf<<"frequency:="<<req.frequency;
-      std::string cmd="roslaunch "+req.launch_file+" "+ns+" "+osf.str()+"&";
-      system(cmd.c_str());
-      ROS_INFO("Launch node(s): namespace=%s launch file=%s frequency=%f", res.created_namespace.c_str(), req.launch_file.c_str(), (float)req.frequency );
-    }
-  else
-    {
-      ROS_ERROR("Failed to call service get_id");
-      return false;
-    }
+ 
+  extern boost::shared_ptr<ros::NodeHandle> ros_nh;
+  extern float ros_frequency;
 
-  return true;
+  void init(int argc, char **argv, std::string node_name, float frequency);
+  std::string get_node_group(std::string namespace_base, std::string launch_file);
+  void release_node_group(std::string namespace_base, std::string gr_namespace);
 }
 
-int main(int argc, char **argv)
-{
-  ros::init(argc, argv, "launch_node_server");
-
-  n.reset(new ros::NodeHandle);
-  ros::ServiceServer service = n->advertiseService("launch_node", launch_node);
-  ROS_INFO("Ready to launch new nodes on demand.");
-  ros::spin();
-
-  return 0;
-}
+#endif

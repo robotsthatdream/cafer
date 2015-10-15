@@ -40,21 +40,14 @@ import os
 
 def set_options(opt) : 
     #print ("OPTIONS Entering directory `" + os.getcwd() + "/modules/sferes_cafer'")
-    opt.tool_options('ros',tooldir=os.getcwd() + "/modules/sferes_cafer")
+    opt.tool_options('ros',tooldir=os.getcwd() + "/modules/ros_binding")
 
 def configure(conf): 
     # ros
     #print ("CONFIGURE Entering directory `" + os.getcwd() + "/modules/sferes_cafer'")
-    conf.check_tool('ros',os.getcwd() + "/modules/sferes_cafer")
+    conf.check_tool('ros',os.getcwd() + "/modules/ros_binding")
     #conf.env['CXXFLAGS'] = conf.env['CXXFLAGS'] + ["-std=c++0x","-pthread"]
     #conf.env['CXXFLAGS'] = conf.env['CXXFLAGS'] + ["-D_REENTRANT","-lpthread"]
 
 def build(bld):
-    print ("Entering directory `" + os.getcwd() + "/modules/'")
-    uselib_ = 'BOOST'
-    sferes_cafer = bld.new_task_gen('cxx', 'staticlib')
-    sferes_cafer.source = 'sferes_cafer.cpp'
-    sferes_cafer.includes = '. ../../'
-    sferes_cafer.target = 'sferes_cafer'
-    sferes_cafer.uselib = 'BOOST'
-
+    pass

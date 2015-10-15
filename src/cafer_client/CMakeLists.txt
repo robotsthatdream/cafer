@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(cafer)
+project(cafer_client)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -7,9 +7,8 @@ project(cafer)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
-  tf
-  message_generation
 )
+find_package(Boost REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -50,14 +49,9 @@ find_package(catkin REQUIRED COMPONENTS
 #)
 
 ## Generate services in the 'srv' folder
-add_service_files(
-   FILES
-   GetID.srv
-   LaunchNode.srv
-   ReleaseNode.srv
-   CleanNodeGroup.srv
-   KillNodeGroup.srv
- )
+# add_service_files(
+#    FILES
+#  )
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -67,10 +61,10 @@ add_service_files(
 # )
 
 ## Generate added messages and services with any dependencies listed here
-generate_messages(
-   DEPENDENCIES
-   std_msgs
-)
+# generate_messages(
+#    DEPENDENCIES
+#    std_msgs
+# )
 
 ###################################
 ## catkin specific configuration ##
@@ -96,9 +90,11 @@ include_directories(
   ${catkin_INCLUDE_DIRS} 
 )
 #link_directories($ENV{HOME}/git/libfastsim/build/src /usr/lib/i386-linux-gnu)
-add_executable(getid src/getid.cpp)
-target_link_libraries(getid ${catkin_LIBRARIES})
-add_executable(launch_node src/launch_node.cpp)
-target_link_libraries(launch_node ${catkin_LIBRARIES})
-add_executable(node_manager src/node_manager.cpp)
-target_link_libraries(node_manager ${catkin_LIBRARIES})
+add_library(cafer_client src/cafer_client.cpp)
+
+install(DIRECTORY src/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  PATTERN ".cpp" EXCLUDE
+)
+# target_link_libraries(cafer_client ${catkin_LIBRARIES})
+

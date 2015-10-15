@@ -38,7 +38,7 @@
 #include <string>
 #include <std_msgs/String.h>
 #include "ros/ros.h"
-#include "cafer/GetID.h"
+#include "cafer_server/GetID.h"
 #include  <boost/unordered_map.hpp>
 /** 
   Service to get a unique ID associated to a string.
@@ -48,8 +48,8 @@ typedef boost::unordered_map<std::string, int> map_ID_t;
 map_ID_t map_ID;
 
 bool get_id(
-        cafer::GetID::Request  &req,
-        cafer::GetID::Response &res)
+        cafer_server::GetID::Request  &req,
+        cafer_server::GetID::Response &res)
 {
 
   if (map_ID.find(req.name) == map_ID.end()) {

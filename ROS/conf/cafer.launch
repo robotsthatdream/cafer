@@ -1,5 +1,0 @@
-<launch>
-  <node name="node_manager" pkg="cafer" type="node_manager" ns="cafer" />
-  <node name="getid" pkg="cafer" type="getid" ns="cafer" />
-  <node name="launch_node" pkg="cafer" type="launch_node" ns="cafer"/>
-</launch>

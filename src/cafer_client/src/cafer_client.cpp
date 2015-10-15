@@ -38,11 +38,11 @@
 #include <boost/shared_ptr.hpp>
 #include <ros/ros.h>
 #include <ros/spinner.h>
-#include "sferes_cafer.hpp"
+#include "cafer_client.hpp"
 
 #include <tbb/concurrent_hash_map.h>
 
-namespace sferes_cafer {
+namespace cafer_client {
   
   // Hashing for strings
   struct MyHashCompare {
@@ -76,11 +76,11 @@ namespace sferes_cafer {
   
   std::string get_node_group(std::string namespace_base, std::string launch_file) {
     std::cout<<"Trying to get a node: "<<namespace_base<<" launch file: "<<launch_file<<std::endl;
-    cafer::LaunchNode v;
+    cafer_server::LaunchNode v;
     v.request.namespace_base = namespace_base;
     v.request.launch_file = launch_file;
     v.request.frequency = ros_frequency;
-    ros::ServiceClient client = ros_nh->serviceClient<cafer::LaunchNode>("/cafer/get_node_group");
+    ros::ServiceClient client = ros_nh->serviceClient<cafer_server::LaunchNode>("/cafer/get_node_group");
     std::string ns="<Failed>";
     if (client.call(v))
       {
@@ -98,10 +98,10 @@ namespace sferes_cafer {
   }
 
   void release_node_group(std::string namespace_base, std::string gr_namespace) {
-    cafer::ReleaseNode v;
+    cafer_server::ReleaseNode v;
     v.request.namespace_base=namespace_base;
     v.request. gr_namespace=gr_namespace;
-    ros::ServiceClient client = ros_nh->serviceClient<cafer::ReleaseNode>("/cafer/release_node_group");
+    ros::ServiceClient client = ros_nh->serviceClient<cafer_server::ReleaseNode>("/cafer/release_node_group");
     std::string ns="<Failed>";
     if (client.call(v))
       {
@@ -114,10 +114,10 @@ namespace sferes_cafer {
 
   }
   void kill_node_group(std::string namespace_base, std::string gr_namespace) {
-    cafer::KillNodeGroup v;
+    cafer_server::KillNodeGroup v;
     v.request.namespace_base=namespace_base;
     v.request.gr_namespace=gr_namespace;
-    ros::ServiceClient client = ros_nh->serviceClient<cafer::KillNodeGroup>("/cafer/kill_node_group");
+    ros::ServiceClient client = ros_nh->serviceClient<cafer_server::KillNodeGroup>("/cafer/kill_node_group");
     std::string ns="<Failed>";
     if (client.call(v))
       {
