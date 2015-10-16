@@ -102,3 +102,13 @@ add_executable(launch_node src/launch_node.cpp)
 target_link_libraries(launch_node ${catkin_LIBRARIES})
 add_executable(node_manager src/node_manager.cpp)
 target_link_libraries(node_manager ${catkin_LIBRARIES})
+
+install(TARGETS getid launch_node node_manager
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(DIRECTORY conf/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/conf
+  PATTERN ".svn" EXCLUDE)

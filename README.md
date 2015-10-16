@@ -22,13 +22,18 @@ How to build and configure CAFER
 
 CAFER is a catkin workspace. To build the project you must simply do (in the cafer directory) :
 ```
-catkin_make
+catkin_make #this build will have an error but that's normal.
+source ~/git/cafer/devel/setup.bash
 catkin_make install
+source ~/git/cafer/install/setup.bash
+
 ```
-And to set up the environment :
+
+And to set up permanently your environment :
 ```
 echo "source ~/git/cafer/devel/setup.bash" >> ~/.bashrc 
 echo "source ~/git/cafer/install/setup.bash" >> ~/.bashrc
+source ~/.bashrc
 ```
 
 Finally, to launch the CAFER modules:
@@ -75,10 +80,10 @@ cd libfastsim
 
 cd ..
 git clone https://github.com/jbmouret/ros_fastsim.git
-cd ros_fastsim
-./waf configure
-./waf build
-./waf install
+cd ~/git/cafer/src/
+ln -s ~/git/ros_fastsim/
+cd ..
+catkin_make
 ```
 
 You should then do something like this:
