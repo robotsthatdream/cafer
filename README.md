@@ -20,19 +20,25 @@ Authors
 How to build and configure CAFER
 --------------------------------
 
+Before building the project :
+```
+cd ~/{YOUR_GIT_FOLDER}/cafer/src/
+catkin_init_workspace
+```
+
 CAFER is a catkin workspace. To build the project you must simply do (in the cafer directory) :
 ```
 catkin_make #this build will have an error but that's normal.
-source ~/git/cafer/devel/setup.bash
+source ~/{YOUR_GIT_FOLDER}/cafer/devel/setup.bash
 catkin_make install
-source ~/git/cafer/install/setup.bash
+source ~/{YOUR_GIT_FOLDER}/cafer/install/setup.bash
 
 ```
 
 And to set up permanently your environment :
 ```
-echo "source ~/git/cafer/devel/setup.bash" >> ~/.bashrc 
-echo "source ~/git/cafer/install/setup.bash" >> ~/.bashrc
+echo "source ~/{YOUR_GIT_FOLDER}/cafer/devel/setup.bash" >> ~/.bashrc 
+echo "source ~/{YOUR_GIT_FOLDER}/cafer/install/setup.bash" >> ~/.bashrc
 source ~/.bashrc
 ```
 
