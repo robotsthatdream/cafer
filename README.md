@@ -8,7 +8,7 @@ This is a set of ROS nodes providing services and publishing/subscribing to diff
 Content
 -------
 
-* ROS: contains the CAFER ROS nodes
+* ROS: contains the CAFER ROS nodes (go to http://wiki.ros.org/indigo/Installation/Ubuntu for installation instuction)
 * sferes: contains the code to connect the sferes software framework to ROS through CAFER
 
 Authors
