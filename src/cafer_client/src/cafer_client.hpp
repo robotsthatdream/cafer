@@ -54,6 +54,10 @@ namespace cafer_client {
   void init(int argc, char **argv, std::string node_name, float frequency);
   std::string get_node_group(std::string namespace_base, std::string launch_file);
   void release_node_group(std::string namespace_base, std::string gr_namespace);
+  void kill_node_group(std::string namespace_base, std::string gr_namespace);
+  void kill_all_allocated_node_groups(void);
+
+
 }
 
 #endif

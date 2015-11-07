@@ -80,7 +80,7 @@ namespace cafer_client {
     v.request.namespace_base = namespace_base;
     v.request.launch_file = launch_file;
     v.request.frequency = ros_frequency;
-    ros::ServiceClient client = ros_nh->serviceClient<cafer_server::LaunchNode>("/cafer/get_node_group");
+    ros::ServiceClient client = ros_nh->serviceClient<cafer_server::LaunchNode>("/cafer_server/get_node_group");
     std::string ns="<Failed>";
     if (client.call(v))
       {
@@ -101,7 +101,7 @@ namespace cafer_client {
     cafer_server::ReleaseNode v;
     v.request.namespace_base=namespace_base;
     v.request. gr_namespace=gr_namespace;
-    ros::ServiceClient client = ros_nh->serviceClient<cafer_server::ReleaseNode>("/cafer/release_node_group");
+    ros::ServiceClient client = ros_nh->serviceClient<cafer_server::ReleaseNode>("/cafer_server/release_node_group");
     std::string ns="<Failed>";
     if (client.call(v))
       {
@@ -117,7 +117,7 @@ namespace cafer_client {
     cafer_server::KillNodeGroup v;
     v.request.namespace_base=namespace_base;
     v.request.gr_namespace=gr_namespace;
-    ros::ServiceClient client = ros_nh->serviceClient<cafer_server::KillNodeGroup>("/cafer/kill_node_group");
+    ros::ServiceClient client = ros_nh->serviceClient<cafer_server::KillNodeGroup>("/cafer_server/kill_node_group");
     std::string ns="<Failed>";
     if (client.call(v))
       {

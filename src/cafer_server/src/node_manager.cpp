@@ -168,22 +168,30 @@ bool clean_node_group(
         cafer_server::CleanNodeGroup::Request  &req,
         cafer_server::CleanNodeGroup::Response &res)
 {
+  ROS_INFO("Clean node group: %s.",req.namespace_base.c_str());
   if (ngm.find(req.namespace_base)==ngm.end()) {
     ROS_ERROR("No such node exists: %s",req.namespace_base.c_str());
+    std::cerr<<"No such node exists: "<<req.namespace_base.c_str()<<std::endl;
     res.ack=false;
     return false;
   }
   std::list<node_group> &l=ngm[req.namespace_base];
+  ROS_INFO("number of node groups in this base namespace: %lu", l.size());
   for (std::list<node_group>::iterator it=l.begin();it!=l.end();) {
     if((!req.availableOnly)|| (it->available)) {
       // kill the nodes in the corresponding namespace
-      std::string nodes=exec(std::string("rosnode list /"+it->gr_namespace).c_str());
+      ROS_INFO("current namespace: %s",it->gr_namespace.c_str());
+      std::string nodes=exec(std::string("rosnode list "+it->gr_namespace).c_str());
+      std::cerr<<"Nodes to kill: "<<nodes<<std::endl;
       std::istringstream iss(nodes);
       std::string node;
       while (std::getline(iss, node)) {
+	
 	std::cout<<"Node to kill: "<<node<<std::endl;
 	std::string cmd("rosnode kill "+node);
+	std::cout<<"Cmd: "<<cmd<<std::endl;
 	system(cmd.c_str());
+      
       }
       it=l.erase(it);
     }
@@ -200,6 +208,7 @@ bool kill_node_group(
         cafer_server::KillNodeGroup::Request  &req,
         cafer_server::KillNodeGroup::Response &res)
 {
+  ROS_INFO("Killing node group: %s in namespace_base=%s.",req.gr_namespace.c_str(),req.namespace_base.c_str());
   if (ngm.find(req.namespace_base)==ngm.end()) {
     ROS_ERROR("No such node exists: %s",req.namespace_base.c_str());
     res.ack=false;
@@ -207,11 +216,14 @@ bool kill_node_group(
   }
   std::list<node_group> &l=ngm[req.namespace_base];
   for (std::list<node_group>::iterator it=l.begin();it!=l.end();) {
+
     if(!it->gr_namespace.compare(req.gr_namespace)){
       // kill the nodes in the corresponding namespace
+      ROS_INFO("Killing node: %s",it->gr_namespace.c_str());
       std::string nodes=exec(std::string("rosnode list "+it->gr_namespace).c_str());
       std::istringstream iss(nodes);
       std::string node;
+      std::cout<<"Nodes to kill: "<<nodes<<std::endl; 
       while (std::getline(iss, node)) {
 	std::cout<<"Node to kill: "<<node<<std::endl;
 	std::string cmd("rosnode kill "+node);
