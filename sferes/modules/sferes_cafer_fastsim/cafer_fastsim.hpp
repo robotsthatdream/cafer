@@ -48,7 +48,8 @@
 #include <tbb/tbb.h>
 #include <ros/callback_queue.h>
 #include "fastsim/Teleport.h"
-
+#include <sys/types.h>
+#include <unistd.h>
 
 namespace cafer_client {
 
@@ -74,7 +75,7 @@ namespace cafer_client {
   
   class cafer_fastsim {
   public:
-    
+    std::string _ros_namespace_base;
     std::string _ros_namespace;
     
     // ROS handles
@@ -107,11 +108,16 @@ namespace cafer_client {
       collision_s.reset();
       speed_left_p.reset();
       speed_right_p.reset();
-      cafer_client::release_node_group(namespace_base,_ros_namespace);
+      //cafer_client::release_node_group(_ros_namespace_base,_ros_namespace);
+      cafer_client::kill_node_group(_ros_namespace_base,_ros_namespace);
     }
     
     void init(const char *launch_file) {
-      _ros_namespace = cafer_client::get_node_group(namespace_base,launch_file);
+      std::ostringstream oss;
+      oss<<namespace_base<<"_"<<getpid();
+      _ros_namespace_base=oss.str();
+      std::cerr<<"Namespace: "<<_ros_namespace_base<<" Launch_file: "<<launch_file<<std::endl;
+      _ros_namespace = cafer_client::get_node_group(_ros_namespace_base,launch_file);
       std::cerr<<"ROS FASTSIM, namespace="<<_ros_namespace<<std::endl;
       if (_ros_namespace.find("<Failed>")!=std::string::npos) {
 	std::cerr<<"ROS initialisation failed."<<std::endl;
