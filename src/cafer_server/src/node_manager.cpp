@@ -186,7 +186,7 @@ bool clean_node_group(
       while (std::getline(iss, node)) {
 	std::string cmd("rosnode kill "+node);
 	system(cmd.c_str());
-	ROS_INFO("Killing node: %s", node);      
+	ROS_INFO("Killing node: %s", node.c_str());      
       }
       it=l.erase(it);
     }
