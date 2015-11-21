@@ -1,3 +1,4 @@
+
 //| This file is a part of the CAFER framework developped within
 //| the DREAM project (http://www.robotsthatdream.eu/).
 //| Copyright 2015, ISIR / Universite Pierre et Marie Curie (UPMC)
@@ -35,43 +36,34 @@
 //| The fact that you are presently reading this means that you have
 //| had knowledge of the CeCILL license and that you accept its terms.
 
-#include <string>
-#include <std_msgs/String.h>
-#include "ros/ros.h"
-#include "cafer_server/GetID.h"
-#include  <boost/unordered_map.hpp>
-/** 
-  Service to get a unique ID associated to a string.
-*/
+#include <ros/ros.h>
+#include <gtest/gtest.h>
+#include <unistd.h>
+#include <cafer_client/cafer_client.hpp>
+#include <cafer_client/Management.h>
 
-typedef boost::unordered_map<std::string, long int> map_ID_t;
-map_ID_t map_ID;
 
-bool get_id(
-        cafer_server::GetID::Request  &req,
-        cafer_server::GetID::Response &res)
-{
+int main(int argc, char **argv){
 
-  if (map_ID.find(req.name) == map_ID.end()) {
-    map_ID[req.name]=0;
-  }
-  else {
-    map_ID[req.name]++;
-  }
-  res.id=map_ID[req.name];
-  ROS_INFO("request: name=%s", req.name.c_str());
-  ROS_INFO("sending back response: [%ld]", (long int)res.id);
-  return true;
-}
+  ros::init(argc, argv, "cafer_client_test_node_send_msg");		
+  ros::NodeHandle nh;
+  ros::Publisher p=nh.advertise<cafer_client::Management>("cafer_client_test_management",10);
 
-int main(int argc, char **argv)
-{
-  ros::init(argc, argv, "getID_server");
-  ros::NodeHandle n;
+  sleep(3);  
 
-  ros::ServiceServer service = n.advertiseService("get_id", get_id);
-  ROS_INFO("Ready to provide new ID for SFERES nodes.");
-  ros::spin();
+  cafer_client::Management msg;
+  msg.type=cafer_client::COMPLETE_NODE_DEATH;
+  msg.src_node="";
+  msg.src_id=-1;
+  msg.dest_node="all";
+  msg.dest_id=-1;
+  msg.data_int=0;
+  msg.data_flt=0;
+  msg.data_str="";
 
+  ROS_INFO_STREAM("Publishing the message COMPLETE_NODE_DEATH");
+  p.publish(msg);
+
+  sleep(3);
   return 0;
 }

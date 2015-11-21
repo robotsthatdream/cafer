@@ -64,22 +64,20 @@ namespace cafer_client {
 
 
   boost::shared_ptr<ros::NodeHandle> ros_nh;
-  float ros_frequency=30;
 
 
-  void init(int argc, char **argv, std::string node_name, float frequency) {
+  void init(int argc, char **argv, std::string node_name) {
     ros::init(argc, argv, node_name);		
     ros_nh.reset(new ros::NodeHandle);
-    std::cout<<"Initialising ROS. Node name: "<<node_name<<" frequency: "<<frequency<<std::endl;
-    ros_frequency=frequency;
+    std::cout<<"Initialising ROS. Node name: "<<node_name<<std::endl;
   }	
   
-  std::string get_node_group(std::string namespace_base, std::string launch_file) {
+  std::string get_node_group(std::string namespace_base, std::string launch_file, double frequency=30) {
     std::cout<<"Trying to get a node: "<<namespace_base<<" launch file: "<<launch_file<<std::endl;
     cafer_server::LaunchNode v;
     v.request.namespace_base = namespace_base;
     v.request.launch_file = launch_file;
-    v.request.frequency = ros_frequency;
+    v.request.frequency = frequency;
     ros::ServiceClient client = ros_nh->serviceClient<cafer_server::LaunchNode>("/cafer_server/get_node_group");
     std::string ns="<Failed>";
     if (client.call(v))
@@ -136,5 +134,11 @@ namespace cafer_client {
       kill_node_group(it->second,it->first);
     }
   }
+
+
+  bool operator==(ClientDescriptor const &cd1, ClientDescriptor const &cd2) {
+    return (cd1.ns==cd2.ns) && (cd1.id==cd2.id);
+  }
+ 
 
 }

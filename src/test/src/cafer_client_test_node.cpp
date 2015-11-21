@@ -1,3 +1,4 @@
+
 //| This file is a part of the CAFER framework developped within
 //| the DREAM project (http://www.robotsthatdream.eu/).
 //| Copyright 2015, ISIR / Universite Pierre et Marie Curie (UPMC)
@@ -35,43 +36,37 @@
 //| The fact that you are presently reading this means that you have
 //| had knowledge of the CeCILL license and that you accept its terms.
 
-#include <string>
-#include <std_msgs/String.h>
-#include "ros/ros.h"
-#include "cafer_server/GetID.h"
-#include  <boost/unordered_map.hpp>
-/** 
-  Service to get a unique ID associated to a string.
-*/
+#include <ros/ros.h>
+#include <gtest/gtest.h>
+#include <cafer_client/cafer_client.hpp>
+#include <cafer_client/Management.h>
 
-typedef boost::unordered_map<std::string, long int> map_ID_t;
-map_ID_t map_ID;
 
-bool get_id(
-        cafer_server::GetID::Request  &req,
-        cafer_server::GetID::Response &res)
-{
 
-  if (map_ID.find(req.name) == map_ID.end()) {
-    map_ID[req.name]=0;
+class DummyClient {
+public:
+  void disconnect_from_ros(void) {}
+  bool is_initialized(void){return true;}
+  void update(void) {}
+};
+
+
+
+
+
+int main(int argc, char **argv){
+
+  cafer_client::init(argc,argv,"cafer_client_test_node");
+  cafer_client::CaferClient<DummyClient> cc("cafer_client_test_management","dummy_node",10);
+
+  cc.wait_for_init();
+
+  while(ros::ok()) {
+    cc.spin();
+    cc.update();
+    cc.sleep();
   }
-  else {
-    map_ID[req.name]++;
-  }
-  res.id=map_ID[req.name];
-  ROS_INFO("request: name=%s", req.name.c_str());
-  ROS_INFO("sending back response: [%ld]", (long int)res.id);
-  return true;
-}
 
-int main(int argc, char **argv)
-{
-  ros::init(argc, argv, "getID_server");
-  ros::NodeHandle n;
-
-  ros::ServiceServer service = n.advertiseService("get_id", get_id);
-  ROS_INFO("Ready to provide new ID for SFERES nodes.");
-  ros::spin();
 
   return 0;
 }

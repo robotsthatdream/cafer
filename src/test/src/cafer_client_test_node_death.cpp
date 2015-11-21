@@ -1,3 +1,4 @@
+
 //| This file is a part of the CAFER framework developped within
 //| the DREAM project (http://www.robotsthatdream.eu/).
 //| Copyright 2015, ISIR / Universite Pierre et Marie Curie (UPMC)
@@ -35,43 +36,67 @@
 //| The fact that you are presently reading this means that you have
 //| had knowledge of the CeCILL license and that you accept its terms.
 
-#include <string>
-#include <std_msgs/String.h>
-#include "ros/ros.h"
-#include "cafer_server/GetID.h"
-#include  <boost/unordered_map.hpp>
-/** 
-  Service to get a unique ID associated to a string.
-*/
+#include <ros/ros.h>
+#include <gtest/gtest.h>
+#include <cafer_client/cafer_client.hpp>
+#include <cafer_client/Management.h>
 
-typedef boost::unordered_map<std::string, long int> map_ID_t;
-map_ID_t map_ID;
 
-bool get_id(
-        cafer_server::GetID::Request  &req,
-        cafer_server::GetID::Response &res)
+
+class DummyClient {
+public:
+  void disconnect_from_ros(void) {}
+  bool is_initialized(void){return true;}
+  void update(void) {}
+};
+
+// Declare a test
+TEST(CaferClient, cafer_client_death)
 {
+  cafer_client::CaferClient<DummyClient> cc("cafer_client_test_management", "test");
 
-  if (map_ID.find(req.name) == map_ID.end()) {
-    map_ID[req.name]=0;
+
+  cc.wait_for_init();
+
+
+  unsigned int nbdummy=0;
+  int count=10;
+  while((nbdummy==0)&&(count>0)) {
+    cc.spin();
+    cc.sleep();
+    nbdummy=cc.how_many_client_from_type("dummy_node");
+    count--;
   }
-  else {
-    map_ID[req.name]++;
+
+  ASSERT_NE(0,count);
+  ASSERT_EQ(1,nbdummy);
+
+  std::vector<cafer_client::ClientDescriptor> vcd;
+  cc.get_connected_client_with_type("dummy_node", vcd);
+
+  ASSERT_EQ(vcd.size(),1);
+
+  ASSERT_TRUE(cc.is_client_up(vcd[0].ns, vcd[0].id));
+
+  cc.send_complete_node_death(vcd[0].ns, vcd[0].id);
+
+  int cpt=4;
+  while (cpt>0) {
+    cc.spin();
+    cc.sleep();
+    cpt--;
   }
-  res.id=map_ID[req.name];
-  ROS_INFO("request: name=%s", req.name.c_str());
-  ROS_INFO("sending back response: [%ld]", (long int)res.id);
-  return true;
+
+  ASSERT_FALSE(cc.is_client_up(vcd[0].ns, vcd[0].id));
+
 }
 
-int main(int argc, char **argv)
-{
-  ros::init(argc, argv, "getID_server");
-  ros::NodeHandle n;
 
-  ros::ServiceServer service = n.advertiseService("get_id", get_id);
-  ROS_INFO("Ready to provide new ID for SFERES nodes.");
-  ros::spin();
+int main(int argc, char **argv){
+  testing::InitGoogleTest(&argc, argv);
 
-  return 0;
+  cafer_client::init(0,NULL,"cafer_client_test");
+
+
+  return RUN_ALL_TESTS();
 }

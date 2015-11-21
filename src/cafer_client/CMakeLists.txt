@@ -7,6 +7,7 @@ project(cafer_client)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
+  message_generation
 )
 find_package(Boost REQUIRED)
 
@@ -44,9 +45,10 @@ find_package(Boost REQUIRED)
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-#add_message_files(
-#  FILES
-#)
+add_message_files(
+  FILES
+  Management.msg
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -60,11 +62,11 @@ find_package(Boost REQUIRED)
 #   Action2.action
 # )
 
-## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#    DEPENDENCIES
-#    std_msgs
-# )
+#Generate added messages and services with any dependencies listed here
+generate_messages(
+   DEPENDENCIES
+   std_msgs
+)
 
 ###################################
 ## catkin specific configuration ##
@@ -76,7 +78,7 @@ find_package(Boost REQUIRED)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  # INCLUDE_DIRS include
+  #INCLUDE_DIRS include
   # LIBRARIES fastsim
   CATKIN_DEPENDS roscpp std_msgs
   DEPENDS system_lib
@@ -91,10 +93,16 @@ include_directories(
 )
 #link_directories($ENV{HOME}/git/libfastsim/build/src /usr/lib/i386-linux-gnu)
 add_library(cafer_client src/cafer_client.cpp)
+target_link_libraries(cafer_client tbb ${catkin_LIBRARIES})
 
 install(DIRECTORY src/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   PATTERN ".cpp" EXCLUDE
 )
-# target_link_libraries(cafer_client ${catkin_LIBRARIES})
+# # 
 
+# ## Install project namespaced headers
+# install(DIRECTORY src/${PROJECT_NAME}/
+#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+#   FILES_MATCHING PATTERN "*.hpp"
+#   PATTERN ".svn" EXCLUDE)

@@ -1,0 +1,5 @@
+<launch>
+  <node name="getid" pkg="cafer_server" type="getid" ns="cctn" />
+  <node name="cafer_client_test_node" pkg="cafer_test" type="cafer_client_test_node" ns="cctn"/>
+  <test test-name="cafer_client_test_node_death" pkg="cafer_test" type="cafer_client_test_node_death" name="cafer_client_test1" ns="cctn"/>
+</launch>

@@ -48,8 +48,6 @@
   Service to launch an instance of a ROS node
 */
 
-typedef boost::unordered_map<std::string, int> map_ID_t;
-map_ID_t map_ID;
 
 boost::shared_ptr<ros::NodeHandle> n;
 
