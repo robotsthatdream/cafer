@@ -111,6 +111,7 @@ bool get_node_group(
   v.request.namespace_base = req.namespace_base;
   v.request.launch_file = req.launch_file;
   v.request.frequency = req.frequency;
+  v.request.management_topic=req.management_topic;
   ros::ServiceClient client = n->serviceClient<cafer_server::LaunchNode>("launch_node");
   std::string ns="<Failed>";
   if (client.call(v))

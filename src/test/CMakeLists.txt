@@ -8,6 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   cafer_client
+  roslib
 )
 
 find_package(Boost REQUIRED)
@@ -18,7 +19,7 @@ find_package(rostest REQUIRED)
 catkin_package(
   #INCLUDE_DIRS include
   # LIBRARIES fastsim
-  CATKIN_DEPENDS roscpp std_msgs cafer_client
+  CATKIN_DEPENDS roscpp std_msgs cafer_client roslib
   DEPENDS system_lib
 )
  
@@ -31,6 +32,7 @@ include_directories(
   ${cafer_client_INCLUDE_DIRS}
 )
 
+# Basic tests on the CAFER component
 add_executable(cafer_client_test_node src/cafer_client_test_node.cpp)
 add_dependencies(cafer_client_test_node cafer_client_hpp)
 target_link_libraries(cafer_client_test_node cafer_client ${catkin_LIBRARIES})
@@ -53,4 +55,7 @@ if(CATKIN_ENABLE_TESTING)
 
   add_rostest_gtest(cafer_client_test_node_death launch/cafer_client_test_node_death.launch src/cafer_client_test_node_death.cpp)
   target_link_libraries(cafer_client_test_node_death cafer_client ${catkin_LIBRARIES})
+
+  add_rostest_gtest(cafer_client_test_node_launch_death launch/cafer_client_test_node_launch_death.launch src/cafer_client_test_node_launch_death.cpp)
+  target_link_libraries(cafer_client_test_node_launch_death cafer_client ${catkin_LIBRARIES})
 endif()

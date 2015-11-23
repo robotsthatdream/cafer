@@ -1,5 +1,5 @@
 <launch>
-  <node name="getid" pkg="cafer_server" type="getid" ns="cctn" />
+  <node name="getid" pkg="cafer_server" type="getid" ns="/cafer_server" />
   <node name="cafer_client_test_node" pkg="cafer_test" type="cafer_client_test_node" ns="cctn"/>
 
   <param name="/cctn/hztest1/topic" value="cafer_client_test_management" />  

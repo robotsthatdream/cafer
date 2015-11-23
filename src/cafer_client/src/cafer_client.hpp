@@ -122,14 +122,14 @@ namespace cafer_client {
       // We get a new and unique ID for this client
       cafer_server::GetID v;
       v.request.name = "cafer_client_id";
-      static ros::ServiceClient sclient = ros_nh->serviceClient<cafer_server::GetID>("get_id");
+      static ros::ServiceClient sclient = ros_nh->serviceClient<cafer_server::GetID>("/cafer_server/get_id");
       if (sclient.call(v))
 	{
 	  id=v.response.id;
 	}
       else
 	{
-	  ROS_ERROR("Failed to call service get_id");
+	  ROS_ERROR_STREAM("Failed to call service get_id. my namespace is: "<<ros_nh->getNamespace());
 	  id=-1;
 	}
 
@@ -156,6 +156,36 @@ namespace cafer_client {
       watchdog.reset();
     }
 
+    /** Call a launch file. Corresponding nodes are to be launched in a namespace namespace_base_XX where XX is a unique id (provided by the getid service). It will be connected to the management_topic topic (the same than this class if this argument equals "").*/
+    std::string call_launch_file(std::string launch_file, std::string namespace_base, std::string management_topic="") {
+      std::string created_namespace;
+
+      if (management_topic =="") {
+	management_topic=management_p->getTopic();
+      }
+
+      cafer_server::GetID v;
+      v.request.name = namespace_base;
+      static ros::ServiceClient client = ros_nh->serviceClient<cafer_server::GetID>("/cafer_server/get_id");
+      if (client.call(v))
+	{
+	  std::ostringstream os, osf;
+	  os<<"/"<<namespace_base<<"_"<<v.response.id;
+	  created_namespace=os.str();
+	  std::string ns="ns:="+os.str();
+	  osf<<"frequency:="<<1./rate->expectedCycleTime().toSec();
+	  std::string mgmt="management_topic:="+management_topic;
+	  std::string cmd="roslaunch "+launch_file+" "+ns+" "+osf.str()+" "+mgmt+"&";
+	  system(cmd.c_str());
+	  ROS_INFO("Launch file called: namespace=%s launch file=%s frequency=%f management_topic=%s", created_namespace.c_str(), launch_file.c_str(), (float)(1./rate->expectedCycleTime().toSec()), management_p->getTopic().c_str());
+	}
+      else
+	{
+	  ROS_ERROR_STREAM("Failed to call service get_id. my namespace is: "<<ros_nh->getNamespace());
+	}
+      return created_namespace;
+    }
+ 
     /** Accessor to the client specific code */
     Client &get_client(void) {return client;}
  
@@ -168,30 +198,43 @@ namespace cafer_client {
       ros::spinOnce();
     }
 
-    /** Check the number of client nodes that have been observed up to now (watchdog) and return their number */
-    unsigned int how_many_client_from_type(std::string _type) {
+    /** Check the number of client nodes that have been observed up to now (watchdog) and return their number. 
+     * If up_only is set to true, only the nodes that are up are counted, otherwise, they are all counted.
+     */
+    unsigned int how_many_client_from_type(std::string _type, bool up_only=true) {
       unsigned int nb=0;
       ROS_INFO_STREAM("how_many_client_from_type: "<<_type<<" my id="<<get_id());
       BOOST_FOREACH( MapWatchDog_t::value_type& v, map_watchdog ) {
-	if (v.first.type == _type) nb++;
+	if ((v.first.type == _type)&&((!up_only)||(is_it_recent_enough(v.second)))) {
+	    nb++;
+	  }
       }
       return nb;
     }
     
     /** Get the ClientDescriptors of all clients connected to the same management topic and of a certain type */
-    void get_connected_client_with_type(std::string _type, std::vector<ClientDescriptor> &vcd) {
+    void get_connected_client_with_type(std::string _type, std::vector<ClientDescriptor> &vcd, bool up_only=true) {
       BOOST_FOREACH(MapWatchDog_t::value_type & v, map_watchdog ) {
-	if (v.first.type == _type) vcd.push_back(v.first);
+	if ((v.first.type == _type)&&((!up_only)||(is_it_recent_enough(v.second)))) {
+	  vcd.push_back(v.first);
+	}
       }
       
     }
 
+    /** Check if a given time is "recent" or not with respect to the node client frequency */
+    bool is_it_recent_enough(ros::Time t) {
+      ros::Duration d=ros::Time::now()-t;
+      return d<=rate->expectedCycleTime()*2.;
+
+    }
 
     /** Check whether a client is up or not (relies on the watchdog functionnality, works only for nodes that are on the same management topic) */
     bool is_client_up(std::string ns, long int id) {
-      ros::Duration d=ros::Time::now()-get_watchdog(ns, id);
-      return d<=rate->expectedCycleTime()*2.;
+      return is_it_recent_enough(get_watchdog(ns, id));
     }
+
+    
 
     /** Waits until the client is up (it needs to be on the same management topic) */
     void wait_for_client(std::string ns, long int id) {
