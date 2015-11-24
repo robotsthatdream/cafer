@@ -58,4 +58,7 @@ if(CATKIN_ENABLE_TESTING)
 
   add_rostest_gtest(cafer_client_test_node_launch_death launch/cafer_client_test_node_launch_death.launch src/cafer_client_test_node_launch_death.cpp)
   target_link_libraries(cafer_client_test_node_launch_death cafer_client ${catkin_LIBRARIES})
+
+  add_rostest_gtest(cafer_client_test_node_launch_death_tbb launch/cafer_client_test_node_launch_death_tbb.launch src/cafer_client_test_node_launch_death_tbb.cpp)
+  target_link_libraries(cafer_client_test_node_launch_death_tbb cafer_client tbb ${catkin_LIBRARIES})
 endif()
