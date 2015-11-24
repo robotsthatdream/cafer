@@ -50,8 +50,78 @@ public:
   void update(void) {}
 };
 
-// Declare a test
-TEST(CaferClient, cafer_client_launch_death)
+/** local_node_death (i.e. terminate attribute) test */
+TEST(CaferClient, cafer_client_launch_death_local)
+{
+  cafer_client::CaferClient<DummyClient> cc("my_mgmt_ld", "test");
+
+
+  cc.wait_for_init();
+
+
+  unsigned int nbdummy=0;
+  int count=10;
+  while((nbdummy==0)&&(count>0)) {
+    cc.spin();
+    cc.sleep();
+    nbdummy=cc.how_many_client_from_type("dummy_node");
+    count--;
+  }
+
+  EXPECT_EQ(0,count);
+  EXPECT_EQ(0,nbdummy);
+
+ 
+  int nb_launch_death;
+  cafer_client::ros_nh->param(ros::this_node::getName()+"/nb_launch_death",nb_launch_death,10);
+  ROS_INFO_STREAM("Launching "<<nb_launch_death<<" Launch-Die cycles (name="<<ros::this_node::getName()<<")");
+  std::string cafer_test_launch = ros::package::getPath("cafer_test")+"/launch/cafer_client_test_node_launch_death_dummy_launch.launch";
+
+  int i=1;
+  while (nb_launch_death) {
+    SCOPED_TRACE("test_"<<i);
+
+    std::cout<<"Launching the "<<i<<"th cycle. "<<nb_launch_death<<" to go."<<std::endl;
+    nb_launch_death--;
+
+    cc.call_launch_file(cafer_test_launch,cafer_client::ros_nh->getNamespace()+"/dummy_nodes");
+    
+    nbdummy=0;
+    count=100;
+    while((nbdummy==0)&&(count>0)) {
+      cc.spin();
+      cc.sleep();
+      nbdummy=cc.how_many_client_from_type("dummy_node");
+      count--;
+    }
+    
+    EXPECT_NE(0,count);
+    EXPECT_EQ(1,nbdummy);
+    
+    std::vector<cafer_client::ClientDescriptor> vcd;
+    cc.get_connected_client_with_type("dummy_node", vcd);
+    
+    ASSERT_EQ(vcd.size(),1);
+    
+    ASSERT_TRUE(cc.is_client_up(vcd[0].ns, vcd[0].id));
+    
+    cc.send_local_node_death(vcd[0].ns, vcd[0].id);
+    
+    int cpt=10;
+    while (cc.is_client_up(vcd[0].ns, vcd[0].id) && (cpt>0)) {
+      cc.spin();
+      cc.sleep();
+      cpt--;
+    }
+    
+    ASSERT_FALSE(cc.is_client_up(vcd[0].ns, vcd[0].id));
+
+  }
+
+}
+
+/** complete_node_death (i.e. ros::shutdown) test */
+TEST(CaferClient, cafer_client_launch_death_complete)
 {
   cafer_client::CaferClient<DummyClient> cc("my_mgmt_ld", "test");
 
@@ -103,7 +173,7 @@ TEST(CaferClient, cafer_client_launch_death)
     
     ASSERT_TRUE(cc.is_client_up(vcd[0].ns, vcd[0].id));
     
-    cc.send_complete_node_death(vcd[0].ns, vcd[0].id);
+    cc.send_local_node_death(vcd[0].ns, vcd[0].id);
     
     int cpt=10;
     while (cc.is_client_up(vcd[0].ns, vcd[0].id) && (cpt>0)) {

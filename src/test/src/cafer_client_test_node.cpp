@@ -86,7 +86,7 @@ int main(int argc, char **argv){
 
   cc.wait_for_init();
 
-  while(ros::ok()) {
+  while(ros::ok()&&(!cc.get_terminate())) {
     cc.spin();
     cc.update();
     cc.sleep();

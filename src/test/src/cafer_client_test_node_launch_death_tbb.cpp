@@ -56,10 +56,10 @@ void test_launch_death(int i) {
   os1<<"test_"<<i;
   os2<<"mgmt_ld_"<<i;
   cafer_client::CaferClient<DummyClient> cc(os2.str(), os1.str());
+ 
+  ROS_INFO_STREAM("Launch-death iteration with tbb: "<<i);
 
-  ROS_INFO_STREAM("Launch-death iteration: "<<i);
-
-  SCOPED_TRACE(os1.str());
+  SCOPED_TRACE(os1.str()<<"_tbb");
 
   cc.wait_for_init();
 
@@ -99,7 +99,7 @@ void test_launch_death(int i) {
   
   ASSERT_TRUE(cc.is_client_up(vcd[0].ns, vcd[0].id));
   
-  cc.send_complete_node_death(vcd[0].ns, vcd[0].id);
+  cc.send_local_node_death(vcd[0].ns, vcd[0].id);
   
   int cpt=10;
   while (cc.is_client_up(vcd[0].ns, vcd[0].id) && (cpt>0)) {

@@ -3,7 +3,7 @@
 
   <arg name="nb_launch_death" default="100"/>
 
-  <test test-name="cafer_client_test_node_launch_death_tbb" pkg="cafer_test" type="cafer_client_test_node_launch_death_tbb" name="cafer_client_test_tbb" ns="cctn" time-limit="3600">
+  <test test-name="cafer_client_test_node_launch_death_tbb" pkg="cafer_test" type="cafer_client_test_node_launch_death_tbb" name="cafer_client_test_tbb" ns="cctn" time-limit="360000">
     <param name="nb_launch_death" type="int" value="$(arg nb_launch_death)" />  
   </test>
 </launch>

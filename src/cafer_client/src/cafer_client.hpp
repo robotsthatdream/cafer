@@ -300,7 +300,7 @@ namespace cafer_client {
       cd.id=id;
       cd.type=_type;
       map_watchdog[cd]=ros::Time::now();
-      ROS_INFO_STREAM("update_watchdog "<<ns<<" "<<id<<" "<<_type<<" my_id="<<get_id());
+      //ROS_INFO_STREAM("update_watchdog "<<ns<<" "<<id<<" "<<_type<<" my_id="<<get_id());
     }
 
     /** Get the time of the last watchdog message for a particular client */
@@ -322,7 +322,7 @@ namespace cafer_client {
     /** Send a watchdog message telling that the client is still alive... */
     void watchdog_cb(const ros::TimerEvent& event)
     {
-      ROS_INFO_STREAM("watchdog_cb my_id="<<get_id());
+      //ROS_INFO_STREAM("watchdog_cb my_id="<<get_id());
       cafer_client::Management msg;
       msg.type=WATCHDOG;
       msg.src_node=ros_nh->getNamespace();
@@ -340,6 +340,21 @@ namespace cafer_client {
       ROS_INFO_STREAM("watchdog_cb my_id="<<get_id());
       cafer_client::Management msg;
       msg.type=COMPLETE_NODE_DEATH;
+      msg.src_node=ros_nh->getNamespace();
+      msg.src_id=get_id();
+      msg.src_type=get_type();
+      msg.dest_node=ns;
+      msg.dest_id=id;
+      msg.data_int=0;
+      msg.data_flt=0;
+      msg.data_str="";
+      management_p->publish(msg);      
+    }
+
+    void send_local_node_death(std::string ns, long int id) {
+      ROS_INFO_STREAM("watchdog_cb my_id="<<get_id());
+      cafer_client::Management msg;
+      msg.type=LOCAL_CLIENT_DEATH;
       msg.src_node=ros_nh->getNamespace();
       msg.src_id=get_id();
       msg.src_type=get_type();
