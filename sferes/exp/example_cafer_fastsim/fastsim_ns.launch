@@ -6,6 +6,7 @@
       <param name="settings" type="str" value="$(find fastsim)/envs/example.xml"/>
       <param name="path" type="str" value="$(find fastsim)/envs" />
       <param name="frequency" type="double" value="$(arg frequency)" />
+      <param name="management_topic" type="string" value="$(arg management_topic)" />
     </node>
   </group>
 </launch>
