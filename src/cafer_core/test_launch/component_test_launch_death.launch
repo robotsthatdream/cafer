@@ -1,0 +1,9 @@
+<launch>
+  <node name="getid" pkg="cafer_core" type="getid" ns="/cafer_server" />
+
+  <arg name="nb_launch_death" default="10"/>
+
+  <test test-name="component_test_launch_death" pkg="cafer_core" type="component_test_launch_death" name="component_test" ns="cctn" time-limit="3600000">
+    <param name="nb_launch_death" type="int" value="$(arg nb_launch_death)" />  
+  </test>
+</launch>

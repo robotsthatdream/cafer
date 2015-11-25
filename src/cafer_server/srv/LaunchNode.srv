@@ -1,6 +1,0 @@
-string namespace_base
-string management_topic
-string launch_file
-float32 frequency
----
-string created_namespace

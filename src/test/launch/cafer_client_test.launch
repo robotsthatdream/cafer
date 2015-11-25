@@ -1,4 +1,0 @@
-<launch>
-  <node name="getid" pkg="cafer_server" type="getid" ns="/cafer_server" />
-  <test test-name="cafer_client_test" pkg="cafer_test" type="cafer_client_test" name="cafer_client_test1" ns="cafer_client_test_ns"/>
-</launch>

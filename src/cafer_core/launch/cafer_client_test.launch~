@@ -1,0 +1,10 @@
+<launch>
+  <node name="node_manager" pkg="cafer_server" type="node_manager" ns="cafer_client_test" />
+  <node name="getid" pkg="cafer_server" type="getid" ns="cafer_client_test" />
+  <node name="launch_node" pkg="cafer_server" type="launch_node" ns="cafer_client_test"/>
+  <param name="cafer_client_test1/topic" value="chatter" />  
+  <param name="cafer_client_test1/hz" value="10.0" />
+  <param name="cafer_client_test1/hzerror" value="0.5" />
+  <param name="cafer_client_test1/test_duration" value="5.0" />    
+  <test test-name="cafer_client_test_test" pkg="rostest" type="cafer_client_test" name="cafer_client_test1" />
+</launch>
