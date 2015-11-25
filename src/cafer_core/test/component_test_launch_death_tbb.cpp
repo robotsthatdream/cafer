@@ -53,8 +53,8 @@ public:
 void test_launch_death(int i,bool local) {
   
   std::ostringstream os1,os2;
-  os1<<"test_tbb_"<<i;
-  os2<<"mgmt_ld_"<<i;
+  os1<<"test_tbb_"<<local<<"_"<<i;
+  os2<<"mgmt_ld_"<<local<<i;
   cafer_core::Component<DummyClient> cc(os2.str(), os1.str());
  
   ROS_INFO_STREAM("Launch-death iteration with tbb: "<<i);

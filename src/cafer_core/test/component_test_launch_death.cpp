@@ -53,7 +53,7 @@ public:
 /** local_node_death (i.e. terminate attribute) test */
 TEST(Component, component_launch_death_local)
 {
-  cafer_core::Component<DummyClient> cc("my_mgmt_ld", "test");
+  cafer_core::Component<DummyClient> cc("my_mgmt_ld", "test_local");
 
 
   cc.wait_for_init();
@@ -125,7 +125,7 @@ TEST(Component, component_launch_death_local)
 /** complete_node_death (i.e. ros::shutdown) test */
 TEST(Component, component_launch_death_complete)
 {
-  cafer_core::Component<DummyClient> cc("my_mgmt_ld", "test");
+  cafer_core::Component<DummyClient> cc("my_mgmt_ld", "test_global");
 
 
   cc.wait_for_init();
