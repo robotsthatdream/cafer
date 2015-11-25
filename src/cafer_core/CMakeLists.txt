@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(cafer_client)
+project(cafer_core)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -7,8 +7,12 @@ project(cafer_client)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
+  message_generation
+  roslib
+  tf
 )
 find_package(Boost REQUIRED)
+find_package(rostest REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -44,14 +48,16 @@ find_package(Boost REQUIRED)
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-#add_message_files(
-#  FILES
-#)
+add_message_files(
+  FILES
+  Management.msg
+)
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#    FILES
-#  )
+add_service_files(
+   FILES
+   GetID.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -60,11 +66,11 @@ find_package(Boost REQUIRED)
 #   Action2.action
 # )
 
-## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#    DEPENDENCIES
-#    std_msgs
-# )
+#Generate added messages and services with any dependencies listed here
+generate_messages(
+   DEPENDENCIES
+   std_msgs
+)
 
 ###################################
 ## catkin specific configuration ##
@@ -76,9 +82,9 @@ find_package(Boost REQUIRED)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  # INCLUDE_DIRS include
+  #INCLUDE_DIRS include
   # LIBRARIES fastsim
-  CATKIN_DEPENDS roscpp std_msgs
+  CATKIN_DEPENDS roscpp std_msgs roslib
   DEPENDS system_lib
 )
 
@@ -90,11 +96,52 @@ include_directories(
   ${catkin_INCLUDE_DIRS} 
 )
 #link_directories($ENV{HOME}/git/libfastsim/build/src /usr/lib/i386-linux-gnu)
-add_library(cafer_client src/cafer_client.cpp)
+
+add_executable(getid src/getid.cpp)
+target_link_libraries(getid ${catkin_LIBRARIES})
+
+add_library(cafer_core src/component.cpp)
+target_link_libraries(cafer_core tbb ${catkin_LIBRARIES})
 
 install(DIRECTORY src/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   PATTERN ".cpp" EXCLUDE
 )
-# target_link_libraries(cafer_client ${catkin_LIBRARIES})
+# # 
 
+# Basic tests on the CAFER component
+add_executable(component_test_node test/component_test_node.cpp)
+target_link_libraries(component_test_node cafer_core ${catkin_LIBRARIES})
+
+add_executable(component_test_chgt_freq_node test/component_test_chgt_freq_node.cpp)
+target_link_libraries(component_test_chgt_freq_node ${catkin_LIBRARIES})
+
+add_executable(component_test_death_node test/component_test_death_node.cpp)
+target_link_libraries(component_test_death_node ${catkin_LIBRARIES})
+
+if(CATKIN_ENABLE_TESTING)
+  find_package(rostest REQUIRED)
+
+  add_rostest_gtest(component_test test_launch/component_test.launch test/component_test.cpp)
+  target_link_libraries(component_test cafer_core ${catkin_LIBRARIES})
+
+  add_rostest(test_launch/component_test_frequency10.launch)
+
+  add_rostest(test_launch/component_test_frequency20.launch)
+
+  add_rostest_gtest(component_test_death test_launch/component_test_death.launch test/component_test_death.cpp)
+  target_link_libraries(component_test_death cafer_core ${catkin_LIBRARIES})
+
+  add_rostest_gtest(component_test_launch_death test_launch/component_test_launch_death.launch test/component_test_launch_death.cpp)
+  target_link_libraries(component_test_launch_death cafer_core ${catkin_LIBRARIES})
+
+  add_rostest_gtest(component_test_launch_death_tbb test_launch/component_test_launch_death_tbb.launch test/component_test_launch_death_tbb.cpp)
+  target_link_libraries(component_test_launch_death_tbb cafer_core tbb ${catkin_LIBRARIES})
+endif()
+
+
+# ## Install project namespaced headers
+# install(DIRECTORY src/${PROJECT_NAME}/
+#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+#   FILES_MATCHING PATTERN "*.hpp"
+#   PATTERN ".svn" EXCLUDE)

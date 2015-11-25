@@ -1,0 +1,10 @@
+int8 type
+string src_node
+int64 src_id
+string src_type
+string dest_node
+int64 dest_id
+string dest_type
+int64 data_int
+float64 data_flt
+string data_str

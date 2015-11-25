@@ -1,3 +1,4 @@
+
 //| This file is a part of the CAFER framework developped within
 //| the DREAM project (http://www.robotsthatdream.eu/).
 //| Copyright 2015, ISIR / Universite Pierre et Marie Curie (UPMC)
@@ -35,61 +36,62 @@
 //| The fact that you are presently reading this means that you have
 //| had knowledge of the CeCILL license and that you accept its terms.
 
-#include <string>
-#include <sstream>
-#include <std_msgs/String.h>
-#include "ros/ros.h"
-#include "cafer_server/LaunchNode.h"
-#include "cafer_server/GetID.h"
-#include <boost/unordered_map.hpp>
-#include <boost/shared_ptr.hpp>
-#include <unistd.h>
-/** 
-  Service to launch an instance of a ROS node
-*/
-
-typedef boost::unordered_map<std::string, int> map_ID_t;
-map_ID_t map_ID;
-
-boost::shared_ptr<ros::NodeHandle> n;
+#include <ros/ros.h>
+#include <gtest/gtest.h>
+#include "../src/component.hpp"
+#include "cafer_core/Management.h"
+#include <std_msgs/Int64.h>
 
 
-bool launch_node(
-        cafer_server::LaunchNode::Request  &req,
-        cafer_server::LaunchNode::Response &res)
-{
+class DummyClient {
+  boost::shared_ptr<ros::Publisher> dummy_p; 
+  long int n;
 
-  cafer_server::GetID v;
-  v.request.name = req.namespace_base;
-  static ros::ServiceClient client = n->serviceClient<cafer_server::GetID>("get_id");
-  if (client.call(v))
-    {
-      std::ostringstream os, osf;
-      os<<"/"<<req.namespace_base<<"_"<<v.response.id;
-      res.created_namespace=os.str();
-      std::string ns="namespace:="+os.str();
-      osf<<"frequency:="<<req.frequency;
-      std::string cmd="roslaunch "+req.launch_file+" "+ns+" "+osf.str()+"&";
-      system(cmd.c_str());
-      ROS_INFO("Launch node(s): namespace=%s launch file=%s frequency=%f", res.created_namespace.c_str(), req.launch_file.c_str(), (float)req.frequency );
-    }
-  else
-    {
-      ROS_ERROR("Failed to call service get_id");
-      return false;
-    }
+public:
+  void connect_to_ros(void) {
+    dummy_p.reset(new ros::Publisher(cafer_core::ros_nh->advertise<std_msgs::Int64>("dummy_topic",10)));
+    n=0;
+  }
 
-  return true;
-}
+  void disconnect_from_ros(void) {
+    dummy_p.reset();
+  }
+  bool is_initialized(void){return true;}
+  void update(void) {}
 
-int main(int argc, char **argv)
-{
-  ros::init(argc, argv, "launch_node_server");
+  void publish_data(void) {
+    std_msgs::Int64 v;
+    v.data=n;
+    dummy_p->publish(v);
+    n++;
+  }
+};
 
-  n.reset(new ros::NodeHandle);
-  ros::ServiceServer service = n->advertiseService("launch_node", launch_node);
-  ROS_INFO("Ready to launch new nodes on demand.");
-  ros::spin();
+
+
+
+
+int main(int argc, char **argv){
+
+  cafer_core::init(argc,argv,"component_test_node");
+
+  std::string management_topic;
+  cafer_core::ros_nh->param("component_test_node/management_topic",management_topic,std::string("component_test_management"));
+  double freq;
+  cafer_core::ros_nh->param("component_test_node/frequency", freq, 10.0);
+
+  ROS_WARN_STREAM("Management topic for test node: "<<management_topic<< " namespace: "<<cafer_core::ros_nh->getNamespace());
+
+  cafer_core::Component<DummyClient> cc(management_topic,"dummy_node",freq);
+
+  cc.wait_for_init();
+
+  while(ros::ok()&&(!cc.get_terminate())) {
+    cc.spin();
+    cc.update();
+    cc.sleep();
+  }
+
 
   return 0;
 }

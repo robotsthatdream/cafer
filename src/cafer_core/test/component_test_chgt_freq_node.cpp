@@ -1,3 +1,4 @@
+
 //| This file is a part of the CAFER framework developped within
 //| the DREAM project (http://www.robotsthatdream.eu/).
 //| Copyright 2015, ISIR / Universite Pierre et Marie Curie (UPMC)
@@ -35,29 +36,35 @@
 //| The fact that you are presently reading this means that you have
 //| had knowledge of the CeCILL license and that you accept its terms.
 
-#ifndef _SFERES_CAFER_HPP
-#define _SFERES_CAFER_HPP
-
 #include <ros/ros.h>
-#include "cafer_server/LaunchNode.h"
-#include "cafer_server/ReleaseNode.h"
-#include "cafer_server/KillNodeGroup.h"
-#include <ros/spinner.h>
+#include <gtest/gtest.h>
+#include <unistd.h>
+#include "../src/component.hpp"
+#include "cafer_core/Management.h"
 
 
-namespace cafer_client {
+int main(int argc, char **argv){
 
- 
-  extern boost::shared_ptr<ros::NodeHandle> ros_nh;
-  extern float ros_frequency;
+  ros::init(argc, argv, "component_test_node_send_msg");		
+  ros::NodeHandle nh;
+  ros::Publisher p=nh.advertise<cafer_core::Management>("component_test_management",10);
 
-  void init(int argc, char **argv, std::string node_name, float frequency);
-  std::string get_node_group(std::string namespace_base, std::string launch_file);
-  void release_node_group(std::string namespace_base, std::string gr_namespace);
-  void kill_node_group(std::string namespace_base, std::string gr_namespace);
-  void kill_all_allocated_node_groups(void);
+  sleep(3);  
 
+  cafer_core::Management msg;
+  msg.type=cafer_core::CHG_FREQ;
+  msg.src_node="";
+  msg.src_id=-1;
+  msg.dest_node="all";
+  msg.dest_id=-1;
+  msg.data_int=0;
+  msg.data_flt=20;
+  msg.data_str="";
 
+  ROS_INFO_STREAM("Publishing the message to change frequency");
+  p.publish(msg);
+
+  sleep(3);  
+
+  return 0;
 }
-
-#endif

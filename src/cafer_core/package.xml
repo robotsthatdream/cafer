@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
-  <name>cafer_server</name>
-  <version>0.0.1</version>
+  <name>cafer_core</name>
+  <version>0.1.1</version>
   <description>The CAFER package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
@@ -38,9 +38,14 @@
   <!--   <test_depend>gtest</test_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>roscpp</build_depend>
+  <build_depend>roslib</build_depend>
   <build_depend>std_msgs</build_depend>
+  <build_depend>boost</build_depend>
   <run_depend>roscpp</run_depend>
+  <run_depend>roslib</run_depend>
+  <run_depend>boost</run_depend>
   <run_depend>std_msgs</run_depend>
+
 
 
   <!-- The export tag contains other, unspecified, tags -->

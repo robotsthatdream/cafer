@@ -1,0 +1,6 @@
+<launch>
+  <node name="node_manager" pkg="cafer_server" type="node_manager" ns="cafer_client_test_ns" />
+  <node name="getid" pkg="cafer_server" type="getid" ns="cafer_client_test_ns" />
+  <node name="launch_node" pkg="cafer_server" type="launch_node" ns="cafer_client_test_ns"/>
+  <test test-name="cafer_client_test_node" pkg="rostest" type="cafer_client_test" name="cafer_client_test1"  ns="cafer_client_test_ns"/>
+</launch>
