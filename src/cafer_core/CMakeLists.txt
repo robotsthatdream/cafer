@@ -84,7 +84,7 @@ generate_messages(
 catkin_package(
   #INCLUDE_DIRS include
   # LIBRARIES fastsim
-  CATKIN_DEPENDS roscpp std_msgs roslib
+  CATKIN_DEPENDS roscpp std_msgs message_runtime roslib
   DEPENDS system_lib
 )
 
@@ -93,15 +93,17 @@ catkin_package(
 ###########
 
 include_directories(
-  ${catkin_INCLUDE_DIRS} 
+  include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${rostest_INCLUDE_DIRS}
 )
 #link_directories($ENV{HOME}/git/libfastsim/build/src /usr/lib/i386-linux-gnu)
 
 add_executable(getid src/getid.cpp)
 target_link_libraries(getid ${catkin_LIBRARIES})
+add_dependencies(getid cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 add_library(cafer_core src/component.cpp)
 target_link_libraries(cafer_core tbb ${catkin_LIBRARIES})
+add_dependencies(cafer_core cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 install(DIRECTORY src/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
@@ -112,12 +114,15 @@ install(DIRECTORY src/
 # Basic tests on the CAFER component
 add_executable(component_test_node test/component_test_node.cpp)
 target_link_libraries(component_test_node cafer_core ${catkin_LIBRARIES})
+add_dependencies(component_test_node cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 add_executable(component_test_chgt_freq_node test/component_test_chgt_freq_node.cpp)
 target_link_libraries(component_test_chgt_freq_node ${catkin_LIBRARIES})
+add_dependencies(component_test_chgt_freq_node cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 add_executable(component_test_death_node test/component_test_death_node.cpp)
 target_link_libraries(component_test_death_node ${catkin_LIBRARIES})
+add_dependencies(component_test_death_node cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 if(CATKIN_ENABLE_TESTING)
   find_package(rostest REQUIRED)
