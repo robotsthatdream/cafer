@@ -1,5 +1,5 @@
-CAFER
-=====
+CAFER_GII
+=========
 
 This is the source code of the CAFER framework, to be used within the DREAM project (http://www.robotsthatdream.eu/).
 
