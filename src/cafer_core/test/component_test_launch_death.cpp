@@ -42,6 +42,7 @@
 #include <cafer_core/Management.h>
 
 #include <ros/package.h>
+#include <ros/impl/duration.h>
 
 class DummyClient {
 public:
@@ -87,17 +88,19 @@ TEST(Component, component_launch_death_local)
     nb_launch_death--;
 
     cc.call_launch_file(cafer_test_launch,cafer_core::ros_nh->getNamespace()+"/dummy_nodes");
+
+    sleep(5);
     
     nbdummy=0;
     count=100;
     while((nbdummy==0)&&(count>0)) {
       cc.spin();
       cc.sleep();
-      nbdummy=cc.how_many_client_from_type("dummy_node");
+      nbdummy=cc.how_many_client_from_type("dummy_node"); 
       count--;
     }
     
-    EXPECT_NE(0,count);
+    EXPECT_NE(0,count); 
     EXPECT_EQ(1,nbdummy);
     
     std::vector<cafer_core::ClientDescriptor> vcd;

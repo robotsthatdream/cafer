@@ -37,62 +37,72 @@
 //| had knowledge of the CeCILL license and that you accept its terms.
 
 #include <ros/ros.h>
-#include <gtest/gtest.h>
-#include "../src/component.hpp"
-#include "cafer_core/Management.h"
-#include <std_msgs/Int64.h>
+#include <ros/package.h>
 #include <ros/impl/duration.h>
+#include "../component.hpp"
+#include "cafer_core/Management.h"
 
 
 class DummyClient {
   boost::shared_ptr<ros::Publisher> dummy_p; 
   long int n;
-
 public:
-  void connect_to_ros(void) {
-    dummy_p.reset(new ros::Publisher(cafer_core::ros_nh->advertise<std_msgs::Int64>("dummy_topic",10)));
-    n=0;
-  }
-
-  void disconnect_from_ros(void) {
-    dummy_p.reset();
-  }
+  void connect_to_ros(void) {  }
+  void disconnect_from_ros(void) {dummy_p.reset();}
   bool is_initialized(void){return true;}
-  void update(void) {}
-
-  void publish_data(void) {
-    std_msgs::Int64 v;
-    v.data=n;
-    dummy_p->publish(v);
-    n++;
-  }
+  void update(void) {  }
 };
-
-
-
-
 
 int main(int argc, char **argv){
 
-  cafer_core::init(argc,argv,"component_test_node");
+  /** Parameters */
+  std::string management_topic,type;
 
-  std::string management_topic;
-  cafer_core::ros_nh->param("component_test_node/management_topic",management_topic,std::string("component_test_management"));
-  double freq;
-  cafer_core::ros_nh->param("component_test_node/frequency", freq, 10.0);
-
-  ROS_WARN_STREAM("Management topic for test node: "<<management_topic<< " namespace: "<<cafer_core::ros_nh->getNamespace());
-
-  cafer_core::Component<DummyClient> cc(management_topic,"dummy_node",freq);
-
-  cc.wait_for_init();
-
-  while(ros::ok()&&(!cc.get_terminate())) {
-    cc.spin();
-    cc.update();
-    cc.sleep();
+  if (argc != 3){
+    ROS_INFO_STREAM("Correct use : rosrun  cafer_core  basic_example_kill_node_topic_type  topic  type  ");
+    return 0;
+  } else {
+    management_topic = argv[1];
+    type = argv[2];    
   }
 
+  /**  New node */
+  cafer_core::init(argc, argv, "basic_example_kill_node_topic_type");	  
+
+  // cafer_core::ros_nh->getParam("/basic_example_ns/basic_example_new_node/management_topic",management_topic);  
+  // cafer_core::ros_nh->getParam("/basic_example_ns/basic_example_new_node/type",type); 
+  ROS_INFO_STREAM("Killing nodes from topic " << management_topic << " and type " << type);   
+
+  /** Create component, in charge of calling the nodes to kill themself*/
+  cafer_core::Component<DummyClient> cc(management_topic, type);
+  cc.wait_for_init();
+  sleep(3);
+
+  cc.spin();
+
+  /** Check the number of current nodes */
+  int nb_nodes_to_kill = cc.how_many_client_from_type(type);
+  std::vector<cafer_core::ClientDescriptor> ntk;
+  if (nb_nodes_to_kill > 0){
+    ROS_INFO_STREAM(nb_nodes_to_kill <<" nodes of type " << type << " to be killed");
+    cc.get_connected_client_with_type(type, ntk);
+  }
+
+  /** Kill the nodes */
+  for (int i=0; i < nb_nodes_to_kill; i++){
+    cc.send_local_node_death(ntk[i].ns, ntk[i].id);
+    int cpt=10;
+    while (cc.is_client_up(ntk[0].ns, ntk[0].id) && (cpt>0)) {
+      ROS_INFO_STREAM("The node " << ntk[0].id << " is up.");      
+      cc.spin();
+      cc.sleep();
+      sleep(1);
+      cpt--;
+    }
+  }
+
+  /** Check the number of nodes killed */
+  ROS_INFO_STREAM(cc.how_many_client_from_type(type) <<" nodes available of type " << type);
 
   return 0;
 }

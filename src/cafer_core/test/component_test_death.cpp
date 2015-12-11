@@ -40,6 +40,7 @@
 #include <gtest/gtest.h>
 #include "../src/component.hpp"
 #include <cafer_core/Management.h>
+#include <ros/impl/duration.h>
 
 
 
