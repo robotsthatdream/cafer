@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(Boost REQUIRED)
 find_package(rostest REQUIRED)
 
+set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -51,6 +52,7 @@ find_package(rostest REQUIRED)
 add_message_files(
   FILES
   Management.msg
+  manager_test.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -93,7 +95,7 @@ catkin_package(
 ###########
 
 include_directories(
-  include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${rostest_INCLUDE_DIRS} src/
+  include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${rostest_INCLUDE_DIRS}
 )
 #link_directories($ENV{HOME}/git/libfastsim/build/src /usr/lib/i386-linux-gnu)
 
@@ -105,29 +107,15 @@ add_library(cafer_core src/component.cpp)
 target_link_libraries(cafer_core tbb ${catkin_LIBRARIES})
 add_dependencies(cafer_core cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
-install(DIRECTORY src/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-  PATTERN ".cpp" EXCLUDE
-)
+install(TARGETS ${PROJECT_NAME}
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION})
+
+install(DIRECTORY include/${PROJECT_NAME}/
+        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
+
 # # 
-
-add_executable(basic_example_launch_set_nodes src/basic_example/basic_example_launch_set_nodes.cpp)
-target_link_libraries(basic_example_launch_set_nodes cafer_core ${catkin_LIBRARIES})
-add_dependencies(basic_example_launch_set_nodes cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-
-add_executable(basic_example_new_node src/basic_example/basic_example_new_node.cpp)
-target_link_libraries(basic_example_new_node cafer_core ${catkin_LIBRARIES})
-add_dependencies(basic_example_new_node cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-
-add_executable(basic_example_change_frequency src/basic_example/basic_example_change_frequency.cpp)
-target_link_libraries(basic_example_change_frequency cafer_core ${catkin_LIBRARIES})
-add_dependencies(basic_example_change_frequency cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-
-add_executable(basic_example_kill_node_topic_type src/basic_example/basic_example_kill_node_topic_type.cpp)
-target_link_libraries(basic_example_kill_node_topic_type cafer_core ${catkin_LIBRARIES})
-add_dependencies(basic_example_kill_node_topic_type cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-
-# #
 
 # Basic tests on the CAFER component
 add_executable(component_test_node test/component_test_node.cpp)
@@ -141,6 +129,14 @@ add_dependencies(component_test_chgt_freq_node cafer_core_generate_messages_cpp 
 add_executable(component_test_death_node test/component_test_death_node.cpp)
 target_link_libraries(component_test_death_node ${catkin_LIBRARIES})
 add_dependencies(component_test_death_node cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+
+add_executable(manager_test_subscribe_node test/manager_test_subscribe_node.cpp)
+target_link_libraries(manager_test_subscribe_node ${catkin_LIBRARIES})
+add_dependencies(manager_test_subscribe_node cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+
+add_executable(manager_component_test_node test/manager_component_test.cpp)
+target_link_libraries(manager_component_test_node cafer_core ${catkin_LIBRARIES})
+add_dependencies(manager_component_test_node cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 if(CATKIN_ENABLE_TESTING)
   find_package(rostest REQUIRED)
@@ -160,11 +156,35 @@ if(CATKIN_ENABLE_TESTING)
 
   add_rostest_gtest(component_test_launch_death_tbb test_launch/component_test_launch_death_tbb.launch test/component_test_launch_death_tbb.cpp)
   target_link_libraries(component_test_launch_death_tbb cafer_core tbb ${catkin_LIBRARIES})
+
+  add_rostest_gtest(manager_test test_launch/manager_test.launch test/manager_test.cpp)
+  target_link_libraries(manager_test cafer_core tbb ${catkin_LIBRARIES})
+  
+  add_rostest_gtest(manager_test_subscribe test_launch/manager_test_subscribe.launch test/manager_test.cpp)
+  target_link_libraries(manager_test_subscribe cafer_core tbb ${catkin_LIBRARIES})
+
+ add_rostest_gtest(manager_component_test test_launch/manager_component_test.launch test/manager_test.cpp)
+  target_link_libraries(manager_component_test cafer_core tbb ${catkin_LIBRARIES})
+
 endif()
 
+#Examples
+add_executable(data_manager_example example/data_manager_example.cpp)
+target_link_libraries(data_manager_example cafer_core ${catkin_LIBRARIES})
+add_dependencies(data_manager_example cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
-# ## Install project namespaced headers
-# install(DIRECTORY src/${PROJECT_NAME}/
-#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#   FILES_MATCHING PATTERN "*.hpp"
-#   PATTERN ".svn" EXCLUDE)
+add_executable(basic_example_change_frequency example/basic_example_change_frequency.cpp)
+target_link_libraries(basic_example_change_frequency cafer_core ${catkin_LIBRARIES})
+add_dependencies(basic_example_change_frequency cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+
+add_executable(basic_example_kill_node_topic_type example/basic_example_kill_node_topic_type.cpp)
+target_link_libraries(basic_example_kill_node_topic_type cafer_core ${catkin_LIBRARIES})
+add_dependencies(basic_example_kill_node_topic_type cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+
+add_executable(basic_example_launch_set_nodes example/basic_example_launch_set_nodes.cpp)
+target_link_libraries(basic_example_launch_set_nodes cafer_core ${catkin_LIBRARIES})
+add_dependencies(basic_example_launch_set_nodes cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+
+add_executable(basic_example_new_node example/basic_example_new_node.cpp)
+target_link_libraries(basic_example_new_node cafer_core ${catkin_LIBRARIES})
+add_dependencies(basic_example_new_node cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
