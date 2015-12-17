@@ -38,7 +38,7 @@
 #include <boost/shared_ptr.hpp>
 #include <ros/ros.h>
 #include <ros/spinner.h>
-#include "component.hpp"
+#include "cafer_core/component.hpp"
 
 #include <tbb/concurrent_hash_map.h>
 

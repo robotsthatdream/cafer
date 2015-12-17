@@ -1,10 +1,9 @@
-
 //| This file is a part of the CAFER framework developped within
 //| the DREAM project (http://www.robotsthatdream.eu/).
 //| Copyright 2015, ISIR / Universite Pierre et Marie Curie (UPMC)
-//| Main contributor(s): 
+//| Main contributor(s):
 //|   * Stephane Doncieux, stephane.doncieux@isir.upmc.fr
-//|
+//|   * Léni Le Goff, le_goff@isir.upmc.fr
 //|
 //| This experiment allows to generate neural networks for simple
 //| navigation tasks (obstacle avoidance and maze navigation).
@@ -14,7 +13,7 @@
 //| can use, modify and/ or redistribute the software under the terms
 //| of the CeCILL license as circulated by CEA, CNRS and INRIA at the
 //| following URL "http://www.cecill.info".
-//| 
+//|
 //| As a counterpart to the access to the source code and rights to
 //| copy, modify and redistribute granted by the license, users are
 //| provided only with a limited warranty and the software's author,
@@ -36,63 +35,50 @@
 //| The fact that you are presently reading this means that you have
 //| had knowledge of the CeCILL license and that you accept its terms.
 
+
 #include <ros/ros.h>
-#include <gtest/gtest.h>
-#include "cafer_core/component.hpp"
-#include "cafer_core/Management.h"
-#include <std_msgs/Int64.h>
-#include <ros/impl/duration.h>
+#include <cafer_core/cafer_core.hpp>
+#include <cafer_core/manager_test.h>
 
+int main(int argc, char** argv){
 
-class DummyClient {
-  boost::shared_ptr<ros::Publisher> dummy_p; 
-  long int n;
+    //initiate the cafer core
+    cafer_core::init(0,NULL,"manager_test_subcribe");
 
-public:
-  void connect_to_ros(void) {
-    dummy_p.reset(new ros::Publisher(cafer_core::ros_nh->advertise<std_msgs::Int64>("dummy_topic",10)));
-    n=0;
-  }
+    //create the data manager for the manager_test msg
+    cafer_core::Manager<cafer_core::manager_test> manager("example","example1");
 
-  void disconnect_from_ros(void) {
-    dummy_p.reset();
-  }
-  bool is_initialized(void){return true;}
-  void update(void) {}
+    //you can create a message
+    cafer_core::manager_test msg1;
+    std_msgs::Header header;
+    header.seq = 1;
+    header.stamp = ros::Time(2.0);
+    header.frame_id = "0";
 
-  void publish_data(void) {
-    std_msgs::Int64 v;
-    v.data=n;
-    dummy_p->publish(v);
-    n++;
-  }
-};
+    msg1.header = header;
+    msg1.description = "I am a message";
+    msg1.tags = {"t","d","e"};
+    msg1.content = "this is not a content";
 
+    //and add it to the data manager
+    manager.add(msg1);
 
+    //and get it with the random access getter
+    manager.get();
 
+    //you can search it
+    manager.search(1);
 
+    //you can remove it
+    manager.remove(1);
 
-int main(int argc, char **argv){
+    //you can also subscribe to a topic to save some data from a external source
+    manager.ListenTo("fake_topic");
 
-  cafer_core::init(argc,argv,"component_test_node");
+    //listen until manager have 10 messages in his data set
+    while(manager.data_size() < 10){
+        ros::spinOnce();
+    }
 
-  std::string management_topic;
-  cafer_core::ros_nh->param("component_test_node/management_topic",management_topic,std::string("component_test_management"));
-  double freq;
-  cafer_core::ros_nh->param("component_test_node/frequency", freq, 10.0);
-
-  ROS_WARN_STREAM("Management topic for test node: "<<management_topic<< " namespace: "<<cafer_core::ros_nh->getNamespace());
-
-  cafer_core::Component<DummyClient> cc(management_topic,"dummy_node",freq);
-
-  cc.wait_for_init();
-
-  while(ros::ok()&&(!cc.get_terminate())) {
-    cc.spin();
-    cc.update();
-    cc.sleep();
-  }
-
-
-  return 0;
+    return 0;
 }

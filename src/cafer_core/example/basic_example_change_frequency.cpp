@@ -2,7 +2,7 @@
 //| This file is a part of the CAFER framework developped within
 //| the DREAM project (http://www.robotsthatdream.eu/).
 //| Copyright 2015, ISIR / Universite Pierre et Marie Curie (UPMC)
-//| Main contributor(s): 
+//| Main contributor(s):
 //|   * Stephane Doncieux, stephane.doncieux@isir.upmc.fr
 //|
 //|
@@ -14,7 +14,7 @@
 //| can use, modify and/ or redistribute the software under the terms
 //| of the CeCILL license as circulated by CEA, CNRS and INRIA at the
 //| following URL "http://www.cecill.info".
-//| 
+//|
 //| As a counterpart to the access to the source code and rights to
 //| copy, modify and redistribute granted by the license, users are
 //| provided only with a limited warranty and the software's author,
@@ -38,61 +38,43 @@
 
 #include <ros/ros.h>
 #include <gtest/gtest.h>
-#include "cafer_core/component.hpp"
+#include <unistd.h>
+#include "cafer_core/cafer_core.hpp"
 #include "cafer_core/Management.h"
-#include <std_msgs/Int64.h>
-#include <ros/impl/duration.h>
-
-
-class DummyClient {
-  boost::shared_ptr<ros::Publisher> dummy_p; 
-  long int n;
-
-public:
-  void connect_to_ros(void) {
-    dummy_p.reset(new ros::Publisher(cafer_core::ros_nh->advertise<std_msgs::Int64>("dummy_topic",10)));
-    n=0;
-  }
-
-  void disconnect_from_ros(void) {
-    dummy_p.reset();
-  }
-  bool is_initialized(void){return true;}
-  void update(void) {}
-
-  void publish_data(void) {
-    std_msgs::Int64 v;
-    v.data=n;
-    dummy_p->publish(v);
-    n++;
-  }
-};
-
-
-
+#include <sstream>
 
 
 int main(int argc, char **argv){
 
-  cafer_core::init(argc,argv,"component_test_node");
-
-  std::string management_topic;
-  cafer_core::ros_nh->param("component_test_node/management_topic",management_topic,std::string("component_test_management"));
-  double freq;
-  cafer_core::ros_nh->param("component_test_node/frequency", freq, 10.0);
-
-  ROS_WARN_STREAM("Management topic for test node: "<<management_topic<< " namespace: "<<cafer_core::ros_nh->getNamespace());
-
-  cafer_core::Component<DummyClient> cc(management_topic,"dummy_node",freq);
-
-  cc.wait_for_init();
-
-  while(ros::ok()&&(!cc.get_terminate())) {
-    cc.spin();
-    cc.update();
-    cc.sleep();
+  int freq_value = 10;
+  if (argc != 3){
+    ROS_INFO_STREAM("Correct use : rosrun  cafer_core  basic_example_change_frequency  management_topic freq_value");
+    return 0;
+  } else {
+    std::stringstream ss (argv[2]);
+    ss >> freq_value;
   }
 
+  ros::init(argc, argv, "change_freq_node");
+  ros::NodeHandle nh;
+  std::string management_topic = argv[1];
+  ROS_INFO_STREAM("management_topic" << management_topic);
+  ros::Publisher p=nh.advertise<cafer_core::Management>(management_topic,freq_value);
+
+  sleep(1);
+
+  cafer_core::Management msg;
+  msg.type=cafer_core::CHG_FREQ;
+  msg.src_node="";
+  msg.src_id=-1;
+  msg.dest_node="all";
+  msg.dest_id=-1;
+  msg.data_int=0;
+  msg.data_flt=freq_value;
+  msg.data_str="";
+
+  ROS_INFO_STREAM("Publishing the message to change frequency");
+  p.publish(msg);
 
   return 0;
 }

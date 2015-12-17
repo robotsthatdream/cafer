@@ -38,7 +38,7 @@
 
 #include <ros/ros.h>
 #include <gtest/gtest.h>
-#include "../src/component.hpp"
+#include "cafer_core/component.hpp"
 #include <cafer_core/Management.h>
 
 #include <ros/package.h>

@@ -1,8 +1,7 @@
-
 //| This file is a part of the CAFER framework developped within
 //| the DREAM project (http://www.robotsthatdream.eu/).
 //| Copyright 2015, ISIR / Universite Pierre et Marie Curie (UPMC)
-//| Main contributor(s): 
+//| Main contributor(s):
 //|   * Stephane Doncieux, stephane.doncieux@isir.upmc.fr
 //|
 //|
@@ -14,7 +13,7 @@
 //| can use, modify and/ or redistribute the software under the terms
 //| of the CeCILL license as circulated by CEA, CNRS and INRIA at the
 //| following URL "http://www.cecill.info".
-//| 
+//|
 //| As a counterpart to the access to the source code and rights to
 //| copy, modify and redistribute granted by the license, users are
 //| provided only with a limited warranty and the software's author,
@@ -37,62 +36,73 @@
 //| had knowledge of the CeCILL license and that you accept its terms.
 
 #include <ros/ros.h>
-#include <gtest/gtest.h>
-#include "cafer_core/component.hpp"
-#include "cafer_core/Management.h"
-#include <std_msgs/Int64.h>
 #include <ros/impl/duration.h>
+#include <cafer_core/cafer_core.hpp>
+#include <cafer_core/manager_test.h>
 
+using namespace cafer_core;
 
-class DummyClient {
-  boost::shared_ptr<ros::Publisher> dummy_p; 
-  long int n;
+class DataSource : public AbstractClient{
 
 public:
-  void connect_to_ros(void) {
-    dummy_p.reset(new ros::Publisher(cafer_core::ros_nh->advertise<std_msgs::Int64>("dummy_topic",10)));
-    n=0;
-  }
+    DataSource() : AbstractClient(){
+        connect_to_ros();
+        std::seed_seq seed = {std::time(0)};
+        gen.seed(seed);
+    }
 
-  void disconnect_from_ros(void) {
-    dummy_p.reset();
-  }
-  bool is_initialized(void){return true;}
-  void update(void) {}
+    void connect_to_ros(){
+        pub.reset(new Publisher(ros_nh->advertise<manager_test>("manager_test",1)));
+        _is_init = true;
+    }
+    void disconnect_from_ros(){
+        pub.reset();
+    }
+    void update(){
+        publish();
+    }
 
-  void publish_data(void) {
-    std_msgs::Int64 v;
-    v.data=n;
-    dummy_p->publish(v);
-    n++;
-  }
+    void publish(){
+        manager_test msg;
+        std_msgs::Header header;
+
+        header.seq = gen();
+        header.stamp = ros::Time(gen());
+        header.frame_id = "0";
+
+        msg.header = header;
+        msg.description = "I am a message";
+        msg.tags = {"t","d","e"};
+        msg.content = "this is not a content";
+
+
+        pub->publish(msg);
+    }
+
+private:
+    PublisherPtr pub;
+    std::mt19937 gen;
+
 };
 
 
+int main(int argc, char** argv){
 
+    cafer_core::init(argc,argv,"manager_component_test");
 
+    std::string management_topic;
+    cafer_core::ros_nh->param("manager_component_test/management_topic",management_topic,std::string("manager_component_test"));
+    double freq;
+    cafer_core::ros_nh->param("manager_component_test/frequency", freq, 10.0);
 
-int main(int argc, char **argv){
+    Component<DataSource> cc(management_topic,"DataSource",freq);
 
-  cafer_core::init(argc,argv,"component_test_node");
+    cc.wait_for_init();
 
-  std::string management_topic;
-  cafer_core::ros_nh->param("component_test_node/management_topic",management_topic,std::string("component_test_management"));
-  double freq;
-  cafer_core::ros_nh->param("component_test_node/frequency", freq, 10.0);
+    while(ros::ok()){
+        cc.update();
+       cc.spin();
+       cc.sleep();
+    }
 
-  ROS_WARN_STREAM("Management topic for test node: "<<management_topic<< " namespace: "<<cafer_core::ros_nh->getNamespace());
-
-  cafer_core::Component<DummyClient> cc(management_topic,"dummy_node",freq);
-
-  cc.wait_for_init();
-
-  while(ros::ok()&&(!cc.get_terminate())) {
-    cc.spin();
-    cc.update();
-    cc.sleep();
-  }
-
-
-  return 0;
 }

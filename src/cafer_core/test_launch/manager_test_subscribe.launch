@@ -1,0 +1,4 @@
+<launch>
+  <node name="manager_test" pkg="cafer_core" type="manager_test_subscribe_node" ns="manager_test_ns" />
+  <test test-name="manager_test_subscribe" pkg="cafer_core" type="manager_test_subscribe" name="manager_test2" ns="manager_test_ns"/>
+</launch>
