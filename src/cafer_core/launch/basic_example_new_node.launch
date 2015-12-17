@@ -1,0 +1,3 @@
+<launch>
+  <node name="basic_example_new_node" pkg="cafer_core" type="basic_example_new_node" ns="$(arg ns)" output="screen" />
+</launch>

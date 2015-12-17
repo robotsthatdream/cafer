@@ -42,6 +42,7 @@
 #include <cafer_core/Management.h>
 #include <tbb/tbb.h>
 #include <ros/package.h>
+#include <ros/impl/duration.h>
 
 class DummyClient {
 public:

@@ -1,5 +1,5 @@
 <launch>
-  <node name="getid" pkg="cafer_core" type="getid" ns="/cafer_server" />
+  <node name="getid" pkg="cafer_core" type="getid" ns="/cafer_core" />
 
   <arg name="nb_launch_death" default="5"/>
 

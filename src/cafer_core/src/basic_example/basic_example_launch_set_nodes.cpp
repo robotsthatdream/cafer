@@ -37,62 +37,55 @@
 //| had knowledge of the CeCILL license and that you accept its terms.
 
 #include <ros/ros.h>
-#include <gtest/gtest.h>
-#include "../src/component.hpp"
-#include "cafer_core/Management.h"
-#include <std_msgs/Int64.h>
+#include <ros/package.h>
 #include <ros/impl/duration.h>
+#include "../component.hpp"
+#include "cafer_core/Management.h"
 
 
 class DummyClient {
   boost::shared_ptr<ros::Publisher> dummy_p; 
   long int n;
-
 public:
-  void connect_to_ros(void) {
-    dummy_p.reset(new ros::Publisher(cafer_core::ros_nh->advertise<std_msgs::Int64>("dummy_topic",10)));
-    n=0;
-  }
-
-  void disconnect_from_ros(void) {
-    dummy_p.reset();
-  }
+  void connect_to_ros(void) {  }
+  void disconnect_from_ros(void) {dummy_p.reset();}
   bool is_initialized(void){return true;}
-  void update(void) {}
-
-  void publish_data(void) {
-    std_msgs::Int64 v;
-    v.data=n;
-    dummy_p->publish(v);
-    n++;
-  }
+  void update(void) {  }
 };
 
-
-
-
-
 int main(int argc, char **argv){
-
-  cafer_core::init(argc,argv,"component_test_node");
-
-  std::string management_topic;
-  cafer_core::ros_nh->param("component_test_node/management_topic",management_topic,std::string("component_test_management"));
+  
+  /** Parameters */
+  std::string management_topic, type, ns;  
+  int nb_nodes = 2;
   double freq;
-  cafer_core::ros_nh->param("component_test_node/frequency", freq, 10.0);
 
-  ROS_WARN_STREAM("Management topic for test node: "<<management_topic<< " namespace: "<<cafer_core::ros_nh->getNamespace());
+  /**  New node */
+  cafer_core::init(argc, argv, "basic_example_launch_set_nodes");	
+     
+  cafer_core::ros_nh->getParam(ros::this_node::getName()+"/management_topic",management_topic);  
+  cafer_core::ros_nh->getParam(ros::this_node::getName()+"/type",type); 
+  cafer_core::ros_nh->getParam(ros::this_node::getName()+"/frequency",freq);
+  ns = cafer_core::ros_nh->getNamespace();
+  ROS_INFO_STREAM("Launching "<<nb_nodes<<" new nodes (name="<<ros::this_node::getName()<<")");
 
-  cafer_core::Component<DummyClient> cc(management_topic,"dummy_node",freq);
-
+  /** Create component, in charge of calling the launch file creating the new nodes */
+  cafer_core::Component<DummyClient> cc(management_topic, type);
   cc.wait_for_init();
+  sleep(3);
+  std::string basic_example_new_node_launch = ros::package::getPath("cafer_core")+"/launch/basic_example_new_node.launch";
 
-  while(ros::ok()&&(!cc.get_terminate())) {
-    cc.spin();
-    cc.update();
-    cc.sleep();
+  /** Check the number of current nodes */
+  std::vector<cafer_core::ClientDescriptor> current_nodes;
+  cc.get_connected_client_with_type(type, current_nodes);  
+
+  /** New nodes to be created */
+  for(int i=0; i < nb_nodes; i++){
+    ROS_INFO_STREAM("Params : " << " " << ns << " " << management_topic << " " << type << " " << nb_nodes << " " << freq);
+    cc.call_launch_file(basic_example_new_node_launch,ns + "/basic_node");
   }
 
+  cc.spin();
 
   return 0;
 }

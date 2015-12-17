@@ -93,7 +93,7 @@ catkin_package(
 ###########
 
 include_directories(
-  include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${rostest_INCLUDE_DIRS}
+  include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${rostest_INCLUDE_DIRS} src/
 )
 #link_directories($ENV{HOME}/git/libfastsim/build/src /usr/lib/i386-linux-gnu)
 
@@ -110,6 +110,24 @@ install(DIRECTORY src/
   PATTERN ".cpp" EXCLUDE
 )
 # # 
+
+add_executable(basic_example_launch_set_nodes src/basic_example/basic_example_launch_set_nodes.cpp)
+target_link_libraries(basic_example_launch_set_nodes cafer_core ${catkin_LIBRARIES})
+add_dependencies(basic_example_launch_set_nodes cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+
+add_executable(basic_example_new_node src/basic_example/basic_example_new_node.cpp)
+target_link_libraries(basic_example_new_node cafer_core ${catkin_LIBRARIES})
+add_dependencies(basic_example_new_node cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+
+add_executable(basic_example_change_frequency src/basic_example/basic_example_change_frequency.cpp)
+target_link_libraries(basic_example_change_frequency cafer_core ${catkin_LIBRARIES})
+add_dependencies(basic_example_change_frequency cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+
+add_executable(basic_example_kill_node_topic_type src/basic_example/basic_example_kill_node_topic_type.cpp)
+target_link_libraries(basic_example_kill_node_topic_type cafer_core ${catkin_LIBRARIES})
+add_dependencies(basic_example_kill_node_topic_type cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+
+# #
 
 # Basic tests on the CAFER component
 add_executable(component_test_node test/component_test_node.cpp)

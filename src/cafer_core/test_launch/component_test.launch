@@ -1,4 +1,4 @@
 <launch>
-  <node name="getid" pkg="cafer_core" type="getid" ns="/cafer_server" />
+  <node name="getid" pkg="cafer_core" type="getid" ns="/cafer_core" />
   <test test-name="component_test" pkg="cafer_core" type="component_test" name="component_test1" ns="component_test_ns"/>
 </launch>
