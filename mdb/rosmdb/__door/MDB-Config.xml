@@ -1,0 +1,1102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+Configuración del MDB para probar el Simulador en el que el robot debe alcanzar la ficha (o pelota) roja.
+En el simulador se configura un solo sensor que envía información sobre el ángulo, distancia y si está visible o no la pelota.
+
+La selección de acciones se realiza directamente desde el principio con los comportamientos
+
+-->
+<MDB>
+    <core>
+        <stopCondition>
+            <class>es.udc.gii.mdb.core.condition.MaxIterationsStopCondition</class>
+            <maxIterations>2000</maxIterations>
+        </stopCondition>
+        <ip>localhost</ip>
+         <strategyChooser>
+            <id>exploratoryChooser</id>
+            <class>es.udc.gii.mdb.action.chooser.exploration.CollectTheBallWithDoorExplorationChooser</class>
+
+           
+            <explorationCriteria> <!-- used for ExplorationChooser -->
+                <class>es.udc.gii.mdb.action.chooser.exploration.evo.EvoExplorationCriteria</class>
+                <useAction>false</useAction>
+                <n>5</n>
+            </explorationCriteria>
+
+
+
+            <candidateActionSelector> <!-- used for ExplorationChooser -->
+                <class>es.udc.gii.mdb.action.chooser.exploration.RandomActionSelector</class>
+                <numberOfActions>32</numberOfActions>
+                <actuator>motor</actuator>
+            </candidateActionSelector>
+
+            
+            <logs>
+                 <!-- <log>
+                        <class>es.udc.gii.mdb.util.log.ExplorationCriteriaLogTool</class>
+                        <folder>__door/_log</folder>
+                        <iterations>1</iterations>
+                    </log>  
+                    <log>
+                        <class>es.udc.gii.mdb.util.log.ExplorationBestCriteriaLogTool</class>
+                        <folder>__door/_log</folder>
+                        <iterations>1</iterations>
+                    </log>   
+                      <log>
+                        <class>es.udc.gii.mdb.util.log.DensityCertaintyPostAntiTraceAproxLogTool</class>
+                        <folder>__door/_log</folder>
+                        <iterations>1</iterations>
+                    </log>   
+-->
+
+            </logs>
+
+        </strategyChooser>
+        <accomplished>accomplished</accomplished>
+        <savePath>__door/_log</savePath>
+        <logTool>
+<!--           <log>
+                <class>es.udc.gii.mdb.util.log.MDBGoalAccomplishedLogTool</class>
+                <folder>__door/_log</folder>
+                <iterations>1</iterations>
+            </log>
+            <log>
+                <class>es.udc.gii.mdb.util.log.MDBRewardLogTool</class>
+                <folder>__door/_log</folder>
+                <iterations>1</iterations>
+            </log>
+            <log>
+                <class>es.udc.gii.mdb.util.log.MDBAPPLogTool</class>
+                <folder>__door/_log</folder>
+                <iterations>1</iterations>
+            </log>     -->                  
+        </logTool>
+        <stopLearning>1000000</stopLearning>
+        <saveIterations>10000</saveIterations>
+        <iterationToSubgoal>50000</iterationToSubgoal>
+        <episodicBufferSize>200</episodicBufferSize>
+        <maxSubgoals>7</maxSubgoals>
+
+    </core>
+
+    <sensors>
+	<sensor>
+            <id>crash</id>
+            <port>20777</port>
+            <minVal>0</minVal>
+            <maxVal>1</maxVal>
+            <normMinVal>0</normMinVal>
+            <normMaxVal>1</normMaxVal>
+        </sensor>
+        <sensor>
+            <id>coinSinAngle</id>
+            <port>20530</port>
+            <minVal>-1</minVal>
+            <maxVal>1</maxVal>
+            <normMinVal>0</normMinVal>
+            <normMaxVal>1</normMaxVal>
+        </sensor>
+        <sensor>
+            <id>coinCosAngle</id>
+            <port>20531</port>
+            <minVal>-1</minVal>
+            <maxVal>1</maxVal>
+            <normMinVal>0</normMinVal>
+            <normMaxVal>1</normMaxVal>
+        </sensor>
+        <sensor>
+            <id>coinDistance</id>
+            <port>20532</port>
+            <minVal>0</minVal>
+            <maxVal>1000</maxVal>
+            <normMinVal>0</normMinVal>
+            <normMaxVal>1</normMaxVal>
+        </sensor>
+        <sensor>
+            <id>boxSinAngle</id>
+            <port>20550</port>
+            <minVal>-1</minVal>
+            <maxVal>1</maxVal>
+            <normMinVal>0</normMinVal>
+            <normMaxVal>1</normMaxVal>
+        </sensor>
+        <sensor>
+            <id>boxCosAngle</id>
+            <port>20551</port>
+            <minVal>-1</minVal>
+            <maxVal>1</maxVal>
+            <normMinVal>0</normMinVal>
+            <normMaxVal>1</normMaxVal>
+        </sensor>
+        <sensor>
+            <id>boxDistance</id>
+            <port>20552</port>
+            <minVal>0</minVal>
+            <maxVal>1000</maxVal>
+            <normMinVal>0</normMinVal>
+            <normMaxVal>1</normMaxVal>
+        </sensor>
+
+        <sensor>
+            <id>doorDistance</id>
+            <port>20001</port>
+            <minVal>0</minVal>
+            <maxVal>1000</maxVal>
+            <normMinVal>0</normMinVal>
+            <normMaxVal>1</normMaxVal>
+        </sensor>
+        <sensor>
+            <id>doorSinAngle</id>
+            <port>20002</port>
+            <minVal>-1</minVal>
+            <maxVal>1</maxVal>
+            <normMinVal>0</normMinVal>
+            <normMaxVal>1</normMaxVal>
+        </sensor>
+        <sensor>
+            <id>doorCosAngle</id>
+            <port>20003</port>
+            <minVal>-1</minVal>
+            <maxVal>1</maxVal>
+            <normMinVal>0</normMinVal>
+            <normMaxVal>1</normMaxVal>
+        </sensor>
+        <sensor>
+            <id>doorState</id>
+            <port>20004</port>
+            <minVal>0</minVal>
+            <maxVal>1</maxVal>
+            <normMinVal>0</normMinVal>
+            <normMaxVal>1</normMaxVal>
+        </sensor>
+        <sensor>
+            <id>buttonDistance</id>
+            <port>20005</port>
+            <minVal>0</minVal>
+            <maxVal>1000</maxVal>
+            <normMinVal>0</normMinVal>
+            <normMaxVal>1</normMaxVal>
+        </sensor>
+        <sensor>
+            <id>buttonSinAngle</id>
+            <port>20006</port>
+            <minVal>-1</minVal>
+            <maxVal>1</maxVal>
+            <normMinVal>0</normMinVal>
+            <normMaxVal>1</normMaxVal>
+        </sensor>
+        <sensor>
+            <id>buttonCosAngle</id>
+            <port>20007</port>
+            <minVal>-1</minVal>
+            <maxVal>1</maxVal>
+            <normMinVal>0</normMinVal>
+            <normMaxVal>1</normMaxVal>
+        </sensor>
+        <sensor>
+            <id>buttonState</id>
+            <port>20008</port>
+            <minVal>0</minVal>
+            <maxVal>1</maxVal>
+            <normMinVal>0</normMinVal>
+            <normMaxVal>1</normMaxVal>
+        </sensor>
+        <sensor>
+            <id>satisfaction</id>
+            <port>20534</port>
+            <minVal>0</minVal>
+            <maxVal>1</maxVal>
+            <normMinVal>0</normMinVal>
+            <normMaxVal>1</normMaxVal>
+        </sensor>
+        <sensor>
+            <id>accomplished</id>
+            <port>20535</port>
+            <minVal>0</minVal>
+            <maxVal>1</maxVal>
+            <normMinVal>0</normMinVal>
+            <normMaxVal>1</normMaxVal>
+        </sensor>        
+       <sensor>
+            <id>load</id>
+            <port>20553</port>
+            <minVal>0</minVal>
+            <maxVal>1</maxVal>
+            <normMinVal>0</normMinVal>
+            <normMaxVal>1</normMaxVal>
+        </sensor>
+
+       
+        
+    </sensors>
+
+    <actuators>
+        <actuator>
+            <id>motor</id>
+            <port>20540</port>
+            <minVal>-90</minVal>
+            <maxVal>90</maxVal>
+            <normMinVal>0</normMinVal>
+            <normMaxVal>1</normMaxVal>
+        </actuator>
+
+    </actuators>
+
+    <actionPerceptionPair>
+        <perception_t>
+            <external>
+                <field>
+                    <id>coinSinAngle_t</id>
+                    <type>coinSinAngle</type>
+                </field>                
+                <field>
+                    <id>coinCosAngle_t</id>
+                    <type>coinCosAngle</type>
+                </field>
+                <field>
+                    <id>coinDistance_t</id>
+                    <type>coinDistance</type>
+                </field>                
+                <field>
+                    <id>boxSinAngle_t</id>
+                    <type>boxSinAngle</type>
+                </field>
+                <field>
+                    <id>boxCosAngle_t</id>
+                    <type>boxCosAngle</type>
+                </field>
+                <field>
+                    <id>boxDistance_t</id>
+                    <type>boxDistance</type>
+                </field>
+                <field>
+                    <id>doorSinAngle_t</id>
+                    <type>doorSinAngle</type>
+                </field>
+                <field>
+                    <id>doorCosAngle_t</id>
+                    <type>doorCosAngle</type>
+                </field>
+                <field>
+                    <id>doorDistance_t</id>
+                    <type>doorDistance</type>
+                </field>         
+                <field>
+                    <id>doorState_t</id>
+                    <type>doorState</type>
+                </field>
+                <field>
+                    <id>buttonSinAngle_t</id>
+                    <type>buttonSinAngle</type>
+                </field>
+                <field>
+                    <id>buttonCosAngle_t</id>
+                    <type>buttonCosAngle</type>
+                </field>
+                <field>
+                    <id>buttonDistance_t</id>
+                    <type>buttonDistance</type>
+                </field>         
+                <field>
+                    <id>buttonState_t</id>
+                    <type>buttonState</type>
+                </field>
+            </external>
+            <internal>
+            </internal>
+        </perception_t>
+        <strategy>
+            <length>1</length>
+            <action>
+                <field>
+                    <id>motor_t</id>
+                    <type>motor</type>
+                </field>
+            </action>
+        </strategy>
+        <perception_t_n>
+            <external>
+                <field>
+                    <id>coinSinAngle_t+n</id>
+                    <type>coinSinAngle</type>
+                </field>                
+                <field>
+                    <id>coinCosAngle_t+n</id>
+                    <type>coinCosAngle</type>
+                </field>
+                <field>
+                    <id>coinDistance_t+n</id>
+                    <type>coinDistance</type>
+                </field>                
+                <field>
+                    <id>boxSinAngle_t+n</id>
+                    <type>boxSinAngle</type>
+                </field>
+                <field>
+                    <id>boxCosAngle_t+n</id>
+                    <type>boxCosAngle</type>
+                </field>
+                <field>
+                    <id>boxDistance_t+n</id>
+                    <type>boxDistance</type>
+                </field>
+                <field>
+                    <id>doorSinAngle_t+n</id>
+                    <type>doorSinAngle</type>
+                </field>
+                <field>
+                    <id>doorCosAngle_t+n</id>
+                    <type>doorCosAngle</type>
+                </field>
+                <field>
+                    <id>doorDistance_t+n</id>
+                    <type>doorDistance</type>
+                </field>         
+                <field>
+                    <id>doorState_t+n</id>
+                    <type>doorState</type>
+                </field>
+                <field>
+                    <id>buttonSinAngle_t+n</id>
+                    <type>buttonSinAngle</type>
+                </field>
+                <field>
+                    <id>buttonCosAngle_t+n</id>
+                    <type>buttonCosAngle</type>
+                </field>
+                <field>
+                    <id>buttonDistance_t+n</id>
+                    <type>buttonDistance</type>
+                </field>         
+                <field>
+                    <id>buttonState_t+n</id>
+                    <type>buttonState</type>
+                </field>
+            </external>
+            <internal>
+            </internal>
+        </perception_t_n>
+        <satisfaction_t_n>
+            <field>
+                <id>satisfaction_t+n</id>
+                <type>satisfaction</type>
+            </field>
+        </satisfaction_t_n>
+    </actionPerceptionPair>
+
+
+
+    <worldModels>
+        <model>
+            <id>coinSinAngleModel</id>
+            <approach>
+                <class>es.udc.gii.mdb.util.testing.collectcoin.model.CoinSinModelApproach</class>
+                <maxDistance>1000</maxDistance>
+                <avance>25</avance>
+            </approach>
+            <inputs>
+                <id>coinSinAngle_t</id>
+                <id>coinCosAngle_t</id>
+                <id>coinDistance_t</id>
+                <id>motor_t</id>
+            </inputs>
+            <outputs>
+                <id>coinSinAngle_t+n</id>
+            </outputs>
+            <stopLearning>-1</stopLearning>
+            <constraints>
+            </constraints>
+            <memory>
+                <class>es.udc.gii.mdb.memory.stm.FIFOMemory</class>
+                <size>3</size>
+            </memory>
+
+            <logTool>
+            </logTool>
+        </model>
+        
+        <model>
+            <id>coinCosAngleModel</id>
+            <approach>
+                <class>es.udc.gii.mdb.util.testing.collectcoin.model.CoinCosModelApproach</class>
+                <maxDistance>1000</maxDistance>
+                <avance>25</avance>
+            </approach>       
+            <inputs>
+                <id>coinSinAngle_t</id>
+                <id>coinCosAngle_t</id>
+                <id>coinDistance_t</id>
+                <id>motor_t</id>
+            </inputs>
+            <outputs>
+                <id>coinCosAngle_t+n</id>
+            </outputs>
+            <stopLearning>-1</stopLearning>
+            <constraints>
+            </constraints>
+            <memory>
+                <class>es.udc.gii.mdb.memory.stm.FIFOMemory</class>
+                <size>3</size>
+             
+            </memory>
+
+            <logTool>
+              </logTool>
+        </model>
+
+        <model>
+            <id>coinDistanceModel</id>
+             <approach>
+                <class>es.udc.gii.mdb.util.testing.collectcoin.model.CoinDistanceSinCosModelApproach</class>
+                <maxDistance>1000</maxDistance>
+                <avance>25</avance>
+            </approach>       
+            <inputs>
+                <id>coinSinAngle_t</id>
+                <id>coinCosAngle_t</id>
+                <id>coinDistance_t</id>
+                <id>motor_t</id>
+            </inputs>
+            <outputs>
+                <id>coinDistance_t+n</id>
+            </outputs>
+            <stopLearning>-1</stopLearning>
+            <constraints>
+            </constraints>
+            <memory>
+                <class>es.udc.gii.mdb.memory.stm.FIFOMemory</class>
+                <size>3</size>
+                
+            </memory>
+
+            <logTool>
+              
+            </logTool>
+        </model>
+
+        <model>
+            <id>boxSinAngleModel</id>
+            <approach>
+                <class>es.udc.gii.mdb.util.testing.collectcoin.model.CoinSinModelApproach</class>
+                <maxDistance>1000</maxDistance>
+                <avance>25</avance>
+            </approach>  
+            <inputs>
+                <id>boxSinAngle_t</id>
+                <id>boxCosAngle_t</id>
+                <id>boxDistance_t</id>
+                <id>motor_t</id>
+            </inputs>
+            <outputs>
+                <id>boxSinAngle_t+n</id>
+            </outputs>
+            <stopLearning>-1</stopLearning>
+            <constraints>
+            </constraints>
+            <memory>
+                <class>es.udc.gii.mdb.memory.stm.FIFOMemory</class>
+                <size>3</size>
+          
+            </memory>
+          
+            <logTool>
+              
+            </logTool>
+        </model>
+        
+        <model>
+            <id>boxCosAngleModel</id>
+            <approach>
+                <class>es.udc.gii.mdb.util.testing.collectcoin.model.CoinCosModelApproach</class>
+                <maxDistance>1000</maxDistance>
+                <avance>25</avance>
+            </approach>  
+            <inputs>
+                <id>boxSinAngle_t</id>
+                <id>boxCosAngle_t</id>
+                <id>boxDistance_t</id>
+                <id>motor_t</id>
+            </inputs>
+            <outputs>
+                <id>boxCosAngle_t+n</id>
+            </outputs>
+            <stopLearning>-1</stopLearning>
+            <constraints>
+            </constraints>
+            <memory>
+                <class>es.udc.gii.mdb.memory.stm.FIFOMemory</class>
+                <size>3</size>
+            </memory>
+           
+            <logTool>
+              
+            </logTool>
+        </model>
+
+        <model>
+            <id>boxDistanceModel</id>
+             <approach>
+                <class>es.udc.gii.mdb.util.testing.collectcoin.model.CoinDistanceSinCosModelApproach</class>
+                <maxDistance>1000</maxDistance>
+                <avance>25</avance>
+            </approach>  
+            <inputs>
+                <id>boxSinAngle_t</id>
+                <id>boxCosAngle_t</id>
+                <id>boxDistance_t</id>
+                <id>motor_t</id>
+            </inputs>
+            <outputs>
+                <id>boxDistance_t+n</id>
+            </outputs>
+            <stopLearning>-1</stopLearning>
+            <constraints>
+            </constraints>
+            <memory>
+                <class>es.udc.gii.mdb.memory.stm.FIFOMemory</class>
+                <size>3</size>
+            </memory>
+
+            <logTool>
+              
+            </logTool>
+        </model>
+
+        <model>
+            <id>doorSinAngleModel</id>
+            <approach>
+                <class>es.udc.gii.mdb.util.testing.collectcoin.model.CoinSinModelApproach</class>
+                <maxDistance>1000</maxDistance>
+                <avance>25</avance>
+            </approach>  
+            <inputs>
+                <id>doorSinAngle_t</id>
+                <id>doorCosAngle_t</id>
+                <id>doorDistance_t</id>
+                <id>motor_t</id>
+            </inputs>
+            <outputs>
+                <id>doorSinAngle_t+n</id>
+            </outputs>
+            <stopLearning>-1</stopLearning>
+            <constraints>
+            </constraints>
+            <memory>
+                <class>es.udc.gii.mdb.memory.stm.FIFOMemory</class>
+                <size>3</size>
+          
+            </memory>
+          
+            <logTool>
+              
+            </logTool>
+        </model>
+        
+        <model>
+            <id>doorCosAngleModel</id>
+            <approach>
+                <class>es.udc.gii.mdb.util.testing.collectcoin.model.CoinCosModelApproach</class>
+                <maxDistance>1000</maxDistance>
+                <avance>25</avance>
+            </approach>  
+            <inputs>
+                <id>doorSinAngle_t</id>
+                <id>doorCosAngle_t</id>
+                <id>doorDistance_t</id>
+                <id>motor_t</id>
+            </inputs>
+            <outputs>
+                <id>doorCosAngle_t+n</id>
+            </outputs>
+            <stopLearning>-1</stopLearning>
+            <constraints>
+            </constraints>
+            <memory>
+                <class>es.udc.gii.mdb.memory.stm.FIFOMemory</class>
+                <size>3</size>
+               
+            </memory>
+           
+            <logTool>
+              
+            </logTool>
+        </model>
+
+        <model>
+            <id>doorDistanceModel</id>
+             <approach>
+                <class>es.udc.gii.mdb.util.testing.collectcoin.model.CoinDistanceSinCosModelApproach</class>
+                <maxDistance>1000</maxDistance>
+                <avance>25</avance>
+            </approach>  
+            <inputs>
+                <id>doorSinAngle_t</id>
+                <id>doorCosAngle_t</id>
+                <id>doorDistance_t</id>
+                <id>motor_t</id>
+            </inputs>
+            <outputs>
+                <id>doorDistance_t+n</id>
+            </outputs>
+            <stopLearning>-1</stopLearning>
+            <constraints>
+            </constraints>
+            <memory>
+                <class>es.udc.gii.mdb.memory.stm.FIFOMemory</class>
+                <size>3</size>
+            </memory>
+
+            <logTool>
+              
+            </logTool>
+        </model>
+        
+        <model>
+            <id>doorStateModel</id>
+             <approach>
+                <class>es.udc.gii.mdb.util.testing.collectcoin.model.StateDistanceSinCosModelApproach</class>
+                <maxDistance>1000</maxDistance>
+                <avance>25</avance>
+            </approach>  
+            <inputs>
+                <id>doorSinAngle_t</id>
+                <id>doorCosAngle_t</id>
+                <id>doorDistance_t</id>
+                <id>doorState_t</id>
+                <id>motor_t</id>
+            </inputs>
+            <outputs>
+                <id>doorState_t+n</id>
+            </outputs>
+            <stopLearning>-1</stopLearning>
+            <constraints>
+            </constraints>
+            <memory>
+                <class>es.udc.gii.mdb.memory.stm.FIFOMemory</class>
+                <size>3</size>
+            </memory>
+
+            <logTool>
+              
+            </logTool>
+        </model>
+    
+        
+        <model>
+            <id>buttonSinAngleModel</id>
+            <approach>
+                <class>es.udc.gii.mdb.util.testing.collectcoin.model.CoinSinModelApproach</class>
+                <maxDistance>1000</maxDistance>
+                <avance>25</avance>
+            </approach>  
+            <inputs>
+                <id>buttonSinAngle_t</id>
+                <id>buttonCosAngle_t</id>
+                <id>buttonDistance_t</id>
+                <id>motor_t</id>
+            </inputs>
+            <outputs>
+                <id>buttonSinAngle_t+n</id>
+            </outputs>
+            <stopLearning>-1</stopLearning>
+            <constraints>
+            </constraints>
+            <memory>
+                <class>es.udc.gii.mdb.memory.stm.FIFOMemory</class>
+                <size>3</size>
+          
+            </memory>
+          
+            <logTool>
+              
+            </logTool>
+        </model>
+        
+        <model>
+            <id>buttonCosAngleModel</id>
+            <approach>
+                <class>es.udc.gii.mdb.util.testing.collectcoin.model.CoinCosModelApproach</class>
+                <maxDistance>1000</maxDistance>
+                <avance>25</avance>
+            </approach>  
+            <inputs>
+                <id>buttonSinAngle_t</id>
+                <id>buttonCosAngle_t</id>
+                <id>buttonDistance_t</id>
+                <id>motor_t</id>
+            </inputs>
+            <outputs>
+                <id>buttonCosAngle_t+n</id>
+            </outputs>
+            <stopLearning>-1</stopLearning>
+            <constraints>
+            </constraints>
+            <memory>
+                <class>es.udc.gii.mdb.memory.stm.FIFOMemory</class>
+                <size>3</size>
+               
+            </memory>
+           
+            <logTool>
+              
+            </logTool>
+        </model>
+
+        <model>
+            <id>buttonDistanceModel</id>
+             <approach>
+                <class>es.udc.gii.mdb.util.testing.collectcoin.model.CoinDistanceSinCosModelApproach</class>
+                <maxDistance>1000</maxDistance>
+                <avance>25</avance>
+            </approach>  
+            <inputs>
+                <id>buttonSinAngle_t</id>
+                <id>buttonCosAngle_t</id>
+                <id>buttonDistance_t</id>
+                <id>motor_t</id>
+            </inputs>
+            <outputs>
+                <id>buttonDistance_t+n</id>
+            </outputs>
+            <stopLearning>-1</stopLearning>
+            <constraints>
+            </constraints>
+            <memory>
+                <class>es.udc.gii.mdb.memory.stm.FIFOMemory</class>
+                <size>3</size>
+            </memory>
+
+            <logTool>
+              
+            </logTool>
+        </model>
+        
+        <model>
+            <id>buttonStateModel</id>
+             <approach>
+                <class>es.udc.gii.mdb.util.testing.collectcoin.model.StateDistanceSinCosModelApproach</class>
+                <maxDistance>1000</maxDistance>
+                <avance>25</avance>
+            </approach>  
+            <inputs>
+                <id>buttonSinAngle_t</id>
+                <id>buttonCosAngle_t</id>
+                <id>buttonDistance_t</id>
+                <id>buttonState_t</id>
+                <id>motor_t</id>
+            </inputs>
+            <outputs>
+                <id>buttonState_t+n</id>
+            </outputs>
+            <stopLearning>-1</stopLearning>
+            <constraints>
+            </constraints>
+            <memory>
+                <class>es.udc.gii.mdb.memory.stm.FIFOMemory</class>
+                <size>3</size>
+            </memory>
+
+            <logTool>
+              
+            </logTool>
+        </model>
+    
+    </worldModels>
+
+    <internalModels>
+    </internalModels>
+    
+    <rewardModels>
+        <model>
+            <id>rewardModel</id>
+            <approach>
+                <class>es.udc.gii.mdb.anji.ANJINEATModelApproach</class>
+                <configFile>__door/rewardModel.properties</configFile>  
+            </approach>                   
+            <inputs>
+           <!--     <id>coinSinAngle_t</id>
+                <id>coinCosAngle_t</id> -->
+                <id>coinDistance_t</id>
+           <!--     <id>boxSinAngle_t</id> 
+                <id>boxCosAngle_t</id>-->
+                <id>boxDistance_t</id>
+         <!--       <id>doorSinAngle_t</id>
+                <id>doorCosAngle_t</id> -->
+          <!--      <id>doorDistance_t</id>  -->
+         <!--       <id>doorState_t</id> -->
+          <!--      <id>buttonSinAngle_t</id>
+                <id>buttonCosAngle_t</id>  -->
+                <id>buttonDistance_t</id>
+         <!--       <id>buttonState_t</id>  -->
+            </inputs>
+            <outputs>
+                <id>satisfaction_t+n</id>
+            </outputs>
+            <stopLearning>-1</stopLearning>
+
+            <memory>
+                <class>es.udc.gii.mdb.motivation.buffer.MotivationCacheEpisodicBuffer</class>
+                <size>75</size>
+                <decayFunction>
+                    <class>es.udc.gii.mdb.motivation.buffer.DecayFunction</class>
+                    <initValue>1.0</initValue>
+                    <decayFactor>0.04</decayFactor>
+                </decayFunction>
+                
+            </memory>
+            <rewardSensor>accomplished</rewardSensor>
+            <density>
+                <forgettingFactor>1.0</forgettingFactor>
+                <ct>0.1</ct>
+            </density>
+            <certainty>
+                <nMax>20</nMax>
+                <minTraceSize>10</minTraceSize>
+                <gamma>1</gamma>
+                <k>1</k>
+            </certainty>
+
+          <logTool>
+               <!-- <log>
+                    <class>es.udc.gii.mdb.util.log.MDBIterLogTool</class>
+                    <folder>__door/_log/</folder>
+                    <iterations>1</iterations>
+                </log>
+                <log>
+                    <class>es.udc.gii.mdb.util.log.AbsErrorLogTool</class>
+                    <folder>__door/_log/</folder>
+                    <iterations>1</iterations>
+                </log>
+                <log>
+                    <class>es.udc.gii.mdb.util.log.RewardOutputsLogTool</class>
+                    <folder>__door/_log/</folder>
+                    <iterations>100</iterations>
+                </log>
+                <log>
+                    <class>es.udc.gii.mdb.util.log.RewardModelSubgoalLogTool</class>
+                    <folder>__door/_log/</folder>
+                    <iterations>1</iterations>
+                </log>
+
+        <log>
+            <class>es.udc.gii.mdb.util.log.MotivationMemoryLogTool</class>
+            <folder>__door/_log/</folder>
+            <iterations>1</iterations>
+        </log> 
+        <log>
+            <class>es.udc.gii.mdb.util.log.DensityCertaintyPostRewardAproxLogTool</class>
+            <folder>__door/_log/</folder>
+            <iterations>1</iterations>
+        </log> -->
+      
+           </logTool>
+        </model>
+    </rewardModels>
+   <behaviourModels>
+        <model>
+            <id>behaviourModel</id>
+            <approach>
+                <class>es.udc.gii.mdb.anji.ANJINEATModelApproach</class>
+                <configFile>__door/behaviourModel.properties</configFile>  
+            </approach> 
+            <inputs>
+                <id>coinSinAngle_t</id>
+                <id>coinCosAngle_t</id>
+                <id>coinDistance_t</id>
+                <id>boxSinAngle_t</id>
+                <id>boxCosAngle_t</id>
+                <id>boxDistance_t</id>
+                <id>doorSinAngle_t</id>
+                <id>doorCosAngle_t</id>
+                <id>doorDistance_t</id>
+                <id>doorState_t</id>
+                <id>buttonSinAngle_t</id>
+                <id>buttonCosAngle_t</id>
+                <id>buttonDistance_t</id>
+                <id>buttonState_t</id>
+            </inputs>
+            <outputs>
+                <id>motor_t</id>
+            </outputs>
+         
+            <constraints>
+            
+                </constraints>
+            <memory>
+                <class>es.udc.gii.mdb.memory.stm.AtentionMemory</class>
+                <size>50</size>
+                <!-- solo para Atention Memory -->
+                <labels>
+                    <label> 
+                        <class>es.udc.gii.mdb.memory.stm.register.label.Distance</class>
+                        <coefficient>1</coefficient>
+                    </label>  
+                </labels>
+            </memory>
+            <stopLearning>-1</stopLearning>
+
+            <ltmemory>
+                <class>es.udc.gii.mdb.memory.ltm.stabilityltm.LTMemoryStability</class>
+                <stability>
+                    <class>es.udc.gii.mdb.memory.ltm.stabilityltm.stability.StabilityByFitnessPaper</class>
+                    <parameters>
+                        <unstableCont>5</unstableCont>
+                        <unstableThr>1.5</unstableThr>
+                        <errorMemorySize>40</errorMemorySize>
+                        <coeffOfVariation>0.3</coeffOfVariation>
+                    </parameters>
+                </stability>
+                <replacement>
+                    <class>es.udc.gii.mdb.memory.ltm.stabilityltm.replacement.CrossComparationReplacementStrategy</class>
+                    <parameters>
+                        <similarityThr>1</similarityThr>
+                    </parameters>                   
+                </replacement>  
+            </ltmemory>
+            <logTool>
+
+             </logTool>
+        
+        </model>  
+    </behaviourModels>
+    <learningAlgorithms>
+<learning>
+    <id>satisfactionModelLearning</id>
+    <class>es.udc.gii.mdb.anji.ANJINEATLearningAlgorithm</class>
+    <modelId>rewardModel</modelId>
+    <config>__door/rewardModel.properties</config> 
+    <samples>1</samples>
+    <populationfactor>2.0</populationfactor>
+</learning>
+
+<learning>
+    <id>satisfactionModelLearning2</id>
+    <class>es.udc.gii.mdb.anji.ANJINEATLearningAlgorithm</class>
+    <modelId>rewardModel2</modelId>
+    <config>__door/rewardModel2.properties</config> 
+    <samples>1</samples>
+    <populationfactor>2.0</populationfactor>
+</learning>
+
+<learning>
+    <id>satisfactionModelLearning3</id>
+    <class>es.udc.gii.mdb.anji.ANJINEATLearningAlgorithm</class>
+    <modelId>rewardModel3</modelId>
+    <config>__door/rewardModel3.properties</config> 
+    <samples>1</samples>
+    <populationfactor>2.0</populationfactor>
+</learning>
+
+<learning>
+    <id>satisfactionModelLearning4</id>
+    <class>es.udc.gii.mdb.anji.ANJINEATLearningAlgorithm</class>
+    <modelId>rewardModel4</modelId>
+    <config>__door/rewardModel4.properties</config> 
+    <samples>1</samples>
+    <populationfactor>2.0</populationfactor>
+</learning>
+<learning>
+    <id>satisfactionModelLearning5</id>
+    <class>es.udc.gii.mdb.anji.ANJINEATLearningAlgorithm</class>
+    <modelId>rewardModel5</modelId>
+    <config>__door/rewardModel5.properties</config> 
+    <samples>1</samples>
+    <populationfactor>2.0</populationfactor>
+</learning>
+
+<learning>
+    <id>satisfactionModelLearning6</id>
+    <class>es.udc.gii.mdb.anji.ANJINEATLearningAlgorithm</class>
+    <modelId>rewardModel6</modelId>
+    <config>__door/rewardModel6.properties</config> 
+    <samples>1</samples>
+    <populationfactor>2.0</populationfactor>
+</learning>
+
+<learning>
+    <id>satisfactionModelLearning7</id>
+    <class>es.udc.gii.mdb.anji.ANJINEATLearningAlgorithm</class>
+    <modelId>rewardModel7</modelId>
+    <config>__door/rewardModel7.properties</config> 
+    <samples>1</samples>
+    <populationfactor>2.0</populationfactor>
+</learning>
+
+<learning>
+    <id>satisfactionModelLearning8</id>
+    <class>es.udc.gii.mdb.anji.ANJINEATLearningAlgorithm</class>
+    <modelId>rewardModel8</modelId>
+    <config>__door/rewardModel8.properties</config> 
+    <samples>1</samples>
+    <populationfactor>2.0</populationfactor>
+</learning>
+
+
+</learningAlgorithms>
+
+
+
+<logs>
+    <logTool>
+        <id>rewardModelLogTool</id>
+        <!--<log>
+            <class>es.udc.gii.mdb.util.log.MDBIterLogTool</class>
+            <folder>__door/_log/</folder>
+            <iterations>1</iterations>
+        </log>
+        <log>
+            <class>es.udc.gii.mdb.util.log.AbsErrorLogTool</class>
+            <folder>__door/_log/</folder>
+            <iterations>1</iterations>
+        </log>
+        <log>
+            <class>es.udc.gii.mdb.util.log.MotivationMemoryLogTool</class>
+            <folder>__door/_log/</folder>
+            <iterations>1</iterations>
+        </log> 
+        <log>
+            <class>es.udc.gii.mdb.util.log.OutputsLogTool</class>
+            <folder>__door/_log/</folder>
+            <iterations>1</iterations>
+        </log>
+        <log>
+            <class>es.udc.gii.mdb.util.log.RewardModelSubgoalLogTool</class>
+            <folder>__door/_log/</folder>
+            <iterations>1</iterations>
+        </log> -->
+      <!--  <log>
+            <class>es.udc.gii.mdb.util.log.DensityCertaintyPostRewardAproxLogTool</class>
+            <folder>__door/_log/</folder>
+            <iterations>1</iterations>
+        </log> -->
+
+    </logTool>
+</logs>
+
+<shorttermmemory>
+    <stmemory>
+         <id>rewardModelSTM</id>
+        <class>es.udc.gii.mdb.motivation.buffer.MotivationCacheEpisodicBuffer</class>
+        <size>75</size>
+        <decayFunction>
+            <class>es.udc.gii.mdb.motivation.buffer.DecayFunction</class>
+            <initValue>1.0</initValue>
+            <decayFactor>0.04</decayFactor>
+        </decayFunction>
+    </stmemory>
+    <stmemory>
+        <id>behaviourModelSTM</id>
+        <modelId>behaviourModel</modelId>
+        <class>es.udc.gii.mdb.memory.stm.AtentionMemory</class>
+        <size>50</size>
+    </stmemory>
+</shorttermmemory>
+
+
+<longtermmemory>
+   
+</longtermmemory> 
+</MDB>

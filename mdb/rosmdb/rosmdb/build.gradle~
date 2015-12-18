@@ -1,0 +1,57 @@
+/*
+ * Copyright (C) 2014 Juan.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
+
+/* This plugin is necessary for creating installApp tasks (i.e. executables) */
+apply plugin: 'application'
+mainClassName = 'org.ros.RosRun'
+
+/* 
+ Dependencies can be on external maven artifacts (such as rosjava_core
+ here) or on sibling subprojects. Fpr external maven artifact dependencies
+ it's convenient to use an open ranged dependency, but restrict it to
+ cover the patch version only to avoid breakages due to api changes
+ which usually occur on minor and major version numbers.
+*/
+
+
+dependencies {
+  /* An external maven artifact dependency */
+  compile 'org.ros.rosjava_core:rosjava:[0.2,0.3)'
+  /* Example of a local subproject dependency */ 
+  /* compile project(':sibling_gradle_project') */
+   compile fileTree(dir: './libs', include: '*.jar')
+}
+
+/*
+ * Create a deploy task to make an executable named "execute",
+ * that can be used from the roslaunch .launch files.
+ * To run this from this directory, do:
+ * ../gradlew deployApp
+ *
+ * see: https://code.google.com/p/rosjava/issues/detail?id=140
+ */
+task deployApp(dependsOn: 'installApp') << {
+  File binDir = new File(project.projectDir, '/bin')
+  if (! binDir.isDirectory()) {
+    println "Creating $binDir directory"
+    binDir.mkdirs()
+  }
+  File link = new File(binDir,"execute")
+  File target = new File(project.projectDir, "build/install/$project.name/bin/$project.name")
+  println "Creating symlink from $link.absolutePath to $target.absolutePath"
+  ant.symlink(link: link.absolutePath, resource: target.absolutePath, overwrite: true)
+}
+

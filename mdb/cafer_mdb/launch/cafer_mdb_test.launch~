@@ -1,0 +1,16 @@
+<launch>
+    <arg name="ns" default="test" />
+    <arg name="management_topic" default="cafer_management_topic"/>
+    <arg name="frequency" default="10"/>
+	<arg name="type" default="cafer_mdb_test"/>
+	<arg name="iterations" default="1000"/>
+
+    <node name="getid" pkg="cafer_core" type="getid" ns="/cafer_core" />
+    <node name="cafer_mdb_test" pkg="cafer_mdb" type="$(arg type)" ns="$(arg ns)" output="screen">
+        <param name="frequency" type="double" value="$(arg frequency)" />
+        <param name="management_topic" type="string" value="$(arg management_topic)" />
+		<param name="type" type="string" value="$(arg type)" />
+		<param name="iterations" type="int" value="$(arg iterations)"/>
+    </node>
+
+</launch>
