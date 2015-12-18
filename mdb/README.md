@@ -29,20 +29,20 @@ Installation:
 MDB is programmed in java, so it is essential to install the java version of ros.
 
 - Install gradle:
-'''
+```
 sudo apt-get install gradle 
-'''
+```
 
 - Create a ROSJava ws:
-'''
+```
 source /opt/ros/jade/setup.bash
 mkdir -p ~/ROSJava/ros_ws
 cd ~/ROSJava/ros_ws
 wstool init src
-'''
+```
 
 - Download and build the ROSJava packages:
-'''
+```
 cd ~/ROSJava/ros_ws/src
 git clone -b indigo https://github.com/ROSJava/ROSJava_build_tools.git
 git clone -b indigo https://github.com/ROSJava/ROSJava_core.git 
@@ -52,19 +52,19 @@ git clone -b indigo https://github.com/ROSJava/ROSJava_messages.git
 cd ..
 catkin_make
 source devel/setup.bash
-'''
+```
 
 - Generate message artifacts:
-'''
+```
 roscd genjava
 scripts/genjava_message_artifacts
-'''
+```
 
 - NOTE: If there are any problems up until this point, check the tutorial this one is based on:
 http://visionlab.uncc.edu/dokuwiki/rosjava
  
 - Move the rosmdb package to the java src folder and build it:
-''' 
+``` 
 cd ~/cafer/mdb
 mv rosmdb ~/ROSJava/ros_ws/src
 roscd rosmdb
@@ -73,7 +73,7 @@ cd ../..
 catkin_make
 roscd rosmdb
 ./gradlew deployApp
-'''
+```
 
 - Move the cafer_mdb package to the cafer src folder:
 ```
@@ -81,21 +81,21 @@ mv ~/cafer/mdb/cafer_mdb ~/cafer/src
 ```
 
 - Overlay the cafer ws to the ROSJava ws and build the cafer packages:
-'''
+```
 cd ~/cafer/src
 catkin_init_ws
 cd ..
 rm -rf devel build
 catkin_make
 source devel/setup.bash
-'''
+```
 
 Running the experiment:
 -----------------------
-'''
+```
 export ROS_HOME=~/ROSJava/ros_ws/src/rosmdb 
 roslaunch cafer_mdb cafer_mdb_test.launch
-'''
+```
 
 The experiment will run until cafer_mdb_test notifies cafer_mdb_node to close itself. For practical reasons, the experiment is configured to run for a total of 2000 iterations and there are no result logs saved, as an example of the mdb use through cafer. 
 
