@@ -1,6 +1,7 @@
 CAFER
 =====
 
+
 This is the source code of the CAFER framework, to be used within the DREAM project (http://www.robotsthatdream.eu/).
 
 This is a set of ROS nodes providing services and publishing/subscribing to different topics.
@@ -53,4 +54,3 @@ There are two ROS packages cafer_server and cafer_client.
 cafer_server define the services of CAFER and
 cafer_client is a library which provide implementations of ROS clients to help the use the cafer's services.
 For future contributions please follow this structure.
-
