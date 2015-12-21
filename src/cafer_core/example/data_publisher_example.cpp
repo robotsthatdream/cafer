@@ -47,7 +47,7 @@ int main(int argc, char** argv){
 
     ros::NodeHandle nh;
 
-    ros::Publisher pub = nh.advertise<cafer_core::manager_test>("manager_test",1);
+    ros::Publisher pub = nh.advertise<cafer_core::manager_test>("fake_topic",1);
 
     std::mt19937 gen;
     std::seed_seq seed = {std::time(0)};
@@ -57,15 +57,16 @@ int main(int argc, char** argv){
     while(ros::ok()){
 
         cafer_core::manager_test msg;
+        std_msgs::Header header;
 
-        header.seq = _gen();
-        header.stamp = ros::Time(_gen());
+        header.seq = gen();
+        header.stamp = ros::Time(gen());
         header.frame_id = "0";
 
-        msg1.header = header;
-        msg1.description = "I am a message";
-        msg1.tags = {"t","d","e"};
-        msg1.content = "this is not a content";
+        msg.header = header;
+        msg.description = "I am a message";
+        msg.tags = {"t","d","e"};
+        msg.content = "this is not a content";
 
 
         pub.publish(msg);

@@ -1,0 +1,4 @@
+<launch>
+	<node name="data_publisher" pkg="cafer_core" type="data_publisher_example" ns="example" />
+	<node name="data_manager_example" pkg="cafer_core" type="data_manager_example" ns="example"  />
+</launch>

@@ -168,6 +168,10 @@ if(CATKIN_ENABLE_TESTING)
 
 endif()
 
+add_executable(data_publisher_example example/data_publisher_example.cpp)
+target_link_libraries(data_publisher_example ${catkin_LIBRARIES})
+add_dependencies(data_publisher_example cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+
 #Examples
 add_executable(data_manager_example example/data_manager_example.cpp)
 target_link_libraries(data_manager_example cafer_core ${catkin_LIBRARIES})
