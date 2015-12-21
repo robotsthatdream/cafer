@@ -11,7 +11,7 @@ usage : two args : a management topic and a frequence value
 
 Kill node topic type
 --------------------
-command : rosrun  cafer_core  basic_example_kill_node_topic_type 
+command : rosrun  cafer_core  basic_example_kill_node_topic_type  
 usage : two args : a topic and a type 
 
 
