@@ -44,9 +44,12 @@
 
 
 
-class DummyClient {
+CAFER_CLIENT(DummyClient) {
+  using AbstractClient::AbstractClient; // C++11 requirement to inherit the constructor
 public:
+  void connect_to_ros(void) {}
   void disconnect_from_ros(void) {}
+  void init() {}
   bool is_initialized(void){return true;}
   void update(void) {}
 };

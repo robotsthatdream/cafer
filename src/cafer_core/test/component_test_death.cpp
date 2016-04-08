@@ -44,17 +44,21 @@
 
 
 
-class DummyClient {
+CAFER_CLIENT(DummyClient) {
+  using AbstractClient::AbstractClient; // C++11 requirement to inherit the constructor
+
 public:
   void disconnect_from_ros(void) {}
+  void connect_to_ros(void) {}
   bool is_initialized(void){return true;}
   void update(void) {}
+  void init(void) {}
 };
 
-// Declare a test
+// In this test, a dummy node is expected to be launched (look at component_test_death.launch) and the test consists in killing it and checking that the node actually gets down.
 TEST(Component, component_death)
 {
-  cafer_core::Component<DummyClient> cc("component_test_management", "test");
+  cafer_core::Component<DummyClient> cc("component_test_launch_death_mgmt", "test");
 
 
   cc.wait_for_init();

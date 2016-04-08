@@ -2,12 +2,20 @@
 
 import sferes
 import os
+import Options
 
 def set_options(opt):
-    pass
+    opt.add_option('--cafer', type='string', help='path to cafer_core install directory.', dest='cafer')
+
 
 def configure(conf):
-    pass
+    cafer_path='/usr/local'
+    if Options.options.cafer:
+        cafer_path=Options.options.cafer
+
+    conf.env['CPPPATH_CAFER'] = cafer_path + '/include/'
+    conf.env['LIBPATH_CAFER'] = cafer_path + '/lib'
+    conf.env['LIB_CAFER'] = ['cafer_core']
 
 def build(bld):
     pass

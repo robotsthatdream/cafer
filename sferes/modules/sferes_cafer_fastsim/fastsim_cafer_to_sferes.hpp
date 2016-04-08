@@ -1,7 +1,7 @@
 //| This file is a part of the CAFER framework developped within
 //| the DREAM project (http://www.robotsthatdream.eu/).
 //| Copyright 2015, ISIR / Universite Pierre et Marie Curie (UPMC)
-//| Main contributor(s): 
+//| Main contributor(s):
 //|   * Stephane Doncieux, stephane.doncieux@isir.upmc.fr
 //|
 //|
@@ -13,7 +13,7 @@
 //| can use, modify and/ or redistribute the software under the terms
 //| of the CeCILL license as circulated by CEA, CNRS and INRIA at the
 //| following URL "http://www.cecill.info".
-//| 
+//|
 //| As a counterpart to the access to the source code and rights to
 //| copy, modify and redistribute granted by the license, users are
 //| provided only with a limited warranty and the software's author,
@@ -39,7 +39,7 @@
 #define _CAFER_FASTSIM_HPP_
 
 #include <unistd.h>
-#include <cafer_client/cafer_client.hpp>
+#include <cafer_core/component.hpp>
 #include <sensor_msgs/LaserScan.h>
 #include <nav_msgs/Odometry.h>
 #include <std_msgs/Bool.h>
@@ -51,12 +51,29 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-namespace cafer_client {
+namespace cafer_core {
 
 
-  const std::string namespace_base="sferes_cafer_fastsim";
+  const std::string namespace_fastsim_base="sferes_cafer_fastsim";
 
-  class Posture {
+  template <class Client>
+  void prepare_nodes(cafer_core::Component<Client> *cc, std::string launch_file) {
+    std::ostringstream oss;
+    oss<<namespace_fastsim_base<<"_"<<getpid();
+    std::string _ros_namespace_fastsim_base=oss.str();
+    std::cerr<<"Namespace_Fastsim: "<<_ros_namespace_fastsim_base<<" Launch_file: "<<launch_file<<std::endl;
+    cc->get_client()._ros_namespace_fastsim=cc->call_launch_file(launch_file, _ros_namespace_fastsim_base);
+    cc->get_client().init();
+    std::cout<<"Waiting for fastsim to start (after having called the launch file)"<<std::flush;
+    while(cc->get_created_nodes(cc->get_client()._ros_namespace_fastsim).size()==0) {
+      std::cout<<"."<<std::flush;
+      cc->spin();
+      cc->sleep();
+    }
+    std::cout<<"[OK]"<<std::endl;
+  }
+
+  class Posture { 
   public:
     Posture(void):_x(0),_y(0),_theta(0){}
     Posture(float x, float y, float theta):_x(x),_y(y),_theta(theta){}
@@ -66,25 +83,27 @@ namespace cafer_client {
     float dist_to(Posture &dest) {
       return sqrt((_x-dest._x)*(_x-dest._x)+(_y-dest._y)*(_y-dest._y));
     }
-    
+
     float _x;
     float _y;
     float _theta;
-    
+
   };
-  
-  class cafer_fastsim {
+
+  CAFER_CLIENT(FastsimCaferToSferes) {
+    using AbstractClient::AbstractClient; // C++11 requirement to inherit the constructor
+ 
   public:
-    std::string _ros_namespace_fastsim_base;
+    //std::string _ros_namespace_fastsim_base;
     std::string _ros_namespace_fastsim;
-    
+
     // ROS handles
     boost::shared_ptr<ros::Subscriber> laser_s;
     boost::shared_ptr<ros::Subscriber> odom_s;
     boost::shared_ptr<ros::Subscriber> collision_s;
     boost::shared_ptr<ros::Publisher> speed_left_p;
     boost::shared_ptr<ros::Publisher> speed_right_p;
-    
+
     // Sensor data (updated by the callbacks)
     tbb::concurrent_bounded_queue<sensor_msgs::LaserScan> lasers;
     tbb::concurrent_bounded_queue<nav_msgs::Odometry> odom;
@@ -93,10 +112,10 @@ namespace cafer_client {
     sensor_msgs::LaserScan lasers_current;
     nav_msgs::Odometry odom_current;
     bool collision_current;
-    
 
 
-    ~cafer_fastsim(void) {
+
+    ~FastsimCaferToSferes(void) {
       //std::cout<<" Function: "<<__func__<<" Line: "<<__LINE__<<" "<<this<<std::endl;
       disconnect_from_ros();
     }
@@ -109,36 +128,68 @@ namespace cafer_client {
       speed_left_p.reset();
       speed_right_p.reset();
       //cafer_client::release_node_group(_ros_namespace_fastsim_base,_ros_namespace_fastsim);
-      cafer_client::kill_node_group(_ros_namespace_fastsim_base,_ros_namespace_fastsim);
+      //cafer_core::kill_node_group(_ros_namespace_fastsim_base,_ros_namespace_fastsim);
     }
-    
-    void init(const char *launch_file) {
+
+    void connect_to_ros(void) {
+      std::string topic_laser=_ros_namespace_fastsim+"/cafer_fastsim/laser_scan";
+      laser_s.reset(new ros::Subscriber(ros_nh->subscribe(topic_laser.c_str(),10,&FastsimCaferToSferes::laser_cb,this)));
+      std::string topic_odom=_ros_namespace_fastsim+"/cafer_fastsim/odom";
+      odom_s.reset(new ros::Subscriber(ros_nh->subscribe(topic_odom.c_str(),10,&FastsimCaferToSferes::odom_cb,this)));
+      std::string topic_collision=_ros_namespace_fastsim+"/cafer_fastsim/collision";
+      collision_s.reset(new ros::Subscriber(ros_nh->subscribe(topic_collision.c_str(),10,&FastsimCaferToSferes::collision_cb,this)));
+
+      std::string topic_speed_left=_ros_namespace_fastsim+"/cafer_fastsim/speed_left";
+      speed_left_p.reset(new ros::Publisher(ros_nh->advertise<std_msgs::Float32>(topic_speed_left.c_str(),10)));
+      std::string topic_speed_right=_ros_namespace_fastsim+"/cafer_fastsim/speed_right";
+      speed_right_p.reset(new ros::Publisher(ros_nh->advertise<std_msgs::Float32>(topic_speed_right.c_str(),10)));
+    }
+ 
+    void init(void) {
+
       std::ostringstream oss;
-      oss<<namespace_fastsim_base<<"_"<<getpid();
-      _ros_namespace_fastsim_base=oss.str();
+      oss<<ros_nh->getNamespace()<<"/"<<namespace_fastsim_base<<"_"<<getpid();
+      std::string _ros_namespace_fastsim_base=oss.str();
+
+      std::string launch_file;
+      ros_nh->param("launch_file_fastsim",launch_file,std::string("unset"));
+
       std::cerr<<"Namespace_Fastsim: "<<_ros_namespace_fastsim_base<<" Launch_file: "<<launch_file<<std::endl;
-      _ros_namespace_fastsim = cafer_client::get_node_group(_ros_namespace_fastsim_base,launch_file);
+
+      if (launch_file=="unset") {
+	std::cerr<<"You should set the launch_file_fastsim ros param !";
+	exit(1);
+      }
+
+      _ros_namespace_fastsim=get_component()->call_launch_file(launch_file, _ros_namespace_fastsim_base);
+
       std::cerr<<"ROS FASTSIM, namespace_fastsim="<<_ros_namespace_fastsim<<std::endl;
       if (_ros_namespace_fastsim.find("<Failed>")!=std::string::npos) {
 	std::cerr<<"ROS initialisation failed."<<std::endl;
 	exit(1);
       }
-      
-      std::string topic_laser=_ros_namespace_fastsim+"/simu_fastsim/laser_scan";
-      laser_s.reset(new ros::Subscriber(ros_nh->subscribe(topic_laser.c_str(),10,&cafer_fastsim::laser_cb,this))); 
-      std::string topic_odom=_ros_namespace_fastsim+"/simu_fastsim/odom";
-      odom_s.reset(new ros::Subscriber(ros_nh->subscribe(topic_odom.c_str(),10,&cafer_fastsim::odom_cb,this)));      
-      std::string topic_collision=_ros_namespace_fastsim+"/simu_fastsim/collision";
-      collision_s.reset(new ros::Subscriber(ros_nh->subscribe(topic_collision.c_str(),10,&cafer_fastsim::collision_cb,this)));
-      
-      std::string topic_speed_left=_ros_namespace_fastsim+"/simu_fastsim/speed_left";
-      speed_left_p.reset(new ros::Publisher(ros_nh->advertise<std_msgs::Float32>(topic_speed_left.c_str(),10)));
-      std::string topic_speed_right=_ros_namespace_fastsim+"/simu_fastsim/speed_right";
-      speed_right_p.reset(new ros::Publisher(ros_nh->advertise<std_msgs::Float32>(topic_speed_right.c_str(),10)));
-      
+
+      connect_to_ros();
+
+
+      std::cout<<"Waiting for fastsim to start (after having called the launch file)"<<std::flush;
+      while(get_component()->get_created_nodes(_ros_namespace_fastsim).size()==0) {
+	std::cout<<"."<<std::flush;
+	get_component()->spin();
+	get_component()->sleep();
+      }
+    std::cout<<"[OK]"<<std::endl;
+
+      std::cerr<<"Waiting for initialization !"<<std::flush;
+      while(!is_initialized()) {
+        get_component()->spin();
+        get_component()->sleep();
+        std::cerr<<"."<<std::flush;
+      }
+      std::cerr<<std::endl;
 
     }
-    
+
     void collision_cb(const std_msgs::Bool &coll) {
       //std::cout<<" Function: "<<__func__<<" Line: "<<__LINE__<<" "<<this<<std::endl;
       collision.push(coll.data);
@@ -163,7 +214,7 @@ namespace cafer_client {
       init=init && (ls>0);
       init=init && (cs>0);
       //std::cout<<" Function: "<<__func__<<" Line: "<<__LINE__<<" odom.size="<<os<<" lasers.size="<<ls<<" coll.size="<<cs<<" "<<this<<std::endl;
-      return init;
+      return _is_init=init;
     }
 
     void update(void) {
@@ -190,11 +241,11 @@ namespace cafer_client {
       v.request.x=x;
       v.request.y=y;
       v.request.theta=theta;
-      std::string teleport=_ros_namespace_fastsim+"/simu_fastsim/teleport";
+      std::string teleport=_ros_namespace_fastsim+"/cafer_fastsim/teleport";
       ros::ServiceClient client = ros_nh->serviceClient<fastsim::Teleport>(teleport.c_str());
       if (client.call(v)) {
 	if (!v.response.ack) {
-	  std::cerr<<"cafer_fastsim: teleport failed ! Position: "<<x<<" "<<y<<" "<<theta<<std::endl;
+	  std::cerr<<"FastsimCaferToSferes: teleport failed ! Position: "<<x<<" "<<y<<" "<<theta<<std::endl;
 	}
       }
       //std::cout<<"== END == Teleporting the robot."<<std::endl;

@@ -42,11 +42,13 @@
 #include "cafer_core/Management.h"
 
 
-class DummyClient : public cafer_core::AbstractClient {
-  boost::shared_ptr<ros::Publisher> dummy_p;
+class DummyClient : public cafer_core::AbstractClient<cafer_core::Component<DummyClient> > {
+  using AbstractClient::AbstractClient; // C++11 requirement to inherit the constructor
   long int n;
 public:
-  void disconnect_from_ros(void) {dummy_p.reset();}
+  void disconnect_from_ros(void) {}
+  void connect_to_ros(void) {}
+  void init(void) {}
   void update(void) {  }
 };
 

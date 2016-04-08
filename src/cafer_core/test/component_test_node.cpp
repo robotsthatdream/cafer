@@ -2,7 +2,7 @@
 //| This file is a part of the CAFER framework developped within
 //| the DREAM project (http://www.robotsthatdream.eu/).
 //| Copyright 2015, ISIR / Universite Pierre et Marie Curie (UPMC)
-//| Main contributor(s): 
+//| Main contributor(s):
 //|   * Stephane Doncieux, stephane.doncieux@isir.upmc.fr
 //|
 //|
@@ -14,7 +14,7 @@
 //| can use, modify and/ or redistribute the software under the terms
 //| of the CeCILL license as circulated by CEA, CNRS and INRIA at the
 //| following URL "http://www.cecill.info".
-//| 
+//|
 //| As a counterpart to the access to the source code and rights to
 //| copy, modify and redistribute granted by the license, users are
 //| provided only with a limited warranty and the software's author,
@@ -44,8 +44,9 @@
 #include <ros/impl/duration.h>
 
 
-class DummyClient {
-  boost::shared_ptr<ros::Publisher> dummy_p; 
+CAFER_CLIENT(DummyClient) {
+  using AbstractClient::AbstractClient; // C++11 requirement to inherit the constructor
+  boost::shared_ptr<ros::Publisher> dummy_p;
   long int n;
 
 public:
@@ -54,9 +55,15 @@ public:
     n=0;
   }
 
+   ~DummyClient(){disconnect_from_ros();}
+
+
   void disconnect_from_ros(void) {
     dummy_p.reset();
   }
+
+  void init(void) {}
+
   bool is_initialized(void){return true;}
   void update(void) {}
 

@@ -44,11 +44,14 @@
 #include <ros/package.h>
 #include <ros/impl/duration.h>
 
-class DummyClient {
+CAFER_CLIENT(DummyClient) {
+  using AbstractClient::AbstractClient; // C++11 requirement to inherit the constructor
 public:
+  void connect_to_ros(void) {}
   void disconnect_from_ros(void) {}
   bool is_initialized(void){return true;}
   void update(void) {}
+  void init(void) {}
 };
 
 void test_launch_death(int i,bool local) {

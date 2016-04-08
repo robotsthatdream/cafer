@@ -42,14 +42,9 @@
 
 using namespace cafer_core;
 
-class DataSource : public AbstractClient{
-
+class DataSource : public cafer_core::AbstractClient<cafer_core::Component<DataSource> >{
+  using AbstractClient::AbstractClient; // C++11 requirement to inherit the constructor
 public:
-    DataSource() : AbstractClient(){
-        connect_to_ros();
-        std::seed_seq seed = {std::time(0)};
-        gen.seed(seed);
-    }
 
     void connect_to_ros(){
         pub.reset(new Publisher(ros_nh->advertise<manager_test>("manager_test",1)));
@@ -61,6 +56,12 @@ public:
     void update(){
         publish();
     }
+
+  void init(){
+        connect_to_ros();
+        std::seed_seq seed = {std::time(0)};
+        gen.seed(seed);
+  }
 
     void publish(){
         manager_test msg;

@@ -42,7 +42,8 @@
 #include <ros/impl/duration.h>
 
 
-class DummyClient : public cafer_core::AbstractClient {
+class DummyClient :public cafer_core::AbstractClient<cafer_core::Component<DummyClient> > {
+  using AbstractClient::AbstractClient; // C++11 requirement to inherit the constructor
   boost::shared_ptr<ros::Publisher> dummy_p;
   long int n;
 public:
@@ -51,6 +52,7 @@ public:
   }
   void disconnect_from_ros(void) {dummy_p.reset();}
   void update(void) {  }
+  void init(){connect_to_ros();}
 };
 
 int main(int argc, char **argv){
