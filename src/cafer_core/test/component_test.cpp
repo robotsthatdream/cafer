@@ -44,11 +44,11 @@
 
 
 
-CAFER_CLIENT(DummyClient) {
-  using AbstractClient::AbstractClient; // C++11 requirement to inherit the constructor
+class DummyClient: public cafer_core::Component {
+  using cafer_core::Component::Component; // To inherit Component's constructor
 public:
-  void connect_to_ros(void) {}
-  void disconnect_from_ros(void) {}
+  void client_connect_to_ros(void) {}
+  void client_disconnect_from_ros(void) {}
   void init() {}
   bool is_initialized(void){return true;}
   void update(void) {}
@@ -57,8 +57,8 @@ public:
 // Declare a test
 TEST(Component, cafer_core1)
 {
-  cafer_core::Component<DummyClient> cc1("component_test_management", "test1");
-  cafer_core::Component<DummyClient> cc2("component_test_management", "test2");
+  DummyClient cc1("component_test_management", "test1");
+  DummyClient cc2("component_test_management", "test2");
 
   // Check ID generation
   ASSERT_NE(cc1.get_id(),-1);

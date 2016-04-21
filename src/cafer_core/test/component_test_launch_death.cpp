@@ -44,11 +44,12 @@
 #include <ros/package.h>
 #include <ros/impl/duration.h>
 
-CAFER_CLIENT(DummyClient) {
-  using AbstractClient::AbstractClient; // C++11 requirement to inherit the constructor 
+class DummyClient: public cafer_core::Component {
+  using cafer_core::Component::Component; // To inherit Component's constructor
+
 public:
-  void disconnect_from_ros(void) {}
-  void connect_to_ros(void) {}
+  void client_disconnect_from_ros(void) {}
+  void client_connect_to_ros(void) {}
   void init(void) {}
   bool is_initialized(void){return true;}
   void update(void) {}
@@ -57,7 +58,7 @@ public:
 /** local_node_death (i.e. terminate attribute) test */
 TEST(Component, component_launch_death_local)
 {
-  cafer_core::Component<DummyClient> cc("my_mgmt_ld", "test_local");
+  DummyClient cc("my_mgmt_ld", "test_local");
 
 
   cc.wait_for_init();
@@ -131,7 +132,7 @@ TEST(Component, component_launch_death_local)
 /** complete_node_death (i.e. ros::shutdown) test */
 TEST(Component, component_launch_death_complete)
 {
-  cafer_core::Component<DummyClient> cc("my_mgmt_ld", "test_global");
+  DummyClient cc("my_mgmt_ld", "test_global");
 
 
   cc.wait_for_init();

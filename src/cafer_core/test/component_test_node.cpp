@@ -44,13 +44,14 @@
 #include <ros/impl/duration.h>
 
 
-CAFER_CLIENT(DummyClient) {
-  using AbstractClient::AbstractClient; // C++11 requirement to inherit the constructor
+class DummyClient: public cafer_core::Component {
+  using cafer_core::Component::Component; // To inherit Component's constructor
+
   boost::shared_ptr<ros::Publisher> dummy_p;
   long int n;
 
 public:
-  void connect_to_ros(void) {
+  void client_connect_to_ros(void) {
     dummy_p.reset(new ros::Publisher(cafer_core::ros_nh->advertise<std_msgs::Int64>("dummy_topic",10)));
     n=0;
   }
@@ -58,7 +59,7 @@ public:
    ~DummyClient(){disconnect_from_ros();}
 
 
-  void disconnect_from_ros(void) {
+  void client_disconnect_from_ros(void) {
     dummy_p.reset();
   }
 
@@ -90,7 +91,7 @@ int main(int argc, char **argv){
 
   ROS_WARN_STREAM("Management topic for test node: "<<management_topic<< " namespace: "<<cafer_core::ros_nh->getNamespace());
 
-  cafer_core::Component<DummyClient> cc(management_topic,"dummy_node",freq);
+  DummyClient cc(management_topic,"dummy_node",freq);
 
   cc.wait_for_init();
 

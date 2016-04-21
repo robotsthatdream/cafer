@@ -44,11 +44,12 @@
 #include <ros/package.h>
 #include <ros/impl/duration.h>
 
-CAFER_CLIENT(DummyClient) {
-  using AbstractClient::AbstractClient; // C++11 requirement to inherit the constructor
+class DummyClient: public cafer_core::Component {
+  using cafer_core::Component::Component; // To inherit Component's constructor
+
 public:
-  void connect_to_ros(void) {}
-  void disconnect_from_ros(void) {}
+  void client_connect_to_ros(void) {}
+  void client_disconnect_from_ros(void) {}
   bool is_initialized(void){return true;}
   void update(void) {}
   void init(void) {}
@@ -59,7 +60,7 @@ void test_launch_death(int i,bool local) {
   std::ostringstream os1,os2;
   os1<<"test_tbb_"<<local<<"_"<<i;
   os2<<"mgmt_ld_"<<local<<i;
-  cafer_core::Component<DummyClient> cc(os2.str(), os1.str());
+  DummyClient cc(os2.str(), os1.str());
  
   ROS_INFO_STREAM("Launch-death iteration with tbb: "<<i);
 

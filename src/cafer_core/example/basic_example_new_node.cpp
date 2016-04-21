@@ -42,38 +42,54 @@
 #include <ros/impl/duration.h>
 
 
-class DummyClient :public cafer_core::AbstractClient<cafer_core::Component<DummyClient> > {
-  using AbstractClient::AbstractClient; // C++11 requirement to inherit the constructor
+/** Basic example of client. Does nothing fancy, except */
+class DummyClient :public cafer_core::Component {
+  using cafer_core::Component::Component; // To inherit Component's constructor
+
   boost::shared_ptr<ros::Publisher> dummy_p;
   long int n;
 public:
-  void connect_to_ros(void) {
+  ~DummyClient() {shutdown();}
+  void client_connect_to_ros(void) {
+    ROS_INFO_STREAM("DummyClient type="<<get_type()<<" id="<<get_id()<<" connecting to ROS");
     dummy_p.reset(new ros::Publisher(cafer_core::ros_nh->advertise<std_msgs::Int64>("basic_example_topic",10)));
   }
-  void disconnect_from_ros(void) {dummy_p.reset();}
+  void client_disconnect_from_ros(void) {
+    ROS_INFO_STREAM("DummyClient type="<<get_type()<<" id="<<get_id()<<" disconnecting from ROS");
+    dummy_p.reset();}
   void update(void) {  }
   void init(){connect_to_ros();}
+  void publish(int n) {
+    if (is_connected_to_ros()) {
+      std_msgs::Int64 mi;
+      mi.data=n;
+      dummy_p->publish(mi);
+    }
+  }
 };
 
 int main(int argc, char **argv){
 
   cafer_core::init(argc,argv,"basic_example_new_node");
 
-  std::string management_topic,type;
+  std::string management_topic="unset",type="basic_example_new_node";
   double freq;
-  cafer_core::ros_nh->getParam("/basic_example_ns/basic_example_launch_set_nodes/management_topic",management_topic);
-  cafer_core::ros_nh->getParam("/basic_example_ns/basic_example_launch_set_nodes/type",type);
-  cafer_core::ros_nh->getParam("/basic_example_ns/basic_example_launch_set_nodes/frequency",freq);
+  cafer_core::ros_nh->getParam("management_topic",management_topic);
+  cafer_core::ros_nh->getParam("frequency",freq);
   ROS_INFO_STREAM("Management topic for new node: "<<management_topic<< " ; Namespace: "<<cafer_core::ros_nh->getNamespace());
 
-  cafer_core::Component<DummyClient> cc(management_topic,type,freq);
+  DummyClient cc(management_topic,type,freq);
   cc.wait_for_init();
+
+  int cpt=0;
 
   while(ros::ok()&&(!cc.get_terminate())) {
     cc.spin();
+    cc.publish(cpt);
     cc.update();
     cc.sleep();
+    cpt++;
   }
-
+  cc.shutdown();
   return 0;
 }

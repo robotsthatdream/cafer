@@ -1,3 +1,17 @@
 <launch>
-  <node name="basic_example_new_node" pkg="cafer_core" type="basic_example_new_node" ns="$(arg ns)" output="screen" />
+  <arg name="ns" default="basic_ns"/>
+  <arg name="name" default="basic_example_new_node"/>
+  <arg name="management_topic" default="basic_mgmt" />
+  <arg name="frequency" default="30"/>
+  <arg name="creator_ns" default="unset"/>
+  <arg name="creator_id" default="-1"/>
+  <node name="$(arg name)" pkg="cafer_core" type="basic_example_new_node" ns="$(arg ns)" output="screen" >
+      <param name="type" type="double" value="$(arg frequency)" />
+      <param name="frequency" type="double" value="$(arg frequency)" />
+      <param name="frequency" type="double" value="$(arg frequency)" />
+      <param name="management_topic" type="string" value="$(arg management_topic)" />
+      <param name="creator_ns" type="string" value="$(arg creator_ns)"/>
+      <param name="creator_id" type="int" value="$(arg creator_id)"/>
+      <param name="created_ns" type="string" value="$(arg ns)"/>
+  </node>
 </launch>

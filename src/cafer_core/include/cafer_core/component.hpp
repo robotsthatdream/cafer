@@ -63,7 +63,7 @@ namespace cafer_core {
   * - WATCHDOG: watchdog message, to tell that the component is still alive
   * - ACK_CREATION: message to tell to a component that has required the creation of a node that the creation is complete. It also allows the creating component to get the id of the created component.
   */
-  typedef enum {CHG_FREQ=0, LOCAL_CLIENT_DEATH, COMPLETE_NODE_DEATH,WATCHDOG,ACK_CREATION} MgmtType;
+  typedef enum {CHG_FREQ=0, LOCAL_CLIENT_DEATH, COMPLETE_NODE_DEATH,WATCHDOG,ACK_CREATION,ASK_NEW_ACK} MgmtType;
 
   /** Client descriptor */
   class ClientDescriptor{
@@ -88,30 +88,37 @@ namespace cafer_core {
     }
   };
 
+  typedef boost::unordered_map<ClientDescriptor, ros::Time, ClientDescriptorHasher> MapWatchDog_t;
+  typedef boost::unordered_map<std::string, std::vector<ClientDescriptor> > CreatedNodes_t;
 
-  /**
-   * @brief The AbstractClient class
-   * Based class to implement node for using the template class Component. There is no obligation to use it.
+
+  /** Abstract class for the Cafer client
+   *  Main functionnalities:
+   *  \li watchdog
+   *  \li frequency management
+   *  \li waits for initialization
    */
-  template<class Comp>
-  class AbstractClient{
-    Comp *_my_component;
-  public :
-    explicit AbstractClient(Comp *_comp):_my_component(_comp) {}
+  class Component {
 
+  public:
 
+    /**
+     * @brief update
+     * Calls the code to take into account what has been received through the subscribers (typically update parameter values by taking into account received values)
+     */
     virtual void update() = 0;
+
     /**
      * @brief connect_to_ros
      * all the definition of subscriber and publisher must be done in this method. WARNING: this is not called by default. It is usually called in the init() method.
      */
-    virtual void connect_to_ros() = 0;
+    virtual void client_connect_to_ros() = 0;
 
     /**
      * @brief disconnect_from_ros
      * the purpose of this methode is to free the memory of all subscribers and publishers shared_ptr of the node. WARNING: this is not called by default. Is is usually called in the destructor.
      */
-    virtual void disconnect_from_ros() = 0;
+    virtual void client_disconnect_from_ros() = 0;
 
     /**
      * @brief init
@@ -125,30 +132,21 @@ namespace cafer_core {
      */
     virtual bool is_initialized(){return _is_init;}
 
-    /**
-     * @brief get_component
-     * @return the pointer to the component corresponding to this client
-     */
-    Comp *get_component(void) {return _my_component;}
+
+
 
   protected:
     bool _is_init = false;
-  };
+    bool _is_connected_to_ros = false;
 
-  /** Template for the Cafer client
-   *  Main functionnalities:
-   *  \li watchdog
-   *  \li frequency management
-   *  \li waits for initialization
-   */
-  template<class Client> class Component {
   private:
-    Client client;
+
     int id;
     std::string type;
     int creator_id;
     std::string creator_ns;
     std::string created_ns;
+    std::string _mgmt_topic;
     bool terminate; /**< did we receive the order to stop the client ?*/
 
     boost::shared_ptr<ros::Rate> rate; /**< ROS update rate */
@@ -158,15 +156,13 @@ namespace cafer_core {
     boost::shared_ptr<ros::Subscriber> management_s; /**< subscriber to the management topic */
     boost::shared_ptr<ros::Publisher> management_p; /**<publisher to the management topic */
 
-    typedef boost::unordered_map<ClientDescriptor, ros::Time, ClientDescriptorHasher> MapWatchDog_t;
     MapWatchDog_t map_watchdog; /**< map in which is stored the last watchdog message received from each client connected to the management topic of this client */
 
-    typedef boost::unordered_map<std::string, std::vector<ClientDescriptor> > CreatedNodes_t;
     CreatedNodes_t created_nodes; /**< map in which are stored all nodes created by a call_launch_file. The key is the required namespace */
 
 
   public:
-    Component(std::string mgmt_topic, std::string _type, double freq=10): client(this),type(_type),terminate(false),map_watchdog(5) {
+    Component(std::string mgmt_topic, std::string _type, double freq=10): type(_type),terminate(false),map_watchdog(5) {
       rate.reset(new ros::Rate(freq));
       if (mgmt_topic =="") {
         std::string default_value="default_"+type;
@@ -197,13 +193,13 @@ namespace cafer_core {
        ros_nh->param("created_ns",created_ns,std::string("<unset>"));
        ros_nh->param("creator_ns",creator_ns,std::string("<unset>"));
 
-       get_client().init();
-       ack_creation();
+       //init();
+       //ack_creation();
 
     }
 
     ~Component(void) {
-      disconnect_from_ros();
+      //disconnect_from_ros();
     }
 
     /** Should the client terminate ? This needs to be taken into account in the user code */
@@ -215,11 +211,27 @@ namespace cafer_core {
     /** Accessor to the client id (unique) */
     long int get_id(void) const { return id;}
 
+    bool is_connected_to_ros() const {return _is_connected_to_ros;}
+
+    /** Disconnect the client from ROS, i.e. destroy subscribers and publishers */
+    void connect_to_ros(void) {
+      // connection to management topic is done in the constructor only.
+      client_connect_to_ros();
+      _is_connected_to_ros=true;
+    }
+
     /** Disconnect the client from ROS, i.e. destroy subscribers and publishers */
     void disconnect_from_ros(void) {
-      client.disconnect_from_ros();
+      client_disconnect_from_ros();
       management_s.reset();
       watchdog.reset();
+      _is_connected_to_ros=false;
+    }
+
+    /** Shutting down the component and the corresponding node */
+    void shutdown(void) {
+      disconnect_from_ros();
+      ros::shutdown();
     }
 
     /** Call a launch file. Corresponding nodes are to be launched in a namespace namespace_base_XX where XX is a unique id (provided by the getid service). It will be connected to the management_topic topic (the same than this class if this argument equals "").*/
@@ -232,8 +244,8 @@ namespace cafer_core {
 
       cafer_core::GetID v;
       v.request.name = namespace_base;
-      static ros::ServiceClient client = ros_nh->serviceClient<cafer_core::GetID>("/cafer_core/get_id");
-      if (client.call(v))
+      static ros::ServiceClient clients = ros_nh->serviceClient<cafer_core::GetID>("/cafer_core/get_id");
+      if (clients.call(v))
 	{
 	  std::ostringstream os, osf;
 	  os<<"/"<<namespace_base<<"_"<<v.response.id;
@@ -255,9 +267,6 @@ namespace cafer_core {
 	}
       return created_namespace;
     }
-
-    /** Accessor to the client specific code */
-    Client &get_client(void) {return client;}
 
     /** Sleep: should be called by the user code once all the things that have to be done during one iteration of the loop have been done */
     void sleep(void) {
@@ -317,21 +326,24 @@ namespace cafer_core {
 
     /** Waits for the initialization from the client specific side */
     void wait_for_init(void) {
-      while((!is_client_up(get_namespace(),get_id())) && (!client.is_initialized())) {
+      init();
+      ack_creation();
+
+      while((!is_client_up(get_namespace(),get_id())) && (!is_initialized())) {
 	       ros::spinOnce();
 	       sleep();
       }
       update();
     }
 
-    /** Calls the code to take into account what has been received through the subscribers (typically update parameter values by taking into account received values)*/
-    void update(void) {
-      client.update();
-    }
-
     /** Gets node namespace */
     std::string get_namespace(void) const {
       return ros_nh->getNamespace();
+    }
+
+    /** Gets the created_nodes */
+    CreatedNodes_t &get_created_nodes(void) {
+      return created_nodes;
     }
 
     /** Gets the created_nodes */
@@ -365,6 +377,7 @@ namespace cafer_core {
       case COMPLETE_NODE_DEATH:
 	       if ((mgmt.dest_node == "all")||((mgmt.dest_node == ros_nh->getNamespace())&&(mgmt.dest_id == get_id()))) {
 	          ROS_INFO_STREAM("COMPLETE_NODE_DEATH called");
+		  disconnect_from_ros();
 	          ros::shutdown();
 	      }
 	      break;
@@ -372,19 +385,36 @@ namespace cafer_core {
 	      update_watchdog(mgmt.src_node,mgmt.src_id,mgmt.src_type);
 	      break;
       case ACK_CREATION:
-        ROS_INFO_STREAM("Ack received: mgmt.dest_node="<<mgmt.dest_node<<" mgmt.dest_id="<<mgmt.dest_node<<" my_ns="<<ros_nh->getNamespace()<<" my_id="<<get_id());
         if ((mgmt.dest_node == "all")||((mgmt.dest_node == ros_nh->getNamespace())&&(mgmt.dest_id == get_id()))) {
-           ROS_INFO_STREAM("ACK_CREATION: ack received by the creator");
-           ClientDescriptor cd;
-           cd.ns=mgmt.src_node;
-           cd.id=mgmt.src_id;
-           cd.type=mgmt.src_type;
-           created_nodes[mgmt.data_str].push_back(cd);
+	  ROS_INFO_STREAM("Ack received by the creator: mgmt.dest_node="<<mgmt.dest_node<<" mgmt.dest_id="<<mgmt.dest_node<<" my_ns="<<ros_nh->getNamespace()<<" my_id="<<get_id()<<" src_ns="<<mgmt.src_node<<" src_id="<<mgmt.src_id<<" src_type="<<mgmt.src_type);
+	  ClientDescriptor cd;
+	  cd.ns=mgmt.src_node;
+	  cd.id=mgmt.src_id;
+	  cd.type=mgmt.src_type;
+	  created_nodes[mgmt.data_str].push_back(cd);
         }
         break;
+      case ASK_NEW_ACK:
+	ack_creation();
+	break;
       default:
 	     ROS_WARN_STREAM("component: received unknown message: type="<<mgmt.type);
       }
+    }
+
+    void ask_new_ack() {
+      cafer_core::Management msg;
+      msg.type=ASK_NEW_ACK;
+      msg.src_node=ros_nh->getNamespace();
+      msg.src_id=get_id();
+      msg.src_type=get_type();
+      msg.dest_node="all";
+      msg.dest_id=-1;
+      msg.data_int=0;
+      msg.data_flt=0;
+      msg.data_str="";
+      management_p->publish(msg);
+      
     }
 
     void ack_creation() {
@@ -400,9 +430,9 @@ namespace cafer_core {
         msg.data_flt=0;
         msg.data_str=created_ns;
         // We may need to wait a bit so that the management publisher is connected.
-        ROS_INFO_STREAM("ACK_CREATION: waiting for the connection to the creator.");
+        ROS_INFO_STREAM("ACK_CREATION: waiting for the connection to the creator.my_id="<<get_id());
         wait_for_client(creator_ns,creator_id);
-        ROS_INFO_STREAM("ACK_CREATION: connection to the creator OK.");
+        ROS_INFO_STREAM("ACK_CREATION: connection to the creator OK. my_id="<<get_id());
         management_p->publish(msg);
         ROS_INFO_STREAM("Sending ack after component creation: creator_ns="<<creator_ns<<" creator_id="<<creator_id<<" created_ns="<<created_ns);
       }
@@ -488,7 +518,5 @@ namespace cafer_core {
   };
 
 }
-
-#define CAFER_CLIENT(MyClass) class MyClass: public cafer_core::AbstractClient<cafer_core::Component<MyClass> >
 
 #endif

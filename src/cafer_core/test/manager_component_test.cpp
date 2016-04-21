@@ -42,15 +42,16 @@
 
 using namespace cafer_core;
 
-class DataSource : public cafer_core::AbstractClient<cafer_core::Component<DataSource> >{
-  using AbstractClient::AbstractClient; // C++11 requirement to inherit the constructor
+class DataSource : public cafer_core::Component{
+  using cafer_core::Component::Component; // To inherit Component's constructor
+
 public:
 
-    void connect_to_ros(){
+    void client_connect_to_ros(){
         pub.reset(new Publisher(ros_nh->advertise<manager_test>("manager_test",1)));
         _is_init = true;
     }
-    void disconnect_from_ros(){
+    void client_disconnect_from_ros(){
         pub.reset();
     }
     void update(){
@@ -96,7 +97,7 @@ int main(int argc, char** argv){
     double freq;
     cafer_core::ros_nh->param("manager_component_test/frequency", freq, 10.0);
 
-    Component<DataSource> cc(management_topic,"DataSource",freq);
+    DataSource cc(management_topic,"DataSource",freq);
 
     cc.wait_for_init();
 

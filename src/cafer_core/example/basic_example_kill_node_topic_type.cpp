@@ -42,12 +42,13 @@
 #include "cafer_core/Management.h"
 
 
-class DummyClient : public cafer_core::AbstractClient<cafer_core::Component<DummyClient> > {
-  using AbstractClient::AbstractClient; // C++11 requirement to inherit the constructor
+class DummyClient : public cafer_core::Component {
+  using cafer_core::Component::Component; // To inherit Component's constructor
+
   long int n;
 public:
-  void disconnect_from_ros(void) {}
-  void connect_to_ros(void) {}
+  void client_disconnect_from_ros(void) {}
+  void client_connect_to_ros(void) {}
   void init(void) {}
   void update(void) {  }
 };
@@ -73,11 +74,9 @@ int main(int argc, char **argv){
   ROS_INFO_STREAM("Killing nodes from topic " << management_topic << " and type " << type);
 
   /** Create component, in charge of calling the nodes to kill themself*/
-  cafer_core::Component<DummyClient> cc(management_topic, type);
+  DummyClient cc(management_topic, type);
   cc.wait_for_init();
-  sleep(3);
 
-  cc.spin();
 
   /** Check the number of current nodes */
   int nb_nodes_to_kill = cc.how_many_client_from_type(type);
@@ -91,13 +90,15 @@ int main(int argc, char **argv){
   for (int i=0; i < nb_nodes_to_kill; i++){
     cc.send_local_node_death(ntk[i].ns, ntk[i].id);
     int cpt=10;
-    while (cc.is_client_up(ntk[0].ns, ntk[0].id) && (cpt>0)) {
-      ROS_INFO_STREAM("The node " << ntk[0].id << " is up.");
+    while (cc.is_client_up(ntk[i].ns, ntk[i].id) && (cpt>0)) {
+      ROS_INFO_STREAM("The node " << ntk[i].id << " is still up.");
       cc.spin();
       cc.sleep();
       sleep(1);
       cpt--;
     }
+    ROS_INFO_STREAM("The node " << ntk[i].id << " is down.");
+
   }
 
   /** Check the number of nodes killed */

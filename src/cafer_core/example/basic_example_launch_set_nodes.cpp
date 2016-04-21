@@ -41,15 +41,17 @@
 #include "cafer_core/cafer_core.hpp"
 #include "cafer_core/Management.h"
 
+/** This is a basic example in which two nodes are created through the call to a launch_file. The program checks that they have been properly launched and then kills them and check that they have stopped appropriately. */
 
-class DummyClient : public cafer_core::AbstractClient<cafer_core::Component<DummyClient> > {
-  using AbstractClient::AbstractClient; // C++11 requirement to inherit the constructor 
-  //boost::shared_ptr<ros::Publisher> dummy_p;
+
+class DummyClient : public cafer_core::Component {
+  using cafer_core::Component::Component; // To inherit Component's constructor
+
   long int n;
 public:
-  ~DummyClient(){disconnect_from_ros();}
-  void disconnect_from_ros(void) {}
-  void connect_to_ros(void) {}
+  ~DummyClient(){shutdown();}
+  void client_disconnect_from_ros(void) {}
+  void client_connect_to_ros(void) {}
   void update(void) {  }
   void init(void) {}
 
@@ -66,29 +68,110 @@ int main(int argc, char **argv){
   /**  New node */
   cafer_core::init(argc, argv, "basic_example_launch_set_nodes");
 
-  cafer_core::ros_nh->getParam(ros::this_node::getName()+"/management_topic",management_topic);
-  cafer_core::ros_nh->getParam(ros::this_node::getName()+"/type",type);
-  cafer_core::ros_nh->getParam(ros::this_node::getName()+"/frequency",freq);
+  cafer_core::ros_nh->getParam("management_topic",management_topic);
+  cafer_core::ros_nh->getParam("type",type);
+  cafer_core::ros_nh->getParam("nb_nodes",nb_nodes);
+  cafer_core::ros_nh->getParam("frequency",freq);
   ns = cafer_core::ros_nh->getNamespace();
   ROS_INFO_STREAM("Launching "<<nb_nodes<<" new nodes (name="<<ros::this_node::getName()<<")");
 
-  /** Create component, in charge of calling the launch file creating the new nodes */
-  cafer_core::Component<DummyClient> cc(management_topic, type);
+  /** Create the component in charge of calling the launch file for creating the new nodes */
+  DummyClient cc(management_topic, type);
   cc.wait_for_init();
-  sleep(3);
+
+  /** Finding the path towards the launch_file to call */
   std::string basic_example_new_node_launch = ros::package::getPath("cafer_core")+"/launch/basic_example_new_node.launch";
 
-  /** Check the number of current nodes */
-  std::vector<cafer_core::ClientDescriptor> current_nodes;
-  cc.get_connected_client_with_type(type, current_nodes);
 
-  /** New nodes to be created */
+ 
+  /** Creation of the new nodes */
+  std::vector<std::string> created_namespaces;
   for(int i=0; i < nb_nodes; i++){
     ROS_INFO_STREAM("Params : " << " " << ns << " " << management_topic << " " << type << " " << nb_nodes << " " << freq);
-    cc.call_launch_file(basic_example_new_node_launch,ns + "/basic_node");
+    std::ostringstream oss;
+    oss<<ns<<"/basic_node";
+    created_namespaces.push_back(cc.call_launch_file(basic_example_new_node_launch,oss.str()));
+    cc.sleep();
+  }
+  
+  
+  /** Checking that they are up */
+  int nb_tries=10,count;
+  while (nb_tries>0) {
+    count=20;
+    while((count>0)&&cc.get_created_nodes().size()!=nb_nodes) {
+      cc.spin();
+      cc.update();
+      cc.sleep();
+      count--;
+    }
+    if (count == 0) {
+      ROS_INFO_STREAM("PROBLEM: we haven't received the ack from some node. We ask for a new ack.");
+      cc.ask_new_ack();
+      cc.spin();
+      cc.update();
+      cc.sleep();
+    }
+    else {
+      break;
+    }
+    nb_tries--;
   }
 
-  cc.spin();
+  if (nb_tries==0) {
+    ROS_INFO_STREAM("PROBLEM: the nodes haven't been all launched.");
+    while(ros::ok()&&(!cc.get_terminate())) {
+      cc.spin();
+      cc.update();
+      cc.sleep();
+    }
+
+    exit(1);
+  }
+
+
+
+  /** At this point at least one node from each call to call_launch_file has answered. As there is only one node in the launch file, it should be fine, but just to be sure (and to show how to check it) we verify that all of those nodes are up. */
+  bool all_up=true;
+  BOOST_FOREACH(cafer_core::CreatedNodes_t::value_type & v, cc.get_created_nodes()) {
+    BOOST_FOREACH(cafer_core::ClientDescriptor cd, v.second) {
+      all_up=all_up&&cc.is_client_up(cd.ns, cd.id);
+    }
+  }
+  if (!all_up) {
+    ROS_INFO_STREAM("PROBLEM: the nodes aren't up.");
+    exit(1);
+  }
+
+  /** We kill all created_nodes */
+  cc.kill_created_nodes();
+
+  /** We check that they are down */
+  count=100*nb_nodes;
+  bool all_down=false;
+  std::vector<cafer_core::ClientDescriptor>::iterator it;
+  while((count>0)&&!all_down) {
+    all_down=true;
+    BOOST_FOREACH(cafer_core::CreatedNodes_t::value_type & v, cc.get_created_nodes()) {
+      BOOST_FOREACH(cafer_core::ClientDescriptor cd, v.second) {
+	all_down=all_down&&!cc.is_client_up(cd.ns, cd.id);
+      }
+    }
+    cc.spin();
+    cc.update();
+    cc.sleep();
+    count--;
+  }
+
+  if (!all_down) {
+    ROS_INFO_STREAM("PROBLEM: the nodes aren't down after a kill.");
+    exit(1);
+  }
+  else {
+    ROS_INFO_STREAM("GREAT ! All nodes were created and killed as expected (count="<<count<<")");
+  }
+
+  /** The roslaunch may need to be stopped with a ctrl-c as the getid node will go on working after this node exits. */
 
   return 0;
 }
