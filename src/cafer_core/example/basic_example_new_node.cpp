@@ -53,6 +53,7 @@ public:
   void client_connect_to_ros(void) {
     ROS_INFO_STREAM("DummyClient type="<<get_type()<<" id="<<get_id()<<" connecting to ROS");
     dummy_p.reset(new ros::Publisher(cafer_core::ros_nh->advertise<std_msgs::Int64>("basic_example_topic",10)));
+    _is_init=true;
   }
   void client_disconnect_from_ros(void) {
     ROS_INFO_STREAM("DummyClient type="<<get_type()<<" id="<<get_id()<<" disconnecting from ROS");

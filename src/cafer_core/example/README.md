@@ -48,7 +48,7 @@ rosrun  cafer_core  basic_example_kill_node_topic_type
 usage : two args : a topic and a type 
 
 Example of use:
-1. launch several nodes
+1. Launch several nodes
 ```
 roslaunch basic_example_new_node.launch ns:=basic0 management_topic:=/basic_mgmt
 roslaunch basic_example_new_node.launch ns:=basic1 management_topic:=/basic_mgmt
@@ -65,7 +65,19 @@ Change frequency
 command : rosrun  cafer_core  basic_example_change_frequency  
 usage : two args : a management topic and a frequence value
 
+Example of use:
+1. Launch several nodes
+```
+roslaunch basic_example_new_node.launch ns:=basic0 management_topic:=/basic_mgmt
+roslaunch basic_example_new_node.launch ns:=basic1 management_topic:=/basic_mgmt
+roslaunch basic_example_new_node.launch ns:=basic2 management_topic:=/basic_mgmt
+```
+2. Kill them using the kill node example (the type of the created nodes is basic_example_new_node, see basic_example_new_node.cpp) 
+```
+rosrun cafer_core basic_example_change_frequency /basic_mgmt 40
+```
 
+ROS info log channel should contain messages saying that the frequency was modified.
 
 
 

@@ -169,8 +169,8 @@ namespace cafer_core {
         ros_nh->param("management_topic",mgmt_topic,default_value);
       }
       std::cout<<"Creating a component connected to management_topic: "<<mgmt_topic<<std::endl;
-      management_p.reset(new ros::Publisher(ros_nh->advertise<cafer_core::Management>(mgmt_topic.c_str(),10)));
-      management_s.reset(new ros::Subscriber(ros_nh->subscribe(mgmt_topic.c_str(),10,&Component::management_cb,this)));
+      management_p.reset(new ros::Publisher(ros_nh->advertise<cafer_core::Management>(mgmt_topic.c_str(),0)));
+      management_s.reset(new ros::Subscriber(ros_nh->subscribe(mgmt_topic.c_str(),0,&Component::management_cb,this)));
       watchdog.reset(new ros::Timer(ros_nh->createTimer(ros::Duration(ros::Rate(freq)), &Component::watchdog_cb, this)));
 
       // We get a new and unique ID for this client
@@ -330,8 +330,9 @@ namespace cafer_core {
       ack_creation();
 
       while((!is_client_up(get_namespace(),get_id())) && (!is_initialized())) {
-	       ros::spinOnce();
-	       sleep();
+	ROS_INFO_STREAM("Component id="<<get_id()<<" waiting for init.");
+	ros::spinOnce();
+	sleep();
       }
       update();
     }
@@ -364,7 +365,7 @@ namespace cafer_core {
       //ROS_INFO_STREAM("management_cb my_id="<<get_id()<<" message: "<<std::endl<<mgmt);
       switch (mgmt.type) {
       case CHG_FREQ:
-	       ROS_INFO_STREAM("Changing frequency: "<<mgmt.data_flt);
+	ROS_INFO_STREAM("Changing frequency: new frequency="<<mgmt.data_flt<<" my_id="<<get_id());
 	       rate.reset(new ros::Rate(mgmt.data_flt));
 	       watchdog.reset(new ros::Timer(ros_nh->createTimer(ros::Duration(ros::Rate(mgmt.data_flt)), &Component::watchdog_cb, this)));
 	       break;
@@ -391,7 +392,9 @@ namespace cafer_core {
 	  cd.ns=mgmt.src_node;
 	  cd.id=mgmt.src_id;
 	  cd.type=mgmt.src_type;
-	  created_nodes[mgmt.data_str].push_back(cd);
+	  std::vector<ClientDescriptor>::iterator it=std::find(created_nodes[mgmt.data_str].begin(),created_nodes[mgmt.data_str].end(),cd);
+	  if (it==created_nodes[mgmt.data_str].end())
+	    created_nodes[mgmt.data_str].push_back(cd);
         }
         break;
       case ASK_NEW_ACK:
@@ -463,7 +466,7 @@ namespace cafer_core {
 	return ros::Time(0);
 
       }
-      ROS_INFO_STREAM("get_watchdog initialized "<<ns<<" time="<<map_watchdog[cd]<<" id="<<id<<" my id="<<get_id());
+      //ROS_INFO_STREAM("get_watchdog initialized "<<ns<<" time="<<map_watchdog[cd]<<" id="<<id<<" my id="<<get_id());
       return map_watchdog[cd];
 
     }

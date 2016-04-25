@@ -51,7 +51,7 @@ class DummyClient : public cafer_core::Component {
 public:
   ~DummyClient(){shutdown();}
   void client_disconnect_from_ros(void) {}
-  void client_connect_to_ros(void) {}
+  void client_connect_to_ros(void) {_is_init=true;}
   void update(void) {  }
   void init(void) {}
 
@@ -106,7 +106,15 @@ int main(int argc, char **argv){
       count--;
     }
     if (count == 0) {
-      ROS_INFO_STREAM("PROBLEM: we haven't received the ack from some node. We ask for a new ack.");
+      ROS_INFO_STREAM("PROBLEM: we haven't received the ack from some nodes. We ask for a new ack.");
+      ROS_INFO_STREAM("============= Ack received from "<<cc.get_created_nodes().size()<<" components: ");
+      BOOST_FOREACH(cafer_core::CreatedNodes_t::value_type & v, cc.get_created_nodes()) {
+	BOOST_FOREACH(cafer_core::ClientDescriptor cd, v.second) {
+	  ROS_INFO_STREAM("Component: id="<<cd.id<<" ns="<<cd.ns);
+	}
+      }
+      ROS_INFO_STREAM("=========== End ack received");
+      ROS_INFO_STREAM("");
       cc.ask_new_ack();
       cc.spin();
       cc.update();
