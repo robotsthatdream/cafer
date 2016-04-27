@@ -54,6 +54,7 @@ public:
   void client_connect_to_ros(void) {
     dummy_p.reset(new ros::Publisher(cafer_core::ros_nh->advertise<std_msgs::Int64>("dummy_topic",10)));
     n=0;
+    _is_init=true;
   }
 
    ~DummyClient(){disconnect_from_ros();}
@@ -63,16 +64,17 @@ public:
     dummy_p.reset();
   }
 
-  void init(void) {}
+  void init(void) {connect_to_ros();}
 
-  bool is_initialized(void){return true;}
   void update(void) {}
 
   void publish_data(void) {
-    std_msgs::Int64 v;
-    v.data=n;
-    dummy_p->publish(v);
-    n++;
+    if (is_connected_to_ros()) {
+      std_msgs::Int64 v;
+      v.data=n;
+      dummy_p->publish(v);
+      n++;
+    }
   }
 };
 
@@ -85,9 +87,9 @@ int main(int argc, char **argv){
   cafer_core::init(argc,argv,"component_test_node");
 
   std::string management_topic;
-  cafer_core::ros_nh->param("component_test_node/management_topic",management_topic,std::string("component_test_management"));
+  cafer_core::ros_nh->param("management_topic",management_topic,std::string("component_test_management"));
   double freq;
-  cafer_core::ros_nh->param("component_test_node/frequency", freq, 10.0);
+  cafer_core::ros_nh->param("frequency", freq, 40.0);
 
   ROS_WARN_STREAM("Management topic for test node: "<<management_topic<< " namespace: "<<cafer_core::ros_nh->getNamespace());
 
@@ -101,6 +103,9 @@ int main(int argc, char **argv){
     cc.sleep();
   }
 
+  if (cc.get_terminate()) {
+    cc.shutdown();
+  }
 
   return 0;
 }

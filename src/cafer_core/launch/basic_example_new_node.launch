@@ -6,8 +6,6 @@
   <arg name="creator_ns" default="unset"/>
   <arg name="creator_id" default="-1"/>
   <node name="$(arg name)" pkg="cafer_core" type="basic_example_new_node" ns="$(arg ns)" output="screen" >
-      <param name="type" type="double" value="$(arg frequency)" />
-      <param name="frequency" type="double" value="$(arg frequency)" />
       <param name="frequency" type="double" value="$(arg frequency)" />
       <param name="management_topic" type="string" value="$(arg management_topic)" />
       <param name="creator_ns" type="string" value="$(arg creator_ns)"/>

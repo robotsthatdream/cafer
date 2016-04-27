@@ -73,6 +73,10 @@ using namespace sferes::gen::evo_float;
 using namespace sferes::gen::dnn;
 using namespace fastsim;
 using namespace nn;
+using namespace fastsim_cafer;
+using namespace cafer_core;
+
+
 
 struct Params
 {
@@ -208,7 +212,7 @@ namespace sferes
 	  if (this->mode() != fit::mode::view)
 	    i++;
 	  //std::cout<<"Eval, i="<<i<<std::endl;
-	  _cafer_fastsim->get_client().update();
+	  _cafer_fastsim->update();
 	  _cafer_fastsim->sleep();
 	}
 
@@ -225,7 +229,6 @@ namespace sferes
       //#endif
 
       // Don't forget it to release the cafer node group and force this instance to disconnect from ROS.
-      //_cafer_fastsim->get_client().disconnect_from_ros();
       _cafer_fastsim->kill_created_nodes();
       _cafer_fastsim.reset();
 
@@ -240,9 +243,11 @@ namespace sferes
       this->_objs.resize(1);
       inputs.resize(Params::dnn::nb_inputs);
 
-      _cafer_fastsim.reset(new cafer_core::Component<cafer_core::FastsimCaferToSferes>("oa_mgmt", "obstacle_avoidance"));
-      _cafer_fastsim->get_client().teleport(150,150,M_PI/4.0);
-      old_pos=_cafer_fastsim->get_client().get_pos();
+      _cafer_fastsim.reset(new FastsimCaferToSferes("oa_mgmt", "obstacle_avoidance"));
+      _cafer_fastsim->wait_for_init();
+
+      _cafer_fastsim->teleport(150,150,M_PI/4.0);
+      old_pos=_cafer_fastsim->get_pos();
     }
 
 
@@ -252,17 +257,17 @@ namespace sferes
       void get_inputs(void)
     {
       // Update of the sensors
-      size_t nb_lasers = _cafer_fastsim->get_client().lasers_current.ranges.size()<Params::dnn::nb_inputs?_cafer_fastsim->get_client().lasers_current.ranges.size():Params::dnn::nb_inputs;
+      size_t nb_lasers = _cafer_fastsim->lasers_current.ranges.size()<Params::dnn::nb_inputs?_cafer_fastsim->lasers_current.ranges.size():Params::dnn::nb_inputs;
 
-      if (_cafer_fastsim->get_client().lasers_current.ranges.size()<Params::dnn::nb_inputs)
-	std::cerr<<"[WARNING]: nb_laser ("<<_cafer_fastsim->get_client().lasers_current.ranges.size()<<") != inputs.size (="<<Params::dnn::nb_inputs<<")"<<std::endl;
+      if (_cafer_fastsim->lasers_current.ranges.size()<Params::dnn::nb_inputs)
+	std::cerr<<"[WARNING]: nb_laser ("<<_cafer_fastsim->lasers_current.ranges.size()<<") != inputs.size (="<<Params::dnn::nb_inputs<<")"<<std::endl;
       // *** set inputs ***
 
       // inputs from sensors
       for (size_t j = 0; j < nb_lasers; ++j)
 	{
-	  float d = _cafer_fastsim->get_client().lasers_current.ranges[j];
-	  float range = _cafer_fastsim->get_client().lasers_current.range_max-_cafer_fastsim->get_client().lasers_current.range_min;
+	  float d = _cafer_fastsim->lasers_current.ranges[j];
+	  float range = _cafer_fastsim->lasers_current.range_max-_cafer_fastsim->lasers_current.range_min;
 	  inputs[j] = (d == -1 ? 0 : 1 - d / range);
 	}
 
@@ -293,7 +298,7 @@ namespace sferes
       void move_check(void)
     {
       // *** move robot ***
-      _cafer_fastsim->get_client().publish_speed(outf[0],outf[1]);
+      _cafer_fastsim->publish_speed(outf[0],outf[1]);
 
       float s=(outf[0]+outf[1])/8.0; // in [-1;1]
       float ds=fabs(outf[0]-outf[1])/8.0; // in [0;1]
@@ -301,7 +306,7 @@ namespace sferes
       lin_speed+=s*(1.0-ds);
 
       // *** To save simulation time, we stop evaluation if the robot is stuck for more than 100 time steps ***
-      cafer_core::Posture pos=_cafer_fastsim->get_client().get_pos();
+      Posture pos=_cafer_fastsim->get_pos();
       if ((old_pos.dist_to(pos)<0.0001)&&
 	  (fabs(old_pos.get_theta()-pos.get_theta())<0.0001)) {
 	stand_still++;
@@ -311,12 +316,12 @@ namespace sferes
 	  std::cout<<"Still robot, we stop the eval..."<<std::endl;
 #endif
 	  // We add collisions to be fair and avoid side effects
-	  if (_cafer_fastsim->get_client().collision_current)
+	  if (_cafer_fastsim->collision_current)
 	    nb_coll+=Params::simu::nb_steps-time;
 	}
       }
       else {
-	if (_cafer_fastsim->get_client().collision_current) {
+	if (_cafer_fastsim->collision_current) {
 	  nb_coll++;
 	}
       }
@@ -328,11 +333,11 @@ namespace sferes
     int nb_coll, time;
     float speed, lin_speed;
     unsigned int stand_still;
-    cafer_core::Posture old_pos;
+    Posture old_pos;
     bool stop_eval;                                  // Stops the evaluation
     std::vector<float> outf, inputs;
 
-    boost::shared_ptr<cafer_core::Component<cafer_core::FastsimCaferToSferes>  > _cafer_fastsim;
+    boost::shared_ptr<fastsim_cafer::FastsimCaferToSferes> _cafer_fastsim;
 
   };
 
@@ -369,8 +374,8 @@ int main(int argc, char **argv)
   ea_t ea;
   res_dir=ea.res_dir();
 
-  cafer_core::init(0,NULL,"obstacle_avoidance");
-  cafer_core::ros_nh->setParam("launch_file_fastsim",Params::ros::launch_file());
+  init(0,NULL,"obstacle_avoidance");
+  ros_nh->setParam("launch_file_fastsim",Params::ros::launch_file());
 
   run_ea(argc, argv, ea);
 

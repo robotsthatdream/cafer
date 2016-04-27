@@ -47,7 +47,7 @@ int main(int argc, char **argv){
 
   ros::init(argc, argv, "component_test_node_send_msg");		
   ros::NodeHandle nh;
-  ros::Publisher p=nh.advertise<cafer_core::Management>("component_test_management",10);
+  ros::Publisher p=nh.advertise<cafer_core::Management>("component_test_management",0);
 
   sleep(3);  
 

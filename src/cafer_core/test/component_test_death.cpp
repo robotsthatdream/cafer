@@ -58,7 +58,11 @@ public:
 // In this test, a dummy node is expected to be launched (look at component_test_death.launch) and the test consists in killing it and checking that the node actually gets down.
 TEST(Component, component_death)
 {
-  DummyClient cc("component_test_launch_death_mgmt", "test");
+  
+  std::string management_topic;
+  cafer_core::ros_nh->param("management_topic",management_topic,std::string("/component_test_launch_death_mgmtXXX"));
+
+  DummyClient cc(management_topic, "test");
 
 
   cc.wait_for_init();
@@ -100,7 +104,7 @@ TEST(Component, component_death)
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);
 
-  cafer_core::init(0,NULL,"component_test");
+  cafer_core::init(argc,argv,"component_test");
 
 
   return RUN_ALL_TESTS();

@@ -51,12 +51,15 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-namespace cafer_core {
+using namespace cafer_core;
+
+
+namespace fastsim_cafer {
 
 
   const std::string namespace_fastsim_base="sferes_cafer_fastsim";
 
-  template <class Client>
+  /*  template <class Client>
   void prepare_nodes(cafer_core::Component<Client> *cc, std::string launch_file) {
     std::ostringstream oss;
     oss<<namespace_fastsim_base<<"_"<<getpid();
@@ -71,7 +74,7 @@ namespace cafer_core {
       cc->sleep();
     }
     std::cout<<"[OK]"<<std::endl;
-  }
+    } */
 
   class Posture { 
   public:
@@ -90,8 +93,8 @@ namespace cafer_core {
 
   };
 
-  CAFER_CLIENT(FastsimCaferToSferes) {
-    using AbstractClient::AbstractClient; // C++11 requirement to inherit the constructor
+  class FastsimCaferToSferes: public cafer_core::Component {
+    using cafer_core::Component::Component; // To inherit Component's constructor 
  
   public:
     //std::string _ros_namespace_fastsim_base;
@@ -120,7 +123,7 @@ namespace cafer_core {
       disconnect_from_ros();
     }
 
-    void disconnect_from_ros(void) {
+    void client_disconnect_from_ros(void) {
       //std::cout<<" Function: "<<__func__<<" Line: "<<__LINE__<<" "<<this<<std::endl;
       laser_s.reset();
       odom_s.reset();
@@ -131,7 +134,7 @@ namespace cafer_core {
       //cafer_core::kill_node_group(_ros_namespace_fastsim_base,_ros_namespace_fastsim);
     }
 
-    void connect_to_ros(void) {
+    void client_connect_to_ros(void) {
       std::string topic_laser=_ros_namespace_fastsim+"/cafer_fastsim/laser_scan";
       laser_s.reset(new ros::Subscriber(ros_nh->subscribe(topic_laser.c_str(),10,&FastsimCaferToSferes::laser_cb,this)));
       std::string topic_odom=_ros_namespace_fastsim+"/cafer_fastsim/odom";
@@ -161,7 +164,7 @@ namespace cafer_core {
 	exit(1);
       }
 
-      _ros_namespace_fastsim=get_component()->call_launch_file(launch_file, _ros_namespace_fastsim_base);
+      _ros_namespace_fastsim=call_launch_file(launch_file, _ros_namespace_fastsim_base);
 
       std::cerr<<"ROS FASTSIM, namespace_fastsim="<<_ros_namespace_fastsim<<std::endl;
       if (_ros_namespace_fastsim.find("<Failed>")!=std::string::npos) {
@@ -173,21 +176,21 @@ namespace cafer_core {
 
 
       std::cout<<"Waiting for fastsim to start (after having called the launch file)"<<std::flush;
-      while(get_component()->get_created_nodes(_ros_namespace_fastsim).size()==0) {
+      while(get_created_nodes(_ros_namespace_fastsim).size()==0) {
 	std::cout<<"."<<std::flush;
-	get_component()->spin();
-	get_component()->sleep();
+	spin();
+	sleep();
       }
-    std::cout<<"[OK]"<<std::endl;
-
+      std::cout<<"[OK]"<<std::endl;
+      
       std::cerr<<"Waiting for initialization !"<<std::flush;
       while(!is_initialized()) {
-        get_component()->spin();
-        get_component()->sleep();
+        spin();
+        sleep();
         std::cerr<<"."<<std::flush;
       }
       std::cerr<<std::endl;
-
+      
     }
 
     void collision_cb(const std_msgs::Bool &coll) {

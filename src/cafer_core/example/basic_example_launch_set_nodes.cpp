@@ -51,7 +51,7 @@ class DummyClient : public cafer_core::Component {
 public:
   ~DummyClient(){shutdown();}
   void client_disconnect_from_ros(void) {}
-  void client_connect_to_ros(void) {_is_init=true;}
+  void client_connect_to_ros(void) {}
   void update(void) {  }
   void init(void) {}
 

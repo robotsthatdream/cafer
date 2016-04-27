@@ -62,7 +62,7 @@ void test_launch_death(int i,bool local) {
   os2<<"mgmt_ld_"<<local<<i;
   DummyClient cc(os2.str(), os1.str());
  
-  ROS_INFO_STREAM("Launch-death iteration with tbb: "<<i);
+  ROS_INFO_STREAM("Launch-death iteration with tbb: "<<i<<" mgmt_topic="<<os2.str()<<" type="<<os1.str()<<std::flush);
 
   
   SCOPED_TRACE(os1.str());
@@ -81,22 +81,64 @@ void test_launch_death(int i,bool local) {
   EXPECT_EQ(0,count);
   EXPECT_EQ(0,nbdummy);
 
+  ROS_INFO_STREAM("State OK, ready to launch... mgmt_topic="<<os2.str()<<" type="<<os1.str()<<std::flush);
+
  
   std::string cafer_test_launch = ros::package::getPath("cafer_core")+"/test_launch/component_test_launch_death_dummy_node.launch";
   
   cc.call_launch_file(cafer_test_launch,cafer_core::ros_nh->getNamespace()+"/dummy_nodes");
   
-  nbdummy=0;
-  count=100;
-  while((nbdummy==0)&&(count>0)) {
+  ROS_INFO_STREAM("Launch file called. Waiting for the node to be up. mgmt_topic="<<os2.str()<<" type="<<os1.str()<<std::flush);
+
+  /** Checking that they are up */
+  int nb_tries=10;
+  while (nb_tries>0) {
+    count=20;
+    while((count>0)&&cc.get_created_nodes().size()==0) {
+      cc.spin();
+      cc.update();
+      cc.sleep();
+      count--;
+    }
+    if (count == 0) {
+      ROS_INFO_STREAM("PROBLEM: we haven't received the ack from some nodes. We ask for a new ack."<<std::flush);
+      ROS_INFO_STREAM("============= Ack received from "<<cc.get_created_nodes().size()<<" components: "<<std::flush);
+      BOOST_FOREACH(cafer_core::CreatedNodes_t::value_type & v, cc.get_created_nodes()) {
+	BOOST_FOREACH(cafer_core::ClientDescriptor cd, v.second) {
+	  ROS_INFO_STREAM("Component: id="<<cd.id<<" ns="<<cd.ns<<std::flush);
+	}
+      }
+      ROS_INFO_STREAM("=========== End ack received"<<std::flush);
+      ROS_INFO_STREAM(std::flush);
+      cc.ask_new_ack();
+      cc.spin();
+      cc.update();
+      cc.sleep();
+    }
+    else {
+      ROS_INFO_STREAM("Ack received: dummy node created. my_id="<<cc.get_id()<<std::flush);
+      break;
+    }
+    nb_tries--;
+  }
+
+  ROS_INFO_STREAM("Out of waiting loop. mgmt_topic="<<os2.str()<<" type="<<os1.str()<<std::flush);
+
+  /* nbdummy=0;
+  count=10000;
+  //  while((nbdummy==0)&&(count>0)) {
+  while((count>0)&&cc.get_created_nodes().size()==0) {
     cc.spin();
     cc.sleep();
-    nbdummy=cc.how_many_client_from_type("dummy_node");
+
     count--;
-  }
-  
-  EXPECT_NE(0,count);
+    }*/
+
+  nbdummy=cc.how_many_client_from_type("dummy_node");  
+  EXPECT_NE(0,nb_tries);
   EXPECT_EQ(1,nbdummy);
+
+  ROS_INFO_STREAM("Node created. mgmt_topic="<<os2.str()<<" type="<<os1.str()<<std::flush);
   
   std::vector<cafer_core::ClientDescriptor> vcd;
   cc.get_connected_client_with_type("dummy_node", vcd);
@@ -111,15 +153,20 @@ void test_launch_death(int i,bool local) {
     cc.send_complete_node_death(vcd[0].ns, vcd[0].id);
   }
 
+  ROS_INFO_STREAM("Death signal sent on management topic: "<<cc.management_p->getTopic()<<std::flush);
+
   int cpt=10;
   while (cc.is_client_up(vcd[0].ns, vcd[0].id) && (cpt>0)) {
+    ROS_INFO_STREAM("Checking if clients are still up, cpt="<<cpt<<std::flush);
     cc.spin();
     cc.sleep();
     cpt--;
   }
+
+  ROS_INFO_STREAM("Out of the while loop mgmt_topic="<<os2.str()<<" type="<<os1.str()<<std::flush);
   
   ASSERT_FALSE(cc.is_client_up(vcd[0].ns, vcd[0].id));
-  
+  cc.shutdown();
 }
 
 class ApplyTest {
@@ -139,7 +186,7 @@ TEST(Component, component_launch_local_death_tbb)
 
   int nb_launch_death;
   cafer_core::ros_nh->param(ros::this_node::getName()+"/nb_launch_death",nb_launch_death,10);
-  ROS_INFO_STREAM("Launching "<<nb_launch_death<<" Launch-Die cycles (name="<<ros::this_node::getName()<<")");
+  ROS_INFO_STREAM("Launching "<<nb_launch_death<<" Launch-Die cycles (name="<<ros::this_node::getName()<<")"<<std::flush);
 
 
   tbb::parallel_for(tbb::blocked_range<size_t>(0,nb_launch_death),ApplyTest(true));
@@ -151,7 +198,7 @@ TEST(Component, component_launch_global_death_tbb)
 
   int nb_launch_death;
   cafer_core::ros_nh->param(ros::this_node::getName()+"/nb_launch_death",nb_launch_death,10);
-  ROS_INFO_STREAM("Launching "<<nb_launch_death<<" Launch-Die cycles (name="<<ros::this_node::getName()<<")");
+  ROS_INFO_STREAM("Launching "<<nb_launch_death<<" Launch-Die cycles (name="<<ros::this_node::getName()<<")"<<std::flush);
 
 
   tbb::parallel_for(tbb::blocked_range<size_t>(0,nb_launch_death),ApplyTest(false));
@@ -165,7 +212,7 @@ int main(int argc, char **argv){
 
   testing::InitGoogleTest(&argc, argv);
 
-  cafer_core::init(0,NULL,"component_test_tbb");
+  cafer_core::init(argc,argv,"component_test_tbb");
 
 
   return RUN_ALL_TESTS();

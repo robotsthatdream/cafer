@@ -201,7 +201,7 @@ TEST(Component, component_launch_death_complete)
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);
 
-  cafer_core::init(0,NULL,"component_test");
+  cafer_core::init(argc,argv,"component_test");
 
 
   return RUN_ALL_TESTS();
