@@ -42,7 +42,7 @@
 #include <cafer_core/manager_test.h>
 
 TEST(Manager_subcribe,cafer_core1){
-    cafer_core::Manager<cafer_core::manager_test> manager("test","test2");
+    cafer_core::ManagerMap<cafer_core::manager_test> manager("test","test2");
 
     manager.ListenTo("manager_test");
 
