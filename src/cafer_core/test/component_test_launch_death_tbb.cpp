@@ -60,7 +60,7 @@ void test_launch_death(int i,bool local) {
   std::ostringstream os1,os2;
   os1<<"test_tbb_"<<local<<"_"<<i;
   os2<<"mgmt_ld_"<<local<<i;
-  DummyClient cc(os2.str(), os1.str());
+  DummyClient cc(os2.str(), os1.str(),30,true);
  
   ROS_INFO_STREAM("Launch-death iteration with tbb: "<<i<<" mgmt_topic="<<os2.str()<<" type="<<os1.str()<<std::flush);
 
@@ -86,14 +86,14 @@ void test_launch_death(int i,bool local) {
  
   std::string cafer_test_launch = ros::package::getPath("cafer_core")+"/test_launch/component_test_launch_death_dummy_node.launch";
   
-  cc.call_launch_file(cafer_test_launch,cafer_core::ros_nh->getNamespace()+"/dummy_nodes");
+  cc.call_launch_file(cafer_test_launch,cc.my_ros_nh->getNamespace()+"/dummy_nodes");
   
   ROS_INFO_STREAM("Launch file called. Waiting for the node to be up. mgmt_topic="<<os2.str()<<" type="<<os1.str()<<std::flush);
 
   /** Checking that they are up */
   int nb_tries=10;
   while (nb_tries>0) {
-    count=20;
+    count=2000;
     while((count>0)&&cc.get_created_nodes().size()==0) {
       cc.spin();
       cc.update();

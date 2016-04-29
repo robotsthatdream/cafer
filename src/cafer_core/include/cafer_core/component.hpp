@@ -42,6 +42,7 @@
 #include "cafer_core/Management.h"
 #include "cafer_core/GetID.h"
 #include <ros/spinner.h>
+#include <ros/callback_queue.h>
 #include <boost/unordered_map.hpp>
 #include <boost/foreach.hpp>
 #include <boost/functional/hash.hpp>
@@ -139,7 +140,9 @@ namespace cafer_core {
     bool _is_init = false;
     bool _is_connected_to_ros = false;
 
-  private:
+  public:
+    boost::shared_ptr<ros::NodeHandle> my_ros_nh;
+    boost::shared_ptr<ros::CallbackQueue> my_ros_queue;
 
     int id;
     std::string type;
@@ -162,36 +165,47 @@ namespace cafer_core {
 
 
   public:
-    Component(std::string mgmt_topic, std::string _type, double freq=10): type(_type),terminate(false),map_watchdog(5) {
+    Component(std::string mgmt_topic, std::string _type, double freq=10, bool new_nodehandle=false): type(_type),terminate(false),map_watchdog(5) {
       rate.reset(new ros::Rate(freq));
       if (mgmt_topic =="") {
         std::string default_value="default_"+type;
-        ros_nh->param("management_topic",mgmt_topic,default_value);
+        my_ros_nh->param("management_topic",mgmt_topic,default_value);
       }
-      std::cout<<"Creating a component connected to management_topic: "<<mgmt_topic<<std::endl;
-      management_p.reset(new ros::Publisher(ros_nh->advertise<cafer_core::Management>(mgmt_topic.c_str(),0)));
-      management_s.reset(new ros::Subscriber(ros_nh->subscribe(mgmt_topic.c_str(),0,&Component::management_cb,this)));
-      watchdog.reset(new ros::Timer(ros_nh->createTimer(ros::Duration(ros::Rate(freq)), &Component::watchdog_cb, this)));
+      ROS_INFO_STREAM("Creating a component connected to management_topic: "<<mgmt_topic<<" type="<<_type);
+      if (new_nodehandle) {
+	ROS_INFO_STREAM("     creation of a dedicated callback queue");
+	my_ros_nh.reset(new ros::NodeHandle(*ros_nh.get()));
+	my_ros_queue.reset(new ros::CallbackQueue());
+	my_ros_nh->setCallbackQueue(my_ros_queue.get());
+      }
+      else {
+	my_ros_nh=ros_nh;
+	my_ros_queue.reset();
+      }
+
+      management_p.reset(new ros::Publisher(my_ros_nh->advertise<cafer_core::Management>(mgmt_topic.c_str(),0)));
+      management_s.reset(new ros::Subscriber(my_ros_nh->subscribe(mgmt_topic.c_str(),0,&Component::management_cb,this)));
+      watchdog.reset(new ros::Timer(my_ros_nh->createTimer(ros::Duration(ros::Rate(freq)), &Component::watchdog_cb, this)));
 
       // We get a new and unique ID for this client
       cafer_core::GetID v;
       v.request.name = "component_id";
-      static ros::ServiceClient sclient = ros_nh->serviceClient<cafer_core::GetID>("/cafer_core/get_id");
+      static ros::ServiceClient sclient = my_ros_nh->serviceClient<cafer_core::GetID>("/cafer_core/get_id");
       if (sclient.call(v))
 	     {
 	        id=v.response.id;
 	     }
       else
 	     {
-	        ROS_ERROR_STREAM("Failed to call service get_id. my namespace is: "<<ros_nh->getNamespace());
+	        ROS_ERROR_STREAM("Failed to call service get_id. my namespace is: "<<my_ros_nh->getNamespace());
 	        id=-1;
 	     }
 
 
-       ros_nh->param("creator_id",creator_id,-1);
+       my_ros_nh->param("creator_id",creator_id,-1);
 
-       ros_nh->param("created_ns",created_ns,std::string("<unset>"));
-       ros_nh->param("creator_ns",creator_ns,std::string("<unset>"));
+       my_ros_nh->param("created_ns",created_ns,std::string("<unset>"));
+       my_ros_nh->param("creator_ns",creator_ns,std::string("<unset>"));
 
        //init();
        //ack_creation();
@@ -244,14 +258,14 @@ namespace cafer_core {
 
       cafer_core::GetID v;
       v.request.name = namespace_base;
-      static ros::ServiceClient clients = ros_nh->serviceClient<cafer_core::GetID>("/cafer_core/get_id");
+      static ros::ServiceClient clients = my_ros_nh->serviceClient<cafer_core::GetID>("/cafer_core/get_id");
       if (clients.call(v))
 	{
 	  std::ostringstream os, osf;
 	  os<<"/"<<namespace_base<<"_"<<v.response.id;
 	  created_namespace=os.str();
 	  std::string ns="ns:="+os.str();
-	  osf<<"frequency:="<<1./rate->expectedCycleTime().toSec()<<" creator_ns:="<<ros_nh->getNamespace()<<" creator_id:="<<get_id();
+	  osf<<"frequency:="<<1./rate->expectedCycleTime().toSec()<<" creator_ns:="<<my_ros_nh->getNamespace()<<" creator_id:="<<get_id();
 	  std::string mgmt="management_topic:="+management_topic;
 	  std::string cmd="roslaunch "+launch_file+" "+ns+" "+osf.str()+" "+mgmt+"&";
 	  if (system(cmd.c_str())==-1) {
@@ -263,7 +277,7 @@ namespace cafer_core {
 	}
       else
 	{
-	  ROS_ERROR_STREAM("Failed to call service get_id. my namespace is: "<<ros_nh->getNamespace());
+	  ROS_ERROR_STREAM("Failed to call service get_id. my namespace is: "<<my_ros_nh->getNamespace());
 	}
       return created_namespace;
     }
@@ -274,7 +288,11 @@ namespace cafer_core {
     }
 
     void spin(void) {
-      ros::spinOnce();
+      if (my_ros_queue.get()==NULL)
+	ros::spinOnce();
+      else 
+	my_ros_queue->callAvailable(ros::WallDuration());
+
     }
 
     /** Check the number of client nodes that have been observed up to now (watchdog) and return their number.
@@ -318,7 +336,7 @@ namespace cafer_core {
     /** Waits until the client is up (it needs to be on the same management topic) */
     void wait_for_client(std::string ns, long int id) {
       while(!is_client_up(ns,id)) {
-	       ros::spinOnce();
+	       spin();
 	       sleep();
       }
       update();
@@ -327,19 +345,21 @@ namespace cafer_core {
     /** Waits for the initialization from the client specific side */
     void wait_for_init(void) {
       init();
-      ack_creation();
 
       while((!is_client_up(get_namespace(),get_id())) && (!is_initialized())) {
 	ROS_INFO_STREAM("Component id="<<get_id()<<" waiting for init.");
-	ros::spinOnce();
+	spin();
 	sleep();
       }
+
+      ack_creation();
+
       update();
     }
 
     /** Gets node namespace */
     std::string get_namespace(void) const {
-      return ros_nh->getNamespace();
+      return my_ros_nh->getNamespace();
     }
 
     /** Gets the created_nodes */
@@ -362,32 +382,31 @@ namespace cafer_core {
 
     /** Management callback: what to do when a management message is received */
     void management_cb(const cafer_core::Management &mgmt) {
-      //ROS_INFO_STREAM("management_cb my_id="<<get_id()<<" message: "<<std::endl<<mgmt);
+      //ROS_INFO_STREAM("management_cb my_id="<<get_id()<<" message: "<<std::endl<<mgmt<<std::flush);
       switch (mgmt.type) {
       case CHG_FREQ:
-	ROS_INFO_STREAM("Changing frequency: new frequency="<<mgmt.data_flt<<" my_id="<<get_id());
+	       ROS_INFO_STREAM("Changing frequency: new frequency="<<mgmt.data_flt<<" my_id="<<get_id());
 	       rate.reset(new ros::Rate(mgmt.data_flt));
-	       watchdog.reset(new ros::Timer(ros_nh->createTimer(ros::Duration(ros::Rate(mgmt.data_flt)), &Component::watchdog_cb, this)));
+	       watchdog.reset(new ros::Timer(my_ros_nh->createTimer(ros::Duration(ros::Rate(mgmt.data_flt)), &Component::watchdog_cb, this)));
 	       break;
       case LOCAL_CLIENT_DEATH:
-	       if ((mgmt.dest_node == "all")||((mgmt.dest_node == ros_nh->getNamespace())&&(mgmt.dest_id == get_id()))) {
+	       if ((mgmt.dest_node == "all")||((mgmt.dest_node == my_ros_nh->getNamespace())&&(mgmt.dest_id == get_id()))) {
 	          ROS_INFO_STREAM("LOCAL_CLIENT_DEATH");
 	          terminate=true;
 	       }
 	       break;
       case COMPLETE_NODE_DEATH:
-	       if ((mgmt.dest_node == "all")||((mgmt.dest_node == ros_nh->getNamespace())&&(mgmt.dest_id == get_id()))) {
+	       if ((mgmt.dest_node == "all")||((mgmt.dest_node == my_ros_nh->getNamespace())&&(mgmt.dest_id == get_id()))) {
 	          ROS_INFO_STREAM("COMPLETE_NODE_DEATH called");
-		  disconnect_from_ros();
-	          ros::shutdown();
+	          shutdown();
 	      }
 	      break;
       case WATCHDOG:
 	      update_watchdog(mgmt.src_node,mgmt.src_id,mgmt.src_type);
 	      break;
       case ACK_CREATION:
-        if ((mgmt.dest_node == "all")||((mgmt.dest_node == ros_nh->getNamespace())&&(mgmt.dest_id == get_id()))) {
-	  ROS_INFO_STREAM("Ack received by the creator: mgmt.dest_node="<<mgmt.dest_node<<" mgmt.dest_id="<<mgmt.dest_node<<" my_ns="<<ros_nh->getNamespace()<<" my_id="<<get_id()<<" src_ns="<<mgmt.src_node<<" src_id="<<mgmt.src_id<<" src_type="<<mgmt.src_type);
+        if ((mgmt.dest_node == "all")||((mgmt.dest_node == my_ros_nh->getNamespace())&&(mgmt.dest_id == get_id()))) {
+	  ROS_INFO_STREAM("Ack received by the creator: mgmt.dest_node="<<mgmt.dest_node<<" mgmt.dest_id="<<mgmt.dest_node<<" my_ns="<<my_ros_nh->getNamespace()<<" my_id="<<get_id()<<" src_ns="<<mgmt.src_node<<" src_id="<<mgmt.src_id<<" src_type="<<mgmt.src_type);
 	  ClientDescriptor cd;
 	  cd.ns=mgmt.src_node;
 	  cd.id=mgmt.src_id;
@@ -408,7 +427,7 @@ namespace cafer_core {
     void ask_new_ack() {
       cafer_core::Management msg;
       msg.type=ASK_NEW_ACK;
-      msg.src_node=ros_nh->getNamespace();
+      msg.src_node=my_ros_nh->getNamespace();
       msg.src_id=get_id();
       msg.src_type=get_type();
       msg.dest_node="all";
@@ -418,13 +437,13 @@ namespace cafer_core {
       msg.data_str="";
       management_p->publish(msg);
       
-    }
+    }    
 
     void ack_creation() {
       if(creator_id!=-1) {
         cafer_core::Management msg;
         msg.type=ACK_CREATION;
-        msg.src_node=ros_nh->getNamespace();
+        msg.src_node=my_ros_nh->getNamespace();
         msg.src_id=get_id();
         msg.src_type=get_type();
         msg.dest_node=creator_ns;
@@ -433,14 +452,14 @@ namespace cafer_core {
         msg.data_flt=0;
         msg.data_str=created_ns;
         // We may need to wait a bit so that the management publisher is connected.
-        ROS_INFO_STREAM("ACK_CREATION: waiting for the connection to the creator.my_id="<<get_id());
+        ROS_INFO_STREAM("ACK_CREATION: waiting for the connection to the creator (ns="<<creator_ns<<" id="<<creator_id<<").my_id="<<get_id());
         wait_for_client(creator_ns,creator_id);
         ROS_INFO_STREAM("ACK_CREATION: connection to the creator OK. my_id="<<get_id());
         management_p->publish(msg);
         ROS_INFO_STREAM("Sending ack after component creation: creator_ns="<<creator_ns<<" creator_id="<<creator_id<<" created_ns="<<created_ns);
       }
       else{
-        ROS_WARN_STREAM(ros_nh->getNamespace()<<": No creator id provided, no ack has been sent.");
+        ROS_WARN_STREAM(my_ros_nh->getNamespace()<<": No creator id provided, no ack has been sent.");
       }
 
     }
@@ -452,7 +471,7 @@ namespace cafer_core {
       cd.id=id;
       cd.type=_type;
       map_watchdog[cd]=ros::Time::now();
-      //ROS_INFO_STREAM("update_watchdog "<<ns<<" "<<id<<" "<<_type<<" my_id="<<get_id());
+      ROS_INFO_STREAM("update_watchdog "<<ns<<" "<<id<<" "<<_type<<" my_id="<<get_id());
     }
 
     /** Get the time of the last watchdog message for a particular client */
@@ -474,10 +493,11 @@ namespace cafer_core {
     /** Send a watchdog message telling that the client is still alive... */
     void watchdog_cb(const ros::TimerEvent& event)
     {
-      //ROS_INFO_STREAM("watchdog_cb my_id="<<get_id());
+      ROS_INFO_STREAM("watchdog_cb my_id="<<get_id());
+      ROS_INFO_STREAM("watchdog_cb, management topic="<<management_p->getTopic()<<" nb connected="<<management_p->getNumSubscribers()<<std::flush);
       cafer_core::Management msg;
       msg.type=WATCHDOG;
-      msg.src_node=ros_nh->getNamespace();
+      msg.src_node=my_ros_nh->getNamespace();
       msg.src_id=get_id();
       msg.src_type=get_type();
       msg.dest_node="all";
@@ -492,7 +512,7 @@ namespace cafer_core {
       ROS_INFO_STREAM("send_complete_node_death my_id="<<get_id());
       cafer_core::Management msg;
       msg.type=COMPLETE_NODE_DEATH;
-      msg.src_node=ros_nh->getNamespace();
+      msg.src_node=my_ros_nh->getNamespace();
       msg.src_id=get_id();
       msg.src_type=get_type();
       msg.dest_node=ns;
@@ -507,7 +527,7 @@ namespace cafer_core {
       ROS_INFO_STREAM("send_local_node_death my_id="<<get_id());
       cafer_core::Management msg;
       msg.type=LOCAL_CLIENT_DEATH;
-      msg.src_node=ros_nh->getNamespace();
+      msg.src_node=my_ros_nh->getNamespace();
       msg.src_id=get_id();
       msg.src_type=get_type();
       msg.dest_node=ns;

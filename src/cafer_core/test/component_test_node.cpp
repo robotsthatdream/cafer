@@ -52,7 +52,7 @@ class DummyClient: public cafer_core::Component {
 
 public:
   void client_connect_to_ros(void) {
-    dummy_p.reset(new ros::Publisher(cafer_core::ros_nh->advertise<std_msgs::Int64>("dummy_topic",10)));
+    dummy_p.reset(new ros::Publisher(my_ros_nh->advertise<std_msgs::Int64>("dummy_topic",10)));
     n=0;
     _is_init=true;
   }
