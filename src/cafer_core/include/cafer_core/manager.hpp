@@ -253,15 +253,6 @@ namespace cafer_core {
     public:
 
         /**
-         * @brief The callback function used to process messages from the listened topic.
-         * @param msg
-         */
-        void add_cb(const boost::shared_ptr<Msg>& msg)
-        {
-            add(*msg);
-        }
-
-        /**
          * @brief add a msg to the container of Manager
          * @param msg the message to add
          */
