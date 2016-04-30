@@ -60,6 +60,7 @@ void test_launch_death(int i,bool local) {
   std::ostringstream os1,os2;
   os1<<"test_tbb_"<<local<<"_"<<i;
   os2<<"mgmt_ld_"<<local<<i;
+  ROS_INFO_STREAM("test_launch_death begin "<<i<<" mgmt_topic="<<os2.str()<<" type="<<os1.str()<<std::flush);
   DummyClient cc(os2.str(), os1.str(),30,true);
  
   ROS_INFO_STREAM("Launch-death iteration with tbb: "<<i<<" mgmt_topic="<<os2.str()<<" type="<<os1.str()<<std::flush);
@@ -91,17 +92,19 @@ void test_launch_death(int i,bool local) {
   ROS_INFO_STREAM("Launch file called. Waiting for the node to be up. mgmt_topic="<<os2.str()<<" type="<<os1.str()<<std::flush);
 
   /** Checking that they are up */
-  int nb_tries=10;
+  int nb_tries=20;
+  int nb_tot=0;
   while (nb_tries>0) {
-    count=2000;
+    count=100;
     while((count>0)&&cc.get_created_nodes().size()==0) {
       cc.spin();
       cc.update();
       cc.sleep();
       count--;
+      nb_tot++;
     }
     if (count == 0) {
-      ROS_INFO_STREAM("PROBLEM: we haven't received the ack from some nodes. We ask for a new ack."<<std::flush);
+      ROS_INFO_STREAM("PROBLEM: we haven't received the ack from some nodes. We ask for a new ack. mgmt_topic="<<os2.str()<<" type="<<os1.str()<<std::flush);
       ROS_INFO_STREAM("============= Ack received from "<<cc.get_created_nodes().size()<<" components: "<<std::flush);
       BOOST_FOREACH(cafer_core::CreatedNodes_t::value_type & v, cc.get_created_nodes()) {
 	BOOST_FOREACH(cafer_core::ClientDescriptor cd, v.second) {
@@ -122,7 +125,7 @@ void test_launch_death(int i,bool local) {
     nb_tries--;
   }
 
-  ROS_INFO_STREAM("Out of waiting loop. mgmt_topic="<<os2.str()<<" type="<<os1.str()<<std::flush);
+  ROS_INFO_STREAM("Out of waiting loop. nb_tot="<<nb_tot<<" mgmt_topic="<<os2.str()<<" type="<<os1.str()<<std::flush);
 
   /* nbdummy=0;
   count=10000;
@@ -155,18 +158,20 @@ void test_launch_death(int i,bool local) {
 
   ROS_INFO_STREAM("Death signal sent on management topic: "<<cc.management_p->getTopic()<<std::flush);
 
-  int cpt=10;
+  int cpt=100;
+  nb_tot=0;
   while (cc.is_client_up(vcd[0].ns, vcd[0].id) && (cpt>0)) {
     ROS_INFO_STREAM("Checking if clients are still up, cpt="<<cpt<<std::flush);
     cc.spin();
     cc.sleep();
     cpt--;
+    nb_tot++;
   }
 
-  ROS_INFO_STREAM("Out of the while loop mgmt_topic="<<os2.str()<<" type="<<os1.str()<<std::flush);
+  ROS_INFO_STREAM("Out of the while loop nb_tot="<<nb_tot<<" mgmt_topic="<<os2.str()<<" type="<<os1.str()<<std::flush);
   
   ASSERT_FALSE(cc.is_client_up(vcd[0].ns, vcd[0].id));
-  cc.shutdown();
+  cc.disconnect_from_ros();
 }
 
 class ApplyTest {

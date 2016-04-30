@@ -167,11 +167,6 @@ namespace cafer_core {
   public:
     Component(std::string mgmt_topic, std::string _type, double freq=10, bool new_nodehandle=false): type(_type),terminate(false),map_watchdog(5) {
       rate.reset(new ros::Rate(freq));
-      if (mgmt_topic =="") {
-        std::string default_value="default_"+type;
-        my_ros_nh->param("management_topic",mgmt_topic,default_value);
-      }
-      ROS_INFO_STREAM("Creating a component connected to management_topic: "<<mgmt_topic<<" type="<<_type);
       if (new_nodehandle) {
 	ROS_INFO_STREAM("     creation of a dedicated callback queue");
 	my_ros_nh.reset(new ros::NodeHandle(*ros_nh.get()));
@@ -182,6 +177,11 @@ namespace cafer_core {
 	my_ros_nh=ros_nh;
 	my_ros_queue.reset();
       }
+      if (mgmt_topic =="") {
+        std::string default_value="default_"+type;
+        my_ros_nh->param("management_topic",mgmt_topic,default_value);
+      }
+      ROS_INFO_STREAM("Creating a component connected to management_topic: "<<mgmt_topic<<" type="<<_type);
 
       management_p.reset(new ros::Publisher(my_ros_nh->advertise<cafer_core::Management>(mgmt_topic.c_str(),0)));
       management_s.reset(new ros::Subscriber(my_ros_nh->subscribe(mgmt_topic.c_str(),0,&Component::management_cb,this)));
@@ -300,7 +300,7 @@ namespace cafer_core {
      */
     unsigned int how_many_client_from_type(std::string _type, bool up_only=true) {
       unsigned int nb=0;
-      ROS_INFO_STREAM("how_many_client_from_type: "<<_type<<" my id="<<get_id());
+      //ROS_INFO_STREAM("how_many_client_from_type: "<<_type<<" my id="<<get_id());
       BOOST_FOREACH( MapWatchDog_t::value_type& v, map_watchdog ) {
 	if ((v.first.type == _type)&&((!up_only)||(is_it_recent_enough(v.second)))) {
 	    nb++;
@@ -471,7 +471,7 @@ namespace cafer_core {
       cd.id=id;
       cd.type=_type;
       map_watchdog[cd]=ros::Time::now();
-      ROS_INFO_STREAM("update_watchdog "<<ns<<" "<<id<<" "<<_type<<" my_id="<<get_id());
+      //ROS_INFO_STREAM("update_watchdog "<<ns<<" "<<id<<" "<<_type<<" my_id="<<get_id());
     }
 
     /** Get the time of the last watchdog message for a particular client */
@@ -481,7 +481,7 @@ namespace cafer_core {
       cd.id=id;
       cd.type="undefined";
       if (map_watchdog.find(cd) == map_watchdog.end()) {
-	ROS_INFO_STREAM("get_watchdog uninitialized "<<ns<<" "<<id<<" time="<<ros::Time(0)<<" my id="<<get_id());
+	//ROS_INFO_STREAM("get_watchdog uninitialized "<<ns<<" "<<id<<" time="<<ros::Time(0)<<" my id="<<get_id());
 	return ros::Time(0);
 
       }
@@ -493,8 +493,8 @@ namespace cafer_core {
     /** Send a watchdog message telling that the client is still alive... */
     void watchdog_cb(const ros::TimerEvent& event)
     {
-      ROS_INFO_STREAM("watchdog_cb my_id="<<get_id());
-      ROS_INFO_STREAM("watchdog_cb, management topic="<<management_p->getTopic()<<" nb connected="<<management_p->getNumSubscribers()<<std::flush);
+      //ROS_INFO_STREAM("watchdog_cb my_id="<<get_id());
+      //ROS_INFO_STREAM("watchdog_cb, management topic="<<management_p->getTopic()<<" nb connected="<<management_p->getNumSubscribers()<<std::flush);
       cafer_core::Management msg;
       msg.type=WATCHDOG;
       msg.src_node=my_ros_nh->getNamespace();

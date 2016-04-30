@@ -230,6 +230,7 @@ namespace sferes
 
       // Don't forget it to release the cafer node group and force this instance to disconnect from ROS.
       _cafer_fastsim->kill_created_nodes();
+      _cafer_fastsim->disconnect_from_ros();
       _cafer_fastsim.reset();
 
 
