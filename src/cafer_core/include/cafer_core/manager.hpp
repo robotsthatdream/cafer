@@ -56,8 +56,8 @@
 namespace cafer_core {
 
 /**
- *@brief class Manager<Msg>
- * A data manager for handle the messages (like images, features or policies) used in cafer.
+ *@brief class Manager<Msg, DataContainer, DerivedClass>
+ * A data manager to handle ROS messages (like images, features or policies).
  */
     template<typename Msg, typename DataContainer, typename DerivedClass>
     class ManagerBase {
@@ -122,10 +122,10 @@ namespace cafer_core {
         }
 
         /**
-         * @brief ListenTo connect to a specific topic and listen to it.
-         * @param The topic's name to listen to.
+         * @brief Connects to a specific topic and listen to it.
+         * @param The topic to listen to.
          */
-        void ListenTo(const std::string& topic, io type_io = ADD)
+        void listen_to(const std::string& topic, io type_io = ADD)
         {
             if (type_io == ADD) {
                 _subcriber.reset(new ros::Subscriber(ros_nh->subscribe(topic, 10, &ManagerBase::add_cb, this)));
@@ -133,7 +133,7 @@ namespace cafer_core {
         }
 
         /**
-        * @brief Return the number of elements in the data container.
+        * @brief Returns the number of elements in the data container.
         * @return The manager container's size.
         */
         size_t data_size()
@@ -199,7 +199,7 @@ namespace cafer_core {
         //Defining Base as an alias for the template pattern.
         using Base=ManagerBase<Msg, std::unordered_map<u_int32_t, Msg>, Manager<Msg, std::unordered_map<u_int32_t, Msg>>>;
         //Inheriting base class constructor
-        using Base::ManagerBase;
+        using Base::Base;
     public:
 
         /**
@@ -249,7 +249,7 @@ namespace cafer_core {
         //Defining Base as an alias for the template pattern.
         using Base=ManagerBase<Msg, std::deque<Msg>, Manager<Msg, std::deque<Msg>>>;
         //Inheriting base class constructor
-        using Base::ManagerBase;
+        using Base::Base;
     public:
 
         /**
@@ -267,7 +267,10 @@ namespace cafer_core {
         */
         Msg get()
         {
+            Msg msg;
+            msg = Base::_data_set.front();
             Base::_data_set.pop_front();
+            return msg;
         }
     };
 

@@ -74,7 +74,7 @@ int main(int argc, char **argv)
     manager.remove(1);
 
     //you can also subscribe to a topic to save some data from a external source
-    manager.ListenTo("fake_topic");
+    manager.listen_to("fake_topic");
 
     //listen until manager have 10 messages in his data set
     while (manager.data_size() < 10) {
