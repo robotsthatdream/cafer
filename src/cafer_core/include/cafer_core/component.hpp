@@ -240,6 +240,8 @@ namespace cafer_core {
       management_s.reset();
       watchdog.reset();
       _is_connected_to_ros=false;
+      sleep();
+      sleep();
     }
 
     /** Shutting down the component and the corresponding node */

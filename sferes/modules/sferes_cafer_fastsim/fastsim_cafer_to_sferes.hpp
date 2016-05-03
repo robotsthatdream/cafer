@@ -147,7 +147,7 @@ namespace fastsim_cafer {
       std::string topic_speed_right=_ros_namespace_fastsim+"/cafer_fastsim/speed_right";
       speed_right_p.reset(new ros::Publisher(ros_nh->advertise<std_msgs::Float32>(topic_speed_right.c_str(),10)));
     }
- 
+  
     void init(void) {
 
       std::ostringstream oss;
@@ -176,12 +176,17 @@ namespace fastsim_cafer {
 
 
       std::cout<<"Waiting for fastsim to start (after having called the launch file)"<<std::flush;
+      int nb_wait=0;
       while(get_created_nodes(_ros_namespace_fastsim).size()==0) {
 	std::cout<<"."<<std::flush;
 	spin();
 	sleep();
+	nb_wait++;
+	if (nb_wait==40) {
+	  ask_new_ack();
+	}
       }
-      std::cout<<"[OK]"<<std::endl;
+      std::cout<<"[OK] waited for "<<nb_wait<<" timesteps"<<std::endl;
       
       std::cerr<<"Waiting for initialization !"<<std::flush;
       while(!is_initialized()) {
