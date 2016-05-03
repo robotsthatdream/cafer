@@ -50,15 +50,17 @@ usage : two args : a topic and a type
 Example of use:
 1. Launch several nodes
 ```
-roslaunch basic_example_new_node.launch ns:=basic0 management_topic:=/basic_mgmt
-roslaunch basic_example_new_node.launch ns:=basic1 management_topic:=/basic_mgmt
-roslaunch basic_example_new_node.launch ns:=basic2 management_topic:=/basic_mgmt
+roslaunch basic_example_new_node.launch ns:=basic0 management_topic:=/basic_mgmt &
+roslaunch basic_example_new_node.launch ns:=basic1 management_topic:=/basic_mgmt &
+roslaunch basic_example_new_node.launch ns:=basic2 management_topic:=/basic_mgmt &
 ```
+rosnode list must display the 3 different nodes.
+
 2. Kill them using the kill node example (the type of the created nodes is basic_example_new_node, see basic_example_new_node.cpp) 
 ```
 rosrun cafer_core basic_example_kill_node_topic_type /basic_mgmt basic_example_new_node
 ```
-
+rosnode list should not display the nodes anymore.
 
 Change frequency
 ----------------
@@ -72,7 +74,7 @@ roslaunch basic_example_new_node.launch ns:=basic0 management_topic:=/basic_mgmt
 roslaunch basic_example_new_node.launch ns:=basic1 management_topic:=/basic_mgmt
 roslaunch basic_example_new_node.launch ns:=basic2 management_topic:=/basic_mgmt
 ```
-2. Kill them using the kill node example (the type of the created nodes is basic_example_new_node, see basic_example_new_node.cpp) 
+2. Change their frequency using the basic_example change frequency:
 ```
 rosrun cafer_core basic_example_change_frequency /basic_mgmt 40
 ```
