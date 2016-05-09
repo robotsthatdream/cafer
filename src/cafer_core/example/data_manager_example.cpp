@@ -40,13 +40,14 @@
 #include <cafer_core/cafer_core.hpp>
 #include <cafer_core/manager_test.h>
 
-int main(int argc, char** argv){
+int main(int argc, char **argv)
+{
 
     //initiate the cafer core
-    cafer_core::init(0,NULL,"manager_test_subcribe");
+    cafer_core::init(0, NULL, "manager_test_subcribe");
 
     //create the data manager for the manager_test msg
-    cafer_core::Manager<cafer_core::manager_test> manager("example","example1");
+    cafer_core::ManagerMap<cafer_core::manager_test> manager("example", "example1");
 
     //you can create a message
     cafer_core::manager_test msg1;
@@ -57,7 +58,7 @@ int main(int argc, char** argv){
 
     msg1.header = header;
     msg1.description = "I am a message";
-    msg1.tags = {"t","d","e"};
+    msg1.tags = {"t", "d", "e"};
     msg1.content = "this is not a content";
 
     //and add it to the data manager
@@ -73,10 +74,10 @@ int main(int argc, char** argv){
     manager.remove(1);
 
     //you can also subscribe to a topic to save some data from a external source
-    manager.ListenTo("fake_topic");
+    manager.listen_to("fake_topic");
 
     //listen until manager have 10 messages in his data set
-    while(manager.data_size() < 10){
+    while (manager.data_size() < 10) {
         ros::spinOnce();
     }
 

@@ -55,53 +55,34 @@
 
 namespace cafer_core {
 
-
 /**
- *@brief class Manager<Msg>
- * A data manager for handle the messages (like images, features or policies) used in cafer.
+ *@brief class Manager<Msg, DataContainer, DerivedClass>
+ * A data manager to handle ROS messages (like images, features or policies).
  */
-template<typename Msg>
-class Manager{
-private:
+    template<typename Msg, typename DataContainer, typename DerivedClass>
+    class ManagerBase {
+    public:
 
+        /**
+         * @brief The io enum type of traitement to do with incoming data.
+         */
+        enum io {
+            ADD
+        };
 
-    typedef std::unordered_map<u_int32_t, Msg> data_t;
-    data_t _data_set;
+        /**
+         * @brief Manager constructor
+         * @param type specify which of data manager (and not the type of data)
+         * @param name of the manager
+         * @param description a short description of the manager (optionnal)
+         */
+        ManagerBase(std::string type, std::string name, std::string description = "") :
 
-    long int _id;
-    std::string _name;
-    std::string _description;
-    std::string _type;
-
-    std::mt19937 _gen;
-
-    boost::shared_ptr<ros::Publisher> _publisher;
-//    boost::shared_ptr<ros::ServiceServer> _start_to_publish;
-//    boost::shared_ptr<ros::ServiceServer> _search_service;
-    boost::shared_ptr<ros::Subscriber> _subcriber;
-
-public:
-
-    /**
-     * @brief The io enum type of traitement to do with incoming data.
-     */
-    enum io{
-        ADD
-    };
-
-    /**
-     * @brief Manager constructor
-     * @param type specify which of data manager (and not the type of data)
-     * @param name of the manager
-     * @param description a short description of the manager (optionnal)
-     */
-    Manager(std::string type, std::string name, std::string description = "")
-        : _type(type), _name(name), _description(description)
-    {
-        //init random number generator for random access
-        std::seed_seq seed = {std::time(0)};
-        _gen.seed(seed);
-
+                _type(type), _name(name), _description(description)
+        {
+            //init random number generator for random access
+            std::seed_seq seed = {std::time(0)};
+            _gen.seed(seed);
 
 //        //init services
 //        std::stringstream sstream;
@@ -112,75 +93,55 @@ public:
 //        sstream2 << _name << "_search_service";
 //        _search_service->reset(new ros::ServiceServer(ros_nh->advertiseService(sstream2.str(),search_service)));
 
-    }
+        }
 
-    void disconnect_from_ros(){
+        void disconnect_from_ros()
+        {
+            _subcriber.reset();
 //        _publisher.reset();
 //        _server.reset();
-    }
+        }
 
-    bool is_initialized(){
-        return true;
-    }
+        bool is_initialized()
+        {
+            return true;
+        }
 
-    void update(){
+        void update()
+        {
 
-    }
+        }
 
-    /**
-     * @brief add a msg to the container of Manager
-     * @param msg the message to add
-     */
-    void add(const Msg& msg){
-        _data_set.emplace(msg.header.seq,msg);
-    }
+        /**
+         * @brief The callback function used to process messages from the listened topic.
+         * @param msg
+         */
+        void add_cb(const boost::shared_ptr<Msg>& msg)
+        {
+            static_cast<DerivedClass *>(this)->add(*msg);
+        }
 
-    /**
-     * @brief add_cb callback function for ListenTo
-     * @param msg
-     */
-    void add_cb(const boost::shared_ptr<Msg>& msg){
-        add(*msg);
-    }
+        /**
+         * @brief Connects to a specific topic and listen to it.
+         * @param The topic to listen to.
+         */
+        void listen_to(const std::string& topic, io type_io = ADD)
+        {
+            if (type_io == ADD) {
+                _subcriber.reset(new ros::Subscriber(ros_nh->subscribe(topic, 10, &ManagerBase::add_cb, this)));
+            }
+        }
 
-    /**
-     * @brief get random access to any data
-     * @return a message
-     */
-    Msg get() {
-        std::uniform_int_distribution<> dist(0.,_data_set.size()-1);
-        auto random_it = std::next(std::begin(_data_set),dist(_gen));
-        Msg res = random_it->second;
-        return res;
-    }
-
-    /**
-     * @brief remove a element of the container of the manager
-     * @param id identifier of the msg to remove
-     * @return should be 1 in success case and 0 otherwise.
-     */
-    size_t remove(const u_int32_t& h){
-        return _data_set.erase(h);
-    }
-
-    /**
-     * @brief search a precise msg by is identifier
-     * @param id identifier of the searched msg
-     */
-    Msg search(const u_int32_t& id){
-        return _data_set.find(id)->second;
-    }
+        /**
+        * @brief Returns the number of elements in the data container.
+        * @return The manager container's size.
+        */
+        size_t data_size()
+        {
+            return _data_set.size();
+        }
 
 //    void search_service()
-
-    /**
-     * @brief data_size
-     * @return the number of data.
-     */
-    size_t data_size(){
-        return _data_set.size();
-    }
-
 //    /**
 //     * @brief AskTo Call a specific service
 //     * @param md
@@ -196,15 +157,6 @@ public:
 //        //DO SOMETHING !!!!
 //    }
 
-    /**
-     * @brief ListenTo connect to a specific topic and listen to him
-     * @param topic
-     */
-    void ListenTo(const std::string& topic, io type_io = ADD){
-        if(type_io == ADD)
-             _subcriber.reset(new ros::Subscriber(ros_nh->subscribe(topic,10,&Manager::add_cb,this)));
-    }
-
 //    void start_to_publish(cafer_core::start_to_talk::Request& req,
 //                          cafer_core::start_to_talk::Response& res){
 
@@ -217,10 +169,117 @@ public:
 //        res.start_to_talk = true;
 //        //do parallisation
 //    }
+    protected:
 
+        DataContainer _data_set;
 
-};
+        long int _id;
+        std::string _name;
+        std::string _description;
+        std::string _type;
 
+        std::mt19937 _gen;
+
+        std::unique_ptr<ros::Publisher> _publisher;
+        std::unique_ptr<ros::Subscriber> _subcriber;
+
+        //    boost::shared_ptr<ros::ServiceServer> _start_to_publish;
+        //    boost::shared_ptr<ros::ServiceServer> _search_service;
+    };
+
+    //Declaring the Manager class, inheriting from ManagerBase.
+    template<typename Msg, typename DataContainer>
+    class Manager : public ManagerBase<Msg, DataContainer, Manager<Msg, DataContainer>> {
+    };
+
+    //Partial template specialization of the Manager class using unordered_map as container.
+    template<typename Msg>
+    class Manager<Msg, std::unordered_map<u_int32_t, Msg>>
+            : public ManagerBase<Msg, std::unordered_map<u_int32_t, Msg>, Manager<Msg, std::unordered_map<u_int32_t, Msg>>> {
+        //Defining Base as an alias for the template pattern.
+        using Base=ManagerBase<Msg, std::unordered_map<u_int32_t, Msg>, Manager<Msg, std::unordered_map<u_int32_t, Msg>>>;
+        //Inheriting base class constructor
+        using Base::Base;
+    public:
+
+        /**
+         * @brief add a msg to the container of Manager
+         * @param msg the message to add
+         */
+        void add(const Msg& msg)
+        {
+            Base::_data_set.emplace(msg.header.seq, msg);
+        }
+
+        /**
+        * @brief Get an element from the data container.
+        * @return The returned message/element.
+        */
+        Msg get()
+        {
+            std::uniform_int_distribution<> dist(0., Base::_data_set.size() - 1);
+            auto random_it = std::next(std::begin(Base::_data_set), dist(Base::_gen));
+            Msg res = random_it->second;
+            return res;
+        }
+
+        /**
+         * @brief remove a element of the container of the manager
+         * @param id identifier of the msg to remove
+         * @return should be 1 in success case and 0 otherwise.
+         */
+        size_t remove(const u_int32_t& h)
+        {
+            return Base::_data_set.erase(h);
+        }
+
+        /**
+        * @brief search a precise msg by is identifier
+        * @param id identifier of the searched msg
+        */
+        Msg search(const u_int32_t& id)
+        {
+            return Base::_data_set.find(id)->second;
+        }
+    };
+
+    //Partial template specialization of the Manager class using deque as container.
+    template<typename Msg>
+    class Manager<Msg, std::deque<Msg>> : public ManagerBase<Msg, std::deque<Msg>, Manager<Msg, std::deque<Msg>>> {
+        //Defining Base as an alias for the template pattern.
+        using Base=ManagerBase<Msg, std::deque<Msg>, Manager<Msg, std::deque<Msg>>>;
+        //Inheriting base class constructor
+        using Base::Base;
+    public:
+
+        /**
+         * @brief add a msg to the container of Manager
+         * @param msg the message to add
+         */
+        void add(const Msg& msg)
+        {
+            Base::_data_set.push_back(msg);
+        }
+
+        /**
+        * @brief Get an element from the data container.
+        * @return The returned message/element.
+        */
+        Msg get()
+        {
+            Msg msg;
+            msg = Base::_data_set.front();
+            Base::_data_set.pop_front();
+            return msg;
+        }
+    };
+
+    //Namespace aliases to simplify template usage.
+    template<typename Msg>
+    using ManagerMap=Manager<Msg, std::unordered_map<u_int32_t, Msg>>;
+
+    template<typename Msg>
+    using ManagerQueue=Manager<Msg, std::deque<Msg>>;
 }
 
 #endif //_MANAGER_HPP

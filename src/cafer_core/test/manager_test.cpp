@@ -45,9 +45,10 @@
 /**
  * @brief TEST test for the basis function of manager : add, random access, search and remove.
  */
-TEST(Manager,cafer_core1){
+TEST(Manager, cafer_core1)
+{
 
-    cafer_core::Manager<cafer_core::manager_test> manager("test","manager test");
+    cafer_core::ManagerMap<cafer_core::manager_test> manager("test", "manager test");
 
     //you can create a message
     cafer_core::manager_test msg1;
@@ -58,7 +59,7 @@ TEST(Manager,cafer_core1){
 
     msg1.header = header;
     msg1.description = "I am a message";
-    msg1.tags = {"t","d","e"};
+    msg1.tags = {"t", "d", "e"};
     msg1.content = "this is not a content";
 
     //and add it to the data manager
@@ -81,7 +82,7 @@ TEST(Manager,cafer_core1){
 
     msg3.header = header;
     msg3.description = "I am another message";
-    msg3.tags = {"tt","ds","es"};
+    msg3.tags = {"tt", "ds", "es"};
     msg3.content = "content";
 
     manager.add(msg3);
@@ -114,7 +115,7 @@ TEST(Manager,cafer_core1){
 
     size_t msg3_size = manager.remove(2);
 
-    EXPECT_EQ(msg3_size,1);
+    EXPECT_EQ(msg3_size, 1);
 
     msg2 = manager.get();
 
@@ -129,11 +130,12 @@ TEST(Manager,cafer_core1){
 }
 
 
-int main(int argc, char **argv){
+int main(int argc, char **argv)
+{
 
     testing::InitGoogleTest(&argc, argv);
 
-    cafer_core::init(0,NULL,"manager_test_subcribe");
+    cafer_core::init(0, NULL, "manager_test_subcribe");
 
-  return RUN_ALL_TESTS();
+    return RUN_ALL_TESTS();
 }
