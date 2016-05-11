@@ -42,6 +42,7 @@
 #include <ctime>
 #include <random>
 #include <sstream>
+#include <mutex>
 
 #include <ros/ros.h>
 #include <std_msgs/Time.h>
