@@ -118,9 +118,9 @@ namespace cafer_core {
          */
         void add_cb(const boost::shared_ptr<Msg>& msg)
         {
-            _cv_mutex.lock();
+            _container_mutex.lock();
             static_cast<DerivedClass *>(this)->add(*msg);
-            _cv_mutex.unlock();
+            _container_mutex.unlock();
         }
 
         /**
@@ -141,9 +141,9 @@ namespace cafer_core {
         size_t data_size()
         {
             size_t _container_size;
-            _cv_mutex.lock();
+            _container_mutex.lock();
             _container_size = _data_set.size();
-            _cv_mutex.unlock();
+            _container_mutex.unlock();
             return _container_size;
         }
 
@@ -190,7 +190,7 @@ namespace cafer_core {
         std::mt19937 _gen;
 
         //Mutex to protect the _data_set from concurrent access
-        std::mutex _cv_mutex;
+        std::mutex _container_mutex;
 
         //    boost::shared_ptr<ros::ServiceServer> _start_to_publish;
         //    boost::shared_ptr<ros::ServiceServer> _search_service;
@@ -227,9 +227,9 @@ namespace cafer_core {
         Msg get()
         {
             std::uniform_int_distribution<> dist(0., Base::_data_set.size() - 1);
-            _cv_mutex.lock();
+            Base::_container_mutex.lock();
             auto random_it = std::next(std::begin(Base::_data_set), dist(Base::_gen));
-            _cv_mutex.unlock();
+            Base::_container_mutex.unlock();
             Msg res = random_it->second;
             return res;
         }
@@ -242,9 +242,9 @@ namespace cafer_core {
         size_t remove(const u_int32_t& h)
         {
             size_t return_val;
-            _cv_mutex.lock();
+            Base::_container_mutex.lock();
             return_val = Base::_data_set.erase(h);
-            cv_mutex.unlock();
+            Base::_container_mutex.unlock();
             return return_val;
         }
 
@@ -255,9 +255,9 @@ namespace cafer_core {
         Msg search(const u_int32_t& id)
         {
             Msg return_msg;
-            _cv_mutex.lock();
+            Base::_container_mutex.lock();
             return_msg = Base::_data_set.find(id)->second;
-            _cv_mutex.unlock();
+            Base::_container_mutex.unlock();
             return return_msg;
         }
     };
@@ -289,10 +289,10 @@ namespace cafer_core {
         {
             Msg msg;
 
-            _cv_mutex.lock();
+            Base::_container_mutex.lock();
             msg = Base::_data_set.front();
             Base::_data_set.pop_front();
-            _cv_mutex.unlock();
+            Base::_container_mutex.unlock();
 
             return msg;
         }
