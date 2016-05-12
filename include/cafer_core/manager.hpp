@@ -42,6 +42,7 @@
 #include <ctime>
 #include <random>
 #include <sstream>
+#include <mutex>
 
 #include <ros/ros.h>
 #include <std_msgs/Time.h>
@@ -118,7 +119,9 @@ namespace cafer_core {
          */
         void add_cb(const boost::shared_ptr<Msg>& msg)
         {
+            _container_mutex.lock();
             static_cast<DerivedClass *>(this)->add(*msg);
+            _container_mutex.unlock();
         }
 
         /**
@@ -138,7 +141,11 @@ namespace cafer_core {
         */
         size_t data_size()
         {
-            return _data_set.size();
+            size_t _container_size;
+            _container_mutex.lock();
+            _container_size = _data_set.size();
+            _container_mutex.unlock();
+            return _container_size;
         }
 
 //    void search_service()
@@ -178,10 +185,13 @@ namespace cafer_core {
         std::string _description;
         std::string _type;
 
-        std::mt19937 _gen;
-
         std::unique_ptr<ros::Publisher> _publisher;
         std::unique_ptr<ros::Subscriber> _subcriber;
+
+        std::mt19937 _gen;
+
+        //Mutex to protect the _data_set from concurrent access
+        std::mutex _container_mutex;
 
         //    boost::shared_ptr<ros::ServiceServer> _start_to_publish;
         //    boost::shared_ptr<ros::ServiceServer> _search_service;
@@ -218,7 +228,9 @@ namespace cafer_core {
         Msg get()
         {
             std::uniform_int_distribution<> dist(0., Base::_data_set.size() - 1);
+            Base::_container_mutex.lock();
             auto random_it = std::next(std::begin(Base::_data_set), dist(Base::_gen));
+            Base::_container_mutex.unlock();
             Msg res = random_it->second;
             return res;
         }
@@ -230,7 +242,11 @@ namespace cafer_core {
          */
         size_t remove(const u_int32_t& h)
         {
-            return Base::_data_set.erase(h);
+            size_t return_val;
+            Base::_container_mutex.lock();
+            return_val = Base::_data_set.erase(h);
+            Base::_container_mutex.unlock();
+            return return_val;
         }
 
         /**
@@ -239,7 +255,11 @@ namespace cafer_core {
         */
         Msg search(const u_int32_t& id)
         {
-            return Base::_data_set.find(id)->second;
+            Msg return_msg;
+            Base::_container_mutex.lock();
+            return_msg = Base::_data_set.find(id)->second;
+            Base::_container_mutex.unlock();
+            return return_msg;
         }
     };
 
@@ -250,6 +270,7 @@ namespace cafer_core {
         using Base=ManagerBase<Msg, std::deque<Msg>, Manager<Msg, std::deque<Msg>>>;
         //Inheriting base class constructor
         using Base::Base;
+
     public:
 
         /**
@@ -268,8 +289,12 @@ namespace cafer_core {
         Msg get()
         {
             Msg msg;
+
+            Base::_container_mutex.lock();
             msg = Base::_data_set.front();
             Base::_data_set.pop_front();
+            Base::_container_mutex.unlock();
+
             return msg;
         }
     };
