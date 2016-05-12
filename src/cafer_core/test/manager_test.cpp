@@ -45,7 +45,7 @@
 /**
  * @brief TEST test for the basis function of manager : add, random access, search and remove.
  */
-TEST(Manager, cafer_core1)
+TEST(Manager, ManagerMap)
 {
 
     cafer_core::ManagerMap<cafer_core::manager_test> manager("test", "manager test");
@@ -129,6 +129,72 @@ TEST(Manager, cafer_core1)
 
 }
 
+/**
+ * @brief TEST test for the basis function of manager : add, random access, search and remove.
+ */
+TEST(Manager, ManagerQueue)
+{
+    cafer_core::ManagerQueue<cafer_core::manager_test> manager("test", "manager test");
+
+    //you can create a message
+    cafer_core::manager_test msg1;
+    std_msgs::Header header;
+    header.seq = 1;
+    header.stamp = ros::Time(2.0);
+    header.frame_id = "0";
+
+    msg1.header = header;
+    msg1.description = "I am a message";
+    msg1.tags = {"t", "d", "e"};
+    msg1.content = "this is not a content";
+
+    //and add it to the data manager
+    manager.add(msg1);
+
+    cafer_core::manager_test msg2 = manager.get();
+
+    EXPECT_TRUE(msg1.header.seq == msg2.header.seq);
+    EXPECT_TRUE(msg1.header.stamp == msg2.header.stamp);
+    EXPECT_TRUE(msg1.header.frame_id == msg2.header.frame_id);
+
+    EXPECT_TRUE(msg1.description == msg2.description);
+    EXPECT_TRUE(msg1.tags == msg2.tags);
+    EXPECT_TRUE(msg1.content == msg2.content);
+
+    cafer_core::manager_test msg3;
+    header.seq = 2;
+    header.stamp = ros::Time(3.0);
+    header.frame_id = "frame";
+
+    msg3.header = header;
+    msg3.description = "I am another message";
+    msg3.tags = {"tt", "ds", "es"};
+    msg3.content = "content";
+
+    manager.add(msg3);
+
+    cafer_core::manager_test msg5 = manager.get();
+
+    EXPECT_TRUE(msg3.header.seq == msg5.header.seq || msg1.header.seq == msg5.header.seq);
+    EXPECT_TRUE(msg3.header.stamp == msg5.header.stamp || msg1.header.stamp == msg5.header.stamp);
+    EXPECT_TRUE(msg3.header.frame_id == msg5.header.frame_id || msg1.header.frame_id == msg5.header.frame_id);
+
+    EXPECT_TRUE(msg3.description == msg5.description || msg1.description == msg5.description);
+    EXPECT_TRUE(msg3.tags == msg5.tags || msg1.tags == msg5.tags);
+    EXPECT_TRUE(msg3.content == msg5.content || msg1.content == msg5.content);
+
+    size_t msg3_size = manager.data_size();
+
+    EXPECT_EQ(msg3_size, 0);
+}
+
+/**
+ * @brief TEST test for the basis function of manager : add, random access, search and remove.
+ */
+TEST(Manager, ManagerQueue_DataContainer_Concurrency)
+{
+    std::thread
+}
 
 int main(int argc, char **argv)
 {
