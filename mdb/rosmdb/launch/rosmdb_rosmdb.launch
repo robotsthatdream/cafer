@@ -1,6 +1,0 @@
-<launch>
-    <arg name="ns" default="rosmdb_nodes" />
-    <param name="$(arg ns)/rosmdb_path" type="str" value="$(find rosmdb)/" />
-
-    <node name="rosmdb" pkg="rosmdb" type="execute"  args="es.udc.gii.mdb.ros.ROSMDB" ns="$(arg ns)" output="screen" />
-</launch>
