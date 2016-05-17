@@ -64,7 +64,13 @@ It will install in ~/{YOUR_GIT_FOLDER}/cafer/install/
 
 CAFER comes with some tests. Some require up to several minutes to run. That is normal.
 
-To run them:
+To run them, first we need to run ROS and CAFER:
+```
+roscore
+
+roslaunch cafer_core cafer.launch
+```
+Then we can run the tests:
 ```
 cd ~/catkin_ws
 catkin_make run_tests
