@@ -43,16 +43,14 @@
 #include <random>
 #include <sstream>
 #include <mutex>
+#include <unordered_map>
+#include <deque>
 
 #include <ros/ros.h>
 #include <std_msgs/Time.h>
 #include <std_msgs/Header.h>
 
-#include <boost/functional/hash.hpp>
-#include <boost/random.hpp>
-#include <unordered_map>
-
-#include <cafer_core/component.hpp>
+#include "cafer_core/component.hpp"
 
 namespace cafer_core {
 
@@ -117,7 +115,7 @@ namespace cafer_core {
          * @brief The callback function used to process messages from the listened topic.
          * @param msg
          */
-        void add_cb(const boost::shared_ptr<Msg>& msg)
+        void add_cb(const shared_ptr <Msg>& msg)
         {
             _container_mutex.lock();
             static_cast<DerivedClass *>(this)->add(*msg);
@@ -193,8 +191,8 @@ namespace cafer_core {
         //Mutex to protect the _data_set from concurrent access
         std::mutex _container_mutex;
 
-        //    boost::shared_ptr<ros::ServiceServer> _start_to_publish;
-        //    boost::shared_ptr<ros::ServiceServer> _search_service;
+        //    shared_ptr<ros::ServiceServer> _start_to_publish;
+        //    shared_ptr<ros::ServiceServer> _search_service;
     };
 
     //Declaring the Manager class, inheriting from ManagerBase.

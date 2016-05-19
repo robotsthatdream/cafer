@@ -38,26 +38,29 @@
 
 #include <ros/ros.h>
 #include <gtest/gtest.h>
-#include <cafer_core.hpp>
-#include <cafer_core/manager_test.h>
 
-TEST(Manager_subcribe,cafer_core1){
-    cafer_core::ManagerMap<cafer_core::manager_test> manager("test","test2");
+#include "cafer_core.hpp"
+#include "cafer_core/manager_test.h"
+
+TEST(Manager_subcribe, cafer_core1)
+{
+    cafer_core::ManagerMap<cafer_core::manager_test> manager("test", "test2");
 
     manager.ListenTo("manager_test");
 
-    while(manager.data_size() < 10){
+    while (manager.data_size() < 10) {
         ros::spinOnce();
     }
 
-    EXPECT_GE(manager.data_size(),10);
+    EXPECT_GE(manager.data_size(), 10);
 }
 
-int main(int argc, char** argv){
+int main(int argc, char **argv)
+{
 
     testing::InitGoogleTest(&argc, argv);
 
-    cafer_core::init(0,NULL,"manager_test_subcribe");
+    cafer_core::init(0, NULL, "manager_test_subcribe");
 
 
     return RUN_ALL_TESTS();

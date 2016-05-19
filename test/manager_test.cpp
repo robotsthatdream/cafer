@@ -35,12 +35,13 @@
 //| The fact that you are presently reading this means that you have
 //| had knowledge of the CeCILL license and that you accept its terms.
 
-
+#include <thread>
+#include <atomic>
 #include <ros/ros.h>
 #include <gtest/gtest.h>
-#include <cafer_core/manager.hpp>
-#include <cafer_core/component.hpp>
-#include <cafer_core/manager_test.h>
+
+#include "cafer_core/manager.hpp"
+#include "cafer_core/manager_test.h"
 
 /**
  * @brief TEST test for the basis function of manager : add, random access, search and remove.
@@ -130,7 +131,7 @@ TEST(Manager, ManagerMap)
 }
 
 /**
- * @brief TEST test for the basis function of manager : add, random access, search and remove.
+ * @brief TEST test for the basis function of manager : add, get.
  */
 TEST(Manager, ManagerQueue)
 {
@@ -189,12 +190,88 @@ TEST(Manager, ManagerQueue)
 }
 
 /**
- * @brief TEST test for the basis function of manager : add, random access, search and remove.
+ * Test if conccurrent access to the ManagerQueue's DataContainer works.
+ * If not, it will segfault. Unfortunately, it is not really possible to that cleaner.
  */
-TEST(Manager, ManagerQueue_DataContainer_Concurrency)
+TEST(Manager, ManagerQueue_concurrrency)
 {
-    std::thread
+    cafer_core::ManagerQueue<cafer_core::manager_test> manager("test", "manager test");
+    cafer_core::manager_test dummy_msg;
+    std_msgs::Header header;
+
+    header.seq = 1;
+    header.stamp = ros::Time(2.0);
+    header.frame_id = "0";
+
+    dummy_msg.header = header;
+    dummy_msg.description = "I am a message";
+    dummy_msg.tags = {"t", "d", "e"};
+    dummy_msg.content = "this is not a content";
+
+    std::thread consumer_thread([&manager, &dummy_msg]()
+                                {
+                                    for (unsigned int i = 0; i < 10000; ++i) {
+                                        if (manager.data_size() > 0) {
+                                            manager.get();
+                                        }
+                                    }
+                                });
+
+    for (unsigned int i = 0; i < 1000; ++i) {
+        manager.add(dummy_msg);
+    }
+
+    consumer_thread.join();
+    SUCCEED();
 }
+
+/**
+ * Test if conccurrent access to the ManagerMap's DataContainer works.
+ * If not, it will do a dirty segfault.
+ */
+//TEST(Manager, ManagerMap_concurrrency)
+//{
+//    cafer_core::ManagerMap<cafer_core::manager_test> manager("test", "manager test");
+//    cafer_core::manager_test dummy_msg;
+//    std_msgs::Header header;
+//    std::atomic<unsigned int> data_race_sync(0);
+//
+//    header.stamp = ros::Time(2.0);
+//    header.frame_id = "0";
+//
+//    dummy_msg.description = "I am a message";
+//    dummy_msg.tags = {"t", "d", "e"};
+//    dummy_msg.content = "this is not a content";
+//
+//    for (unsigned int i = 0; i < 100000; ++i) {
+//        data_race_sync.store(false);
+//        header.seq = i + 1;
+//
+//        dummy_msg.header = header;
+//
+//        manager.add(dummy_msg);
+//    }
+//
+//    std::thread consumer_thread_1([&manager, &dummy_msg, &data_race_sync]()
+//                                  {
+//                                      while (data_race_sync.load() < 100000) {
+//                                          manager.remove(data_race_sync.load());
+//                                          ++data_race_sync;
+//                                      }
+//                                  });
+//
+//    std::thread consumer_thread_2([&manager, &dummy_msg, &data_race_sync]()
+//                                  {
+//                                      while (data_race_sync.load() < 100000) {
+//                                          manager.remove(data_race_sync.load());
+//                                          ++data_race_sync;
+//                                      }
+//                                  });
+//
+//    consumer_thread_1.join();
+//    consumer_thread_2.join();
+//    SUCCEED();
+//}
 
 int main(int argc, char **argv)
 {

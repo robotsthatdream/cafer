@@ -1,4 +1,3 @@
-
 //| This file is a part of the CAFER framework developped within
 //| the DREAM project (http://www.robotsthatdream.eu/).
 //| Copyright 2015, ISIR / Universite Pierre et Marie Curie (UPMC)
@@ -44,37 +43,40 @@
 #include <sstream>
 
 
-int main(int argc, char **argv){
+int main(int argc, char **argv)
+{
 
-  int freq_value = 10;
-  if (argc != 3){
-    ROS_INFO_STREAM("Correct use : rosrun  cafer_core  basic_example_change_frequency  management_topic freq_value");
+    int freq_value = 10;
+    if (argc != 3) {
+        ROS_INFO_STREAM(
+                "Correct use : rosrun  cafer_core  basic_example_change_frequency  management_topic freq_value");
+        return 0;
+    }
+    else {
+        std::stringstream ss(argv[2]);
+        ss >> freq_value;
+    }
+
+    ros::init(argc, argv, "change_freq_node");
+    ros::NodeHandle nh;
+    std::string management_topic = argv[1];
+    ROS_INFO_STREAM("management_topic" << management_topic);
+    ros::Publisher p = nh.advertise<cafer_core::Management>(management_topic, freq_value);
+
+    sleep(1);
+
+    cafer_core::Management msg;
+    msg.type = cafer_core::CHG_FREQ;
+    msg.src_node = "";
+    msg.src_id = -1;
+    msg.dest_node = "all";
+    msg.dest_id = -1;
+    msg.data_int = 0;
+    msg.data_flt = freq_value;
+    msg.data_str = "";
+
+    ROS_INFO_STREAM("Publishing the message to change frequency");
+    p.publish(msg);
+
     return 0;
-  } else {
-    std::stringstream ss (argv[2]);
-    ss >> freq_value;
-  }
-
-  ros::init(argc, argv, "change_freq_node");
-  ros::NodeHandle nh;
-  std::string management_topic = argv[1];
-  ROS_INFO_STREAM("management_topic" << management_topic);
-  ros::Publisher p=nh.advertise<cafer_core::Management>(management_topic,freq_value);
-
-  sleep(1);
-
-  cafer_core::Management msg;
-  msg.type=cafer_core::CHG_FREQ;
-  msg.src_node="";
-  msg.src_id=-1;
-  msg.dest_node="all";
-  msg.dest_id=-1;
-  msg.data_int=0;
-  msg.data_flt=freq_value;
-  msg.data_str="";
-
-  ROS_INFO_STREAM("Publishing the message to change frequency");
-  p.publish(msg);
-
-  return 0;
 }

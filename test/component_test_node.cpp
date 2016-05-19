@@ -1,4 +1,3 @@
-
 //| This file is a part of the CAFER framework developped within
 //| the DREAM project (http://www.robotsthatdream.eu/).
 //| Copyright 2015, ISIR / Universite Pierre et Marie Curie (UPMC)
@@ -38,74 +37,80 @@
 
 #include <ros/ros.h>
 #include <gtest/gtest.h>
-#include "cafer_core/component.hpp"
-#include "cafer_core/Management.h"
+
+#include "cafer_core/cafer_core.hpp"
+
 #include <std_msgs/Int64.h>
 #include <ros/impl/duration.h>
 
 
-class DummyClient: public cafer_core::Component {
-  using cafer_core::Component::Component; // To inherit Component's constructor
+class DummyClient : public cafer_core::Component {
+    using cafer_core::Component::Component; // To inherit Component's constructor
 
-  boost::shared_ptr<ros::Publisher> dummy_p;
-  long int n;
+    cafer_core::shared_ptr<ros::Publisher> dummy_p;
+    long int n;
 
 public:
-  void client_connect_to_ros(void) {
-    dummy_p.reset(new ros::Publisher(my_ros_nh->advertise<std_msgs::Int64>("dummy_topic",10)));
-    n=0;
-    _is_init=true;
-  }
-
-   ~DummyClient(){disconnect_from_ros();}
-
-
-  void client_disconnect_from_ros(void) {
-    dummy_p.reset();
-  }
-
-  void init(void) {connect_to_ros();}
-
-  void update(void) {}
-
-  void publish_data(void) {
-    if (is_connected_to_ros()) {
-      std_msgs::Int64 v;
-      v.data=n;
-      dummy_p->publish(v);
-      n++;
+    void client_connect_to_ros(void)
+    {
+        dummy_p.reset(new ros::Publisher(my_ros_nh->advertise<std_msgs::Int64>("dummy_topic", 10)));
+        n = 0;
+        _is_init = true;
     }
-  }
+
+    ~DummyClient()
+    { disconnect_from_ros(); }
+
+
+    void client_disconnect_from_ros(void)
+    {
+        dummy_p.reset();
+    }
+
+    void init(void)
+    { connect_to_ros(); }
+
+    void update(void)
+    { }
+
+    void publish_data(void)
+    {
+        if (is_connected_to_ros()) {
+            std_msgs::Int64 v;
+            v.data = n;
+            dummy_p->publish(v);
+            n++;
+        }
+    }
 };
 
 
+int main(int argc, char **argv)
+{
 
+    cafer_core::init(argc, argv, "component_test_node");
 
+    std::string management_topic;
+    cafer_core::ros_nh->param("management_topic", management_topic, std::string("component_test_management"));
+    double freq;
+    cafer_core::ros_nh->param("frequency", freq, 40.0);
 
-int main(int argc, char **argv){
+    ROS_WARN_STREAM("Management topic for test node: " << management_topic << " namespace: " <<
+                    cafer_core::ros_nh->getNamespace());
 
-  cafer_core::init(argc,argv,"component_test_node");
+    DummyClient cc(management_topic, "dummy_node", freq);
 
-  std::string management_topic;
-  cafer_core::ros_nh->param("management_topic",management_topic,std::string("component_test_management"));
-  double freq;
-  cafer_core::ros_nh->param("frequency", freq, 40.0);
+    cc.wait_for_init();
 
-  ROS_WARN_STREAM("Management topic for test node: "<<management_topic<< " namespace: "<<cafer_core::ros_nh->getNamespace());
+    while (ros::ok() && (!cc.get_terminate())) {
+        cc.spin();
+        cc.update();
+        cc.sleep();
+    }
 
-  DummyClient cc(management_topic,"dummy_node",freq);
+    if (cc.get_terminate()) {
+        cc.shutdown();
+    }
 
-  cc.wait_for_init();
-
-  while(ros::ok()&&(!cc.get_terminate())) {
-    cc.spin();
-    cc.update();
-    cc.sleep();
-  }
-
-  if (cc.get_terminate()) {
-    cc.shutdown();
-  }
-
-  return 0;
+    return 0;
 }

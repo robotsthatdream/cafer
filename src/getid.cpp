@@ -40,7 +40,8 @@
 #include "ros/ros.h"
 #include "cafer_core/GetID.h"
 #include  <boost/unordered_map.hpp>
-/** 
+
+/**
   Service to get a unique ID associated to a string.
 */
 
@@ -48,30 +49,30 @@ typedef boost::unordered_map<std::string, long int> map_ID_t;
 map_ID_t map_ID;
 
 bool get_id(
-        cafer_core::GetID::Request  &req,
-        cafer_core::GetID::Response &res)
+        cafer_core::GetID::Request& req,
+        cafer_core::GetID::Response& res)
 {
 
-  if (map_ID.find(req.name) == map_ID.end()) {
-    map_ID[req.name]=0;
-  }
-  else {
-    map_ID[req.name]++;
-  }
-  res.id=map_ID[req.name];
-  ROS_INFO("request: name=%s", req.name.c_str());
-  ROS_INFO("sending back response: [%ld]", (long int)res.id);
-  return true;
+    if (map_ID.find(req.name) == map_ID.end()) {
+        map_ID[req.name] = 0;
+    }
+    else {
+        map_ID[req.name]++;
+    }
+    res.id = map_ID[req.name];
+    ROS_INFO("request: name=%s", req.name.c_str());
+    ROS_INFO("sending back response: [%ld]", (long int) res.id);
+    return true;
 }
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "getID_server");
-  ros::NodeHandle n;
+    ros::init(argc, argv, "getID_server");
+    ros::NodeHandle n;
 
-  ros::ServiceServer service = n.advertiseService("get_id", get_id);
-  ROS_INFO("Ready to provide new ID for SFERES nodes.");
-  ros::spin();
+    ros::ServiceServer service = n.advertiseService("get_id", get_id);
+    ROS_INFO("Ready to provide new ID for SFERES nodes.");
+    ros::spin();
 
-  return 0;
+    return 0;
 }

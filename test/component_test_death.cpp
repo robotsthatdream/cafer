@@ -1,4 +1,3 @@
-
 //| This file is a part of the CAFER framework developped within
 //| the DREAM project (http://www.robotsthatdream.eu/).
 //| Copyright 2015, ISIR / Universite Pierre et Marie Curie (UPMC)
@@ -38,74 +37,86 @@
 
 #include <ros/ros.h>
 #include <gtest/gtest.h>
+
 #include "cafer_core/component.hpp"
-#include <cafer_core/Management.h>
+#include "cafer_core/Management.h"
+
 #include <ros/impl/duration.h>
 
 
-
-class DummyClient: public cafer_core::Component {
-  using cafer_core::Component::Component; // To inherit Component's constructor
+class DummyClient : public cafer_core::Component {
+    using cafer_core::Component::Component; // To inherit Component's constructor
 
 public:
-  void client_disconnect_from_ros(void) {}
-  void client_connect_to_ros(void) {}
-  bool is_initialized(void){return true;}
-  void update(void) {}
-  void init(void) {}
+    void client_disconnect_from_ros(void)
+    { }
+
+    void client_connect_to_ros(void)
+    { }
+
+    bool is_initialized(void)
+    { return true; }
+
+    void update(void)
+    { }
+
+    void init(void)
+    { }
 };
 
 // In this test, a dummy node is expected to be launched (look at component_test_death.launch) and the test consists in killing it and checking that the node actually gets down.
 TEST(Component, component_death)
 {
-  
-  std::string management_topic;
-  cafer_core::ros_nh->param("management_topic",management_topic,std::string("/component_test_launch_death_mgmtXXX"));
 
-  DummyClient cc(management_topic, "test");
+    std::string management_topic;
+    cafer_core::ros_nh->param("management_topic", management_topic,
+                              std::string("/component_test_launch_death_mgmtXXX"));
 
-
-  cc.wait_for_init();
+    DummyClient cc(management_topic, "test");
 
 
-  unsigned int nbdummy=0;
-  int count=10;
-  while((nbdummy==0)&&(count>0)) {
-    cc.spin();
-    cc.sleep();
-    nbdummy=cc.how_many_client_from_type("dummy_node");
-    count--;
-  }
+    cc.wait_for_init();
 
-  ASSERT_NE(0,count);
-  ASSERT_EQ(1,nbdummy);
 
-  std::vector<cafer_core::ClientDescriptor> vcd;
-  cc.get_connected_client_with_type("dummy_node", vcd);
+    unsigned int nbdummy = 0;
+    int count = 10;
+    while ((nbdummy == 0) && (count > 0)) {
+        cc.spin();
+        cc.sleep();
+        nbdummy = cc.how_many_client_from_type("dummy_node");
+        count--;
+    }
 
-  ASSERT_EQ(vcd.size(),1);
+    ASSERT_NE(0, count);
+    ASSERT_EQ(1, nbdummy);
 
-  ASSERT_TRUE(cc.is_client_up(vcd[0].ns, vcd[0].id));
+    std::vector<cafer_core::ClientDescriptor> vcd;
+    cc.get_connected_client_with_type("dummy_node", vcd);
 
-  cc.send_complete_node_death(vcd[0].ns, vcd[0].id);
+    ASSERT_EQ(vcd.size(), 1);
 
-  int cpt=4;
-  while (cpt>0) {
-    cc.spin();
-    cc.sleep();
-    cpt--;
-  }
+    ASSERT_TRUE(cc.is_client_up(vcd[0].ns, vcd[0].id));
 
-  ASSERT_FALSE(cc.is_client_up(vcd[0].ns, vcd[0].id));
+    cc.send_complete_node_death(vcd[0].ns, vcd[0].id);
+
+    int cpt = 4;
+    while (cpt > 0) {
+        cc.spin();
+        cc.sleep();
+        cpt--;
+    }
+
+    ASSERT_FALSE(cc.is_client_up(vcd[0].ns, vcd[0].id));
 
 }
 
 
-int main(int argc, char **argv){
-  testing::InitGoogleTest(&argc, argv);
+int main(int argc, char **argv)
+{
+    testing::InitGoogleTest(&argc, argv);
 
-  cafer_core::init(argc,argv,"component_test");
+    cafer_core::init(argc, argv, "component_test");
 
 
-  return RUN_ALL_TESTS();
+    return RUN_ALL_TESTS();
 }

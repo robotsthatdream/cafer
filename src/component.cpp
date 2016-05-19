@@ -35,110 +35,115 @@
 //| The fact that you are presently reading this means that you have
 //| had knowledge of the CeCILL license and that you accept its terms.
 
-#include <boost/shared_ptr.hpp>
 #include <ros/ros.h>
 #include <ros/spinner.h>
-#include "cafer_core/component.hpp"
+
+#include "cafer_core/cafer_core.hpp"
 
 #include <tbb/concurrent_hash_map.h>
 
 namespace cafer_core {
 
-  // Hashing for strings
-  struct MyHashCompare {
-    static size_t hash( const std::string& x ) {
-      size_t h = 0;
-      for( const char* s = x.c_str(); *s; ++s )
-	h = (h*17)^*s;
-      return h;
+    // Hashing for strings
+    struct MyHashCompare {
+        static size_t hash(const std::string& x)
+        {
+            size_t h = 0;
+            for (const char *s = x.c_str(); *s; ++s) {
+                h = (h * 17) ^ *s;
+            }
+            return h;
+        }
+
+        //! True if strings are equal
+        static bool equal(const std::string& x, const std::string& y)
+        {
+            return x.compare(y) == 0;
+        }
+    };
+
+    // set of node groups allocated to this sferes run (to clean it up at the end)
+    tbb::concurrent_hash_map<std::string, std::string, MyHashCompare> allocated_node_group;
+
+
+    shared_ptr<ros::NodeHandle> ros_nh;
+
+
+    void init(int argc, char **argv, std::string node_name)
+    {
+        ros::init(argc, argv, node_name);
+        ros_nh.reset(new ros::NodeHandle("~"));
+        std::cout << "Initialising ROS. Node name: " << node_name << std::endl;
     }
-    //! True if strings are equal
-    static bool equal( const std::string& x, const std::string& y ) {
-      return x.compare(y)==0;
+
+    // std::string get_node_group(std::string namespace_base, std::string launch_file, double frequency=30) {
+    //   std::cout<<"Trying to get a node: "<<namespace_base<<" launch file: "<<launch_file<<std::endl;
+    //   cafer_server::LaunchNode v;
+    //   v.request.namespace_base = namespace_base;
+    //   v.request.launch_file = launch_file;
+    //   v.request.frequency = frequency;
+    //   ros::ServiceClient client = ros_nh->serviceClient<cafer_server::LaunchNode>("/cafer_server/get_node_group");
+    //   std::string ns="<Failed>";
+    //   if (client.call(v))
+    //     {
+    // 	ns=v.response.created_namespace;
+    // 	ROS_INFO("Obtained node(s): namespace=%s launch file=%s", ns.c_str(), launch_file.c_str());
+    // 	tbb::concurrent_hash_map<std::string,std::string,MyHashCompare>::accessor a;
+    // 	allocated_node_group.insert(a,ns);
+    // 	a->second=namespace_base;
+    //     }
+    //   else
+    //     {
+    // 	ROS_ERROR("Failed to call service get_node_group");
+    //     }
+    //   return ns;
+    // }
+
+    // void release_node_group(std::string namespace_base, std::string gr_namespace) {
+    //   cafer_server::ReleaseNode v;
+    //   v.request.namespace_base=namespace_base;
+    //   v.request. gr_namespace=gr_namespace;
+    //   ros::ServiceClient client = ros_nh->serviceClient<cafer_server::ReleaseNode>("/cafer_server/release_node_group");
+    //   std::string ns="<Failed>";
+    //   if (client.call(v))
+    //     {
+    // 	ROS_INFO("Released node group=%s: %s", gr_namespace.c_str(),v.response.ack?"OK":"KO");
+    //     }
+    //   else
+    //     {
+    // 	ROS_ERROR("Failed to call service release_node_group");
+    //     }
+
+    // }
+    // void kill_node_group(std::string namespace_base, std::string gr_namespace) {
+    //   cafer_server::KillNodeGroup v;
+    //   v.request.namespace_base=namespace_base;
+    //   v.request.gr_namespace=gr_namespace;
+    //   ros::ServiceClient client = ros_nh->serviceClient<cafer_server::KillNodeGroup>("/cafer_server/kill_node_group");
+    //   std::string ns="<Failed>";
+    //   if (client.call(v))
+    //     {
+    // 	ROS_INFO("Kill node group=%s: %s", gr_namespace.c_str(),v.response.ack?"OK":"KO");
+    //     }
+    //   else
+    //     {
+    // 	ROS_ERROR("Failed to call service kill_node_group");
+    //     }
+
+    // }
+
+    // void kill_all_allocated_node_groups(void) {
+    //   tbb::concurrent_hash_map<std::string,std::string,MyHashCompare>::iterator it,itn;
+    //   for (it=allocated_node_group.begin();it!=allocated_node_group.end();++it) {
+    //     kill_node_group(it->second,it->first);
+    //   }
+    // }
+
+
+    bool operator==(ClientDescriptor const& cd1, ClientDescriptor const& cd2)
+    {
+        return (cd1.ns == cd2.ns) && (cd1.id == cd2.id);
     }
-  };
-
-  // set of node groups allocated to this sferes run (to clean it up at the end)
-  tbb::concurrent_hash_map<std::string,std::string,MyHashCompare> allocated_node_group;
-
-
-
-  boost::shared_ptr<ros::NodeHandle> ros_nh;
-
-
-  void init(int argc, char **argv, std::string node_name) {
-    ros::init(argc, argv, node_name);
-    ros_nh.reset(new ros::NodeHandle("~"));
-    std::cout<<"Initialising ROS. Node name: "<<node_name<<std::endl;
-  }
-
-  // std::string get_node_group(std::string namespace_base, std::string launch_file, double frequency=30) {
-  //   std::cout<<"Trying to get a node: "<<namespace_base<<" launch file: "<<launch_file<<std::endl;
-  //   cafer_server::LaunchNode v;
-  //   v.request.namespace_base = namespace_base;
-  //   v.request.launch_file = launch_file;
-  //   v.request.frequency = frequency;
-  //   ros::ServiceClient client = ros_nh->serviceClient<cafer_server::LaunchNode>("/cafer_server/get_node_group");
-  //   std::string ns="<Failed>";
-  //   if (client.call(v))
-  //     {
-  // 	ns=v.response.created_namespace;
-  // 	ROS_INFO("Obtained node(s): namespace=%s launch file=%s", ns.c_str(), launch_file.c_str());
-  // 	tbb::concurrent_hash_map<std::string,std::string,MyHashCompare>::accessor a;
-  // 	allocated_node_group.insert(a,ns);
-  // 	a->second=namespace_base;
-  //     }
-  //   else
-  //     {
-  // 	ROS_ERROR("Failed to call service get_node_group");
-  //     }
-  //   return ns;
-  // }
-
-  // void release_node_group(std::string namespace_base, std::string gr_namespace) {
-  //   cafer_server::ReleaseNode v;
-  //   v.request.namespace_base=namespace_base;
-  //   v.request. gr_namespace=gr_namespace;
-  //   ros::ServiceClient client = ros_nh->serviceClient<cafer_server::ReleaseNode>("/cafer_server/release_node_group");
-  //   std::string ns="<Failed>";
-  //   if (client.call(v))
-  //     {
-  // 	ROS_INFO("Released node group=%s: %s", gr_namespace.c_str(),v.response.ack?"OK":"KO");
-  //     }
-  //   else
-  //     {
-  // 	ROS_ERROR("Failed to call service release_node_group");
-  //     }
-
-  // }
-  // void kill_node_group(std::string namespace_base, std::string gr_namespace) {
-  //   cafer_server::KillNodeGroup v;
-  //   v.request.namespace_base=namespace_base;
-  //   v.request.gr_namespace=gr_namespace;
-  //   ros::ServiceClient client = ros_nh->serviceClient<cafer_server::KillNodeGroup>("/cafer_server/kill_node_group");
-  //   std::string ns="<Failed>";
-  //   if (client.call(v))
-  //     {
-  // 	ROS_INFO("Kill node group=%s: %s", gr_namespace.c_str(),v.response.ack?"OK":"KO");
-  //     }
-  //   else
-  //     {
-  // 	ROS_ERROR("Failed to call service kill_node_group");
-  //     }
-
-  // }
-
-  // void kill_all_allocated_node_groups(void) {
-  //   tbb::concurrent_hash_map<std::string,std::string,MyHashCompare>::iterator it,itn;
-  //   for (it=allocated_node_group.begin();it!=allocated_node_group.end();++it) {
-  //     kill_node_group(it->second,it->first);
-  //   }
-  // }
-
-
-  bool operator==(ClientDescriptor const &cd1, ClientDescriptor const &cd2) {
-    return (cd1.ns==cd2.ns) && (cd1.id==cd2.id);
-  }
 
 
 }

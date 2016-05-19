@@ -38,27 +38,8 @@
 #ifndef _CAFER_CORE_HPP
 #define _CAFER_CORE_HPP
 
-#include <ros/ros.h>
-#include <cafer_core/component.hpp>
-#include <cafer_core/manager.hpp>
-#include <boost/shared_ptr.hpp>
-
-
-namespace cafer_core {
-
-typedef ros::NodeHandle NodeHandle;
-typedef boost::shared_ptr<ros::NodeHandle> NodeHandlePtr;
-typedef const boost::shared_ptr<ros::NodeHandle> NodeHandleConstPtr;
-
-typedef ros::Subscriber Subcriber;
-typedef boost::shared_ptr<ros::Subscriber> SubscriberPtr;
-typedef const boost::shared_ptr<ros::Subscriber> SubscriberConstPtr;
-
-typedef ros::Publisher Publisher;
-typedef boost::shared_ptr<ros::Publisher> PublisherPtr;
-typedef const boost::shared_ptr<ros::Publisher> PublisherConstPtr;
-
-}//cafer_core
-
+#include "cafer_core/aliases.hpp"
+#include "cafer_core/component.hpp"
+#include "cafer_core/manager.hpp"
 
 #endif //_CAFER_CORE_HPP

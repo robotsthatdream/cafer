@@ -1,4 +1,3 @@
-
 //| This file is a part of the CAFER framework developped within
 //| the DREAM project (http://www.robotsthatdream.eu/).
 //| Copyright 2015, ISIR / Universite Pierre et Marie Curie (UPMC)
@@ -39,31 +38,32 @@
 #include <ros/ros.h>
 #include <gtest/gtest.h>
 #include <unistd.h>
+
 #include "cafer_core/component.hpp"
-#include <cafer_core/Management.h>
+#include "cafer_core/Management.h"
 
+int main(int argc, char **argv)
+{
 
-int main(int argc, char **argv){
+    ros::init(argc, argv, "component_test_node_send_msg");
+    ros::NodeHandle nh;
+    ros::Publisher p = nh.advertise<cafer_core::Management>("component_test_management", 10);
 
-  ros::init(argc, argv, "component_test_node_send_msg");		
-  ros::NodeHandle nh;
-  ros::Publisher p=nh.advertise<cafer_core::Management>("component_test_management",10);
+    sleep(3);
 
-  sleep(3);  
+    cafer_core::Management msg;
+    msg.type = cafer_core::COMPLETE_NODE_DEATH;
+    msg.src_node = "";
+    msg.src_id = -1;
+    msg.dest_node = "all";
+    msg.dest_id = -1;
+    msg.data_int = 0;
+    msg.data_flt = 0;
+    msg.data_str = "";
 
-  cafer_core::Management msg;
-  msg.type=cafer_core::COMPLETE_NODE_DEATH;
-  msg.src_node="";
-  msg.src_id=-1;
-  msg.dest_node="all";
-  msg.dest_id=-1;
-  msg.data_int=0;
-  msg.data_flt=0;
-  msg.data_str="";
+    ROS_INFO_STREAM("Publishing the message COMPLETE_NODE_DEATH");
+    p.publish(msg);
 
-  ROS_INFO_STREAM("Publishing the message COMPLETE_NODE_DEATH");
-  p.publish(msg);
-
-  sleep(3);
-  return 0;
+    sleep(3);
+    return 0;
 }

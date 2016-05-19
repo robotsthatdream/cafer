@@ -37,24 +37,25 @@
 
 
 #include <ros/ros.h>
-#include <cafer_core/manager_test.h>
+#include "cafer_core/manager_test.h"
 #include <random>
 
 
-int main(int argc, char** argv){
+int main(int argc, char **argv)
+{
 
-    ros::init(argc,argv,"manager_test_subcribe_node");
+    ros::init(argc, argv, "manager_test_subcribe_node");
 
     ros::NodeHandle nh;
 
-    ros::Publisher pub = nh.advertise<cafer_core::manager_test>("fake_topic",1);
+    ros::Publisher pub = nh.advertise<cafer_core::manager_test>("fake_topic", 1);
 
     std::mt19937 gen;
     std::seed_seq seed = {std::time(0)};
 
     gen.seed(seed);
 
-    while(ros::ok()){
+    while (ros::ok()) {
 
         cafer_core::manager_test msg;
         std_msgs::Header header;
@@ -65,7 +66,7 @@ int main(int argc, char** argv){
 
         msg.header = header;
         msg.description = "I am a message";
-        msg.tags = {"t","d","e"};
+        msg.tags = {"t", "d", "e"};
         msg.content = "this is not a content";
 
 

@@ -37,34 +37,42 @@
 
 #include <ros/ros.h>
 #include <ros/impl/duration.h>
-#include <cafer_core/cafer_core.hpp>
-#include <cafer_core/manager_test.h>
+
+#include "cafer_core/cafer_core.hpp"
+#include "cafer_core/manager_test.h"
 
 using namespace cafer_core;
 
-class DataSource : public cafer_core::Component{
-  using cafer_core::Component::Component; // To inherit Component's constructor
+class DataSource : public cafer_core::Component {
+    using cafer_core::Component::Component; // To inherit Component's constructor
 
 public:
 
-    void client_connect_to_ros(){
-        pub.reset(new Publisher(ros_nh->advertise<manager_test>("manager_test",1)));
+    void client_connect_to_ros()
+    {
+        pub.reset(new Publisher(ros_nh->advertise<manager_test>("manager_test", 1)));
         _is_init = true;
     }
-    void client_disconnect_from_ros(){
+
+    void client_disconnect_from_ros()
+    {
         pub.reset();
     }
-    void update(){
+
+    void update()
+    {
         publish();
     }
 
-  void init(){
+    void init()
+    {
         connect_to_ros();
         std::seed_seq seed = {std::time(0)};
         gen.seed(seed);
-  }
+    }
 
-    void publish(){
+    void publish()
+    {
         manager_test msg;
         std_msgs::Header header;
 
@@ -74,7 +82,7 @@ public:
 
         msg.header = header;
         msg.description = "I am a message";
-        msg.tags = {"t","d","e"};
+        msg.tags = {"t", "d", "e"};
         msg.content = "this is not a content";
 
 
@@ -88,23 +96,25 @@ private:
 };
 
 
-int main(int argc, char** argv){
+int main(int argc, char **argv)
+{
 
-    cafer_core::init(argc,argv,"manager_component_test");
+    cafer_core::init(argc, argv, "manager_component_test");
 
     std::string management_topic;
-    cafer_core::ros_nh->param("manager_component_test/management_topic",management_topic,std::string("manager_component_test"));
+    cafer_core::ros_nh->param("manager_component_test/management_topic", management_topic,
+                              std::string("manager_component_test"));
     double freq;
     cafer_core::ros_nh->param("manager_component_test/frequency", freq, 10.0);
 
-    DataSource cc(management_topic,"DataSource",freq);
+    DataSource cc(management_topic, "DataSource", freq);
 
     cc.wait_for_init();
 
-    while(ros::ok()){
+    while (ros::ok()) {
         cc.update();
-       cc.spin();
-       cc.sleep();
+        cc.spin();
+        cc.sleep();
     }
 
 }
