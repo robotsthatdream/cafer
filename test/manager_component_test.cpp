@@ -50,7 +50,7 @@ public:
 
     void client_connect_to_ros()
     {
-        pub.reset(new cafer_core::Publisher(ros_nh->advertise<manager_test>("manager_test", 1)));
+        pub.reset(new Publisher(ros_nh->advertise<manager_test>("manager_test", 1)));
         _is_init = true;
     }
 

@@ -117,9 +117,7 @@ namespace cafer_core {
          */
         void add_cb(const shared_ptr<Msg>& msg)
         {
-            _container_mutex.lock();
             static_cast<DerivedClass *>(this)->add(*msg);
-            _container_mutex.unlock();
         }
 
         /**
@@ -216,7 +214,9 @@ namespace cafer_core {
          */
         void add(const Msg& msg)
         {
+            Base::_container_mutex.lock();
             Base::_data_set.emplace(msg.header.seq, msg);
+            Base::_container_mutex.unlock();
         }
 
         /**
@@ -277,7 +277,9 @@ namespace cafer_core {
          */
         void add(const Msg& msg)
         {
+            Base::_container_mutex.lock();
             Base::_data_set.push_back(msg);
+            Base::_container_mutex.unlock();
         }
 
         /**
