@@ -15,7 +15,7 @@ Authors
 - Stephane Doncieux stephane.doncieux@isir.upmc.fr
 - Leni Legoff le_goff@isir.upmc.fr
 - Carlos Maestre carlos.maestre@isir.upmc.fr
-- Pierre-enri Le Fur pierre-henri.le-fur@edu.ece.fr
+- Pierre-Henri Le Fur pierre-henri.le-fur@edu.ece.fr
 - Ghanim Mukhtar mukhtar@isir.upmc.fr
 
 How to build and configure CAFER

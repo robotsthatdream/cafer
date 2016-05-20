@@ -115,7 +115,7 @@ namespace cafer_core {
          * @brief The callback function used to process messages from the listened topic.
          * @param msg
          */
-        void add_cb(const shared_ptr <Msg>& msg)
+        void add_cb(const shared_ptr<Msg>& msg)
         {
             _container_mutex.lock();
             static_cast<DerivedClass *>(this)->add(*msg);
