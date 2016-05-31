@@ -91,8 +91,8 @@ namespace cafer_core {
         }
     };
 
-    typedef std::unordered_map<ClientDescriptor, ros::Time, ClientDescriptorHasher> MapWatchDog_t;
-    typedef std::unordered_map<std::string, std::vector<ClientDescriptor> > CreatedNodes_t;
+    using MapWatchDog_t=std::unordered_map<ClientDescriptor, ros::Time, ClientDescriptorHasher>;
+    using CreatedNodes_t=std::unordered_map<std::string, std::vector<ClientDescriptor> >;
 
 
     /** Abstract class for the Cafer client
@@ -105,7 +105,7 @@ namespace cafer_core {
 
     public:
 
-        shared_ptr<ros::NodeHandle> my_ros_nh;
+        shared_ptr<NodeHandle> my_ros_nh;
         shared_ptr<ros::CallbackQueue> my_ros_queue;
 
         int id;
@@ -123,9 +123,9 @@ namespace cafer_core {
         /**< Watchdog */
 
 
-        shared_ptr<ros::Subscriber> management_s;
+        shared_ptr<Subscriber> management_s;
         /**< subscriber to the management topic */
-        shared_ptr<ros::Publisher> management_p;
+        shared_ptr<Publisher> management_p;
         /**<publisher to the management topic */
 
         MapWatchDog_t map_watchdog;
@@ -155,7 +155,7 @@ namespace cafer_core {
 
         /**
          * @brief init
-         * the purpose of this methode is to make whatever initialization required. It is called at the end of the Component constructor.
+         * the purpose of this method is to make whatever initialization required.
          */
         virtual void init() = 0;
 
@@ -171,8 +171,8 @@ namespace cafer_core {
         {
             rate.reset(new ros::Rate(freq));
             if (new_nodehandle) {
-                ROS_INFO_STREAM("     creation of a dedicated callback queue");
-                my_ros_nh.reset(new ros::NodeHandle(*ros_nh.get()));
+                ROS_INFO_STREAM("creation of a dedicated callback queue");
+                my_ros_nh.reset(new NodeHandle(*ros_nh.get()));
                 my_ros_queue.reset(new ros::CallbackQueue());
                 my_ros_nh->setCallbackQueue(my_ros_queue.get());
             }
@@ -186,9 +186,9 @@ namespace cafer_core {
             }
             ROS_INFO_STREAM("Creating a component connected to management_topic: " << mgmt_topic << " type=" << _type);
 
-            management_p.reset(new ros::Publisher(my_ros_nh->advertise<cafer_core::Management>(mgmt_topic.c_str(), 0)));
+            management_p.reset(new Publisher(my_ros_nh->advertise<cafer_core::Management>(mgmt_topic.c_str(), 0)));
             management_s.reset(
-                    new ros::Subscriber(my_ros_nh->subscribe(mgmt_topic.c_str(), 0, &Component::management_cb, this)));
+                    new Subscriber(my_ros_nh->subscribe(mgmt_topic.c_str(), 0, &Component::management_cb, this)));
             watchdog.reset(new ros::Timer(
                     my_ros_nh->createTimer(ros::Duration(ros::Rate(freq)), &Component::watchdog_cb, this)));
 
@@ -250,7 +250,6 @@ namespace cafer_core {
             management_s.reset();
             watchdog.reset();
             _is_connected_to_ros = false;
-            sleep();
             sleep();
         }
 

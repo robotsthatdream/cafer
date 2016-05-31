@@ -63,7 +63,7 @@ namespace cafer_core {
     };
 
     // set of node groups allocated to this sferes run (to clean it up at the end)
-    tbb::concurrent_hash_map<std::string, std::string, MyHashCompare> allocated_node_group;
+    //tbb::concurrent_hash_map<std::string, std::string, MyHashCompare> allocated_node_group;
 
 
     shared_ptr<ros::NodeHandle> ros_nh;
@@ -73,7 +73,7 @@ namespace cafer_core {
     {
         ros::init(argc, argv, node_name);
         ros_nh.reset(new ros::NodeHandle("~"));
-        std::cout << "Initialising ROS. Node name: " << node_name << std::endl;
+        ROS_INFO_STREAM("Initialising ROS. Node name: " << node_name << std::endl);
     }
 
     // std::string get_node_group(std::string namespace_base, std::string launch_file, double frequency=30) {

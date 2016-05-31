@@ -36,42 +36,37 @@
 //| had knowledge of the CeCILL license and that you accept its terms.
 
 #include <string>
+#include <unordered_map>
 #include <std_msgs/String.h>
+
 #include "ros/ros.h"
 #include "cafer_core/GetID.h"
-#include  <boost/unordered_map.hpp>
-
-/**
-  Service to get a unique ID associated to a string.
-*/
-
-typedef boost::unordered_map<std::string, long int> map_ID_t;
-map_ID_t map_ID;
-
-bool get_id(
-        cafer_core::GetID::Request& req,
-        cafer_core::GetID::Response& res)
-{
-
-    if (map_ID.find(req.name) == map_ID.end()) {
-        map_ID[req.name] = 0;
-    }
-    else {
-        map_ID[req.name]++;
-    }
-    res.id = map_ID[req.name];
-    ROS_INFO("request: name=%s", req.name.c_str());
-    ROS_INFO("sending back response: [%ld]", (long int) res.id);
-    return true;
-}
 
 int main(int argc, char **argv)
 {
+    std::unordered_map<std::string, long int> map_ID;
+
+    auto id_generator = [&map_ID](cafer_core::GetID::Request& req, cafer_core::GetID::Response& res)
+    {
+        if (map_ID.find(req.name) == map_ID.end()) {
+            map_ID.emplace(req.name, 0);
+        }
+        else {
+            map_ID[req.name]++;
+        }
+        res.id = map_ID[req.name];
+
+        ROS_INFO("ID request value received: %s", req.name.c_str());
+        ROS_INFO("Assigned ID: %ld", (long int) res.id);
+
+        return true;
+    };
+
     ros::init(argc, argv, "getID_server");
     ros::NodeHandle n;
 
-    ros::ServiceServer service = n.advertiseService("get_id", get_id);
-    ROS_INFO("Ready to provide new ID for SFERES nodes.");
+    auto service = n.advertiseService<cafer_core::GetID::Request, cafer_core::GetID::Response>("get_id", id_generator);
+    ROS_INFO("Ready to provide new IDs for CAFER components.");
     ros::spin();
 
     return 0;

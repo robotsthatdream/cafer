@@ -94,8 +94,6 @@ int main(int argc, char **argv)
     std::string basic_example_new_node_launch =
             ros::package::getPath("cafer_core") + "/launch/basic_example_new_node.launch";
 
-
-
     /** Creation of the new nodes */
     std::vector<std::string> created_namespaces;
     for (int i = 0; i < nb_nodes; i++) {
@@ -152,7 +150,9 @@ int main(int argc, char **argv)
 
 
 
-    /** At this point at least one node from each call to call_launch_file has answered. As there is only one node in the launch file, it should be fine, but just to be sure (and to show how to check it) we verify that all of those nodes are up. */
+    // At this point at least one node from each call to call_launch_file has answered.
+    // As there is only one node in the launch file, it should be fine,
+    // but just to be sure (and to show how to check it) we verify that all of those nodes are up. */
     bool all_up = true;
     for (const auto& v: cc.get_created_nodes()) {
         for (const auto& cd: v.second) {

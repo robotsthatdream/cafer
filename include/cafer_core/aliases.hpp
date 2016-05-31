@@ -20,7 +20,7 @@ namespace cafer_core {
     using NodeHandlePtr=shared_ptr<ros::NodeHandle>;
     using NodeHandleConstPtr=const shared_ptr<ros::NodeHandle>;
 
-    using Subcriber=ros::Subscriber;
+    using Subscriber=ros::Subscriber;
     using SubscriberPtr=shared_ptr<ros::Subscriber>;
     using SubscriberConstPtr=const shared_ptr<ros::Subscriber>;
 
