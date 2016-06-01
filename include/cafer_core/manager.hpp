@@ -55,7 +55,7 @@
 namespace cafer_core {
 
 /**
- *@brief class Manager<Msg, DataContainer, DerivedClass>
+ *@brief class ManagerBase<Msg, DataContainer, DerivedClass>
  * A data manager to handle ROS messages (like images, features or policies).
  */
     template<typename Msg, typename DataContainer, typename DerivedClass>

@@ -44,106 +44,431 @@
 
 namespace cafer_core {
 
-    // Hashing for strings
-    struct MyHashCompare {
-        static size_t hash(const std::string& x)
-        {
-            size_t h = 0;
-            for (const char *s = x.c_str(); *s; ++s) {
-                h = (h * 17) ^ *s;
-            }
-            return h;
-        }
-
-        //! True if strings are equal
-        static bool equal(const std::string& x, const std::string& y)
-        {
-            return x.compare(y) == 0;
-        }
-    };
-
-    // set of node groups allocated to this sferes run (to clean it up at the end)
-    //tbb::concurrent_hash_map<std::string, std::string, MyHashCompare> allocated_node_group;
-
-
-    shared_ptr<ros::NodeHandle> ros_nh;
-
-
-    void init(int argc, char **argv, std::string node_name)
+// Hashing for strings
+struct MyHashCompare {
+    static size_t hash(const std::string& x)
     {
-        ros::init(argc, argv, node_name);
-        ros_nh.reset(new ros::NodeHandle("~"));
-        ROS_INFO_STREAM("Initialising ROS. Node name: " << node_name << std::endl);
+        size_t h = 0;
+        for (const char *s = x.c_str(); *s; ++s) {
+            h = (h * 17) ^ *s;
+        }
+        return h;
     }
 
-    // std::string get_node_group(std::string namespace_base, std::string launch_file, double frequency=30) {
-    //   std::cout<<"Trying to get a node: "<<namespace_base<<" launch file: "<<launch_file<<std::endl;
-    //   cafer_server::LaunchNode v;
-    //   v.request.namespace_base = namespace_base;
-    //   v.request.launch_file = launch_file;
-    //   v.request.frequency = frequency;
-    //   ros::ServiceClient client = ros_nh->serviceClient<cafer_server::LaunchNode>("/cafer_server/get_node_group");
-    //   std::string ns="<Failed>";
-    //   if (client.call(v))
-    //     {
-    // 	ns=v.response.created_namespace;
-    // 	ROS_INFO("Obtained node(s): namespace=%s launch file=%s", ns.c_str(), launch_file.c_str());
-    // 	tbb::concurrent_hash_map<std::string,std::string,MyHashCompare>::accessor a;
-    // 	allocated_node_group.insert(a,ns);
-    // 	a->second=namespace_base;
-    //     }
-    //   else
-    //     {
-    // 	ROS_ERROR("Failed to call service get_node_group");
-    //     }
-    //   return ns;
-    // }
-
-    // void release_node_group(std::string namespace_base, std::string gr_namespace) {
-    //   cafer_server::ReleaseNode v;
-    //   v.request.namespace_base=namespace_base;
-    //   v.request. gr_namespace=gr_namespace;
-    //   ros::ServiceClient client = ros_nh->serviceClient<cafer_server::ReleaseNode>("/cafer_server/release_node_group");
-    //   std::string ns="<Failed>";
-    //   if (client.call(v))
-    //     {
-    // 	ROS_INFO("Released node group=%s: %s", gr_namespace.c_str(),v.response.ack?"OK":"KO");
-    //     }
-    //   else
-    //     {
-    // 	ROS_ERROR("Failed to call service release_node_group");
-    //     }
-
-    // }
-    // void kill_node_group(std::string namespace_base, std::string gr_namespace) {
-    //   cafer_server::KillNodeGroup v;
-    //   v.request.namespace_base=namespace_base;
-    //   v.request.gr_namespace=gr_namespace;
-    //   ros::ServiceClient client = ros_nh->serviceClient<cafer_server::KillNodeGroup>("/cafer_server/kill_node_group");
-    //   std::string ns="<Failed>";
-    //   if (client.call(v))
-    //     {
-    // 	ROS_INFO("Kill node group=%s: %s", gr_namespace.c_str(),v.response.ack?"OK":"KO");
-    //     }
-    //   else
-    //     {
-    // 	ROS_ERROR("Failed to call service kill_node_group");
-    //     }
-
-    // }
-
-    // void kill_all_allocated_node_groups(void) {
-    //   tbb::concurrent_hash_map<std::string,std::string,MyHashCompare>::iterator it,itn;
-    //   for (it=allocated_node_group.begin();it!=allocated_node_group.end();++it) {
-    //     kill_node_group(it->second,it->first);
-    //   }
-    // }
-
-
-    bool operator==(ClientDescriptor const& cd1, ClientDescriptor const& cd2)
+    //! True if strings are equal
+    static bool equal(const std::string& x, const std::string& y)
     {
-        return (cd1.ns == cd2.ns) && (cd1.id == cd2.id);
+        return x.compare(y) == 0;
     }
+};
+
+
+// set of node groups allocated to this sferes run (to clean it up at the end)
+//tbb::concurrent_hash_map<std::string, std::string, MyHashCompare> allocated_node_group;
+
+
+shared_ptr<ros::NodeHandle> ros_nh;
+
+void init(int argc, char **argv, std::string node_name)
+{
+    ros::init(argc, argv, node_name);
+    ros_nh.reset(new ros::NodeHandle("~"));
+    ROS_INFO_STREAM("Initialising ROS. Node name: " << node_name << std::endl);
+}
+
+
+bool operator==(ClientDescriptor const& cd1, ClientDescriptor const& cd2)
+{
+    return (cd1.ns == cd2.ns) && (cd1.id == cd2.id);
+}
 
 
 }
+
+using namespace cafer_core;
+
+
+Component::Component(std::string mgmt_topic, std::string _type, double freq, bool new_nodehandle) :
+    type(_type), terminate(false), map_watchdog(5)
+{
+    rate.reset(new ros::Rate(freq));
+    if (new_nodehandle) {
+        ROS_INFO_STREAM("creation of a dedicated callback queue");
+        my_ros_nh.reset(new NodeHandle(*ros_nh.get()));
+        my_ros_queue.reset(new ros::CallbackQueue());
+        my_ros_nh->setCallbackQueue(my_ros_queue.get());
+    }
+    else {
+        my_ros_nh = ros_nh;
+        my_ros_queue.reset();
+    }
+    if (mgmt_topic == "") {
+        std::string default_value = "default_" + type;
+        my_ros_nh->param("management_topic", mgmt_topic, default_value);
+    }
+    ROS_INFO_STREAM("Creating a component connected to management_topic: " << mgmt_topic << " type=" << _type);
+
+    management_p.reset(new Publisher(my_ros_nh->advertise<cafer_core::Management>(mgmt_topic.c_str(), 0)));
+    management_s.reset(
+            new Subscriber(my_ros_nh->subscribe(mgmt_topic.c_str(), 0, &Component::management_cb, this)));
+    watchdog.reset(new ros::Timer(
+            my_ros_nh->createTimer(ros::Duration(ros::Rate(freq)), &Component::watchdog_cb, this)));
+
+    // We get a new and unique ID for this client
+    cafer_core::GetID v;
+    v.request.name = "component_id";
+    static ros::ServiceClient sclient = my_ros_nh->serviceClient<cafer_core::GetID>("/cafer_core/get_id");
+    if (sclient.call(v)) {
+        id = v.response.id;
+    }
+    else {
+        ROS_ERROR_STREAM("Failed to call service get_id. my namespace is: " << my_ros_nh->getNamespace());
+        id = -1;
+    }
+
+
+    my_ros_nh->param("creator_id", creator_id, -1);
+
+    my_ros_nh->param("created_ns", created_ns, std::string("<unset>"));
+    my_ros_nh->param("creator_ns", creator_ns, std::string("<unset>"));
+
+    //init();
+    //ack_creation();
+}
+
+
+std::string Component::call_launch_file(std::string launch_file, std::string namespace_base, std::string management_topic){
+    std::string created_namespace = "<Failed>";
+
+    if (management_topic == "") {
+        management_topic = management_p->getTopic();
+    }
+
+    cafer_core::GetID v;
+    v.request.name = namespace_base;
+    static ros::ServiceClient clients = my_ros_nh->serviceClient<cafer_core::GetID>("/cafer_core/get_id");
+    if (clients.call(v)) {
+        std::ostringstream os, osf;
+        os << "/" << namespace_base << "_" << v.response.id;
+        created_namespace = os.str();
+        std::string ns = "ns:=" + os.str();
+        osf << "frequency:=" << 1. / rate->expectedCycleTime().toSec() << " creator_ns:=" <<
+               my_ros_nh->getNamespace() << " creator_id:=" << get_id();
+        std::string mgmt = "management_topic:=" + management_topic;
+        std::string cmd = "roslaunch " + launch_file + " " + ns + " " + osf.str() + " " + mgmt + "&";
+        if (system(cmd.c_str()) == -1) {
+            ROS_ERROR_STREAM("Failed to execute roslaunch. Called command: " << cmd);
+            return created_namespace;
+        }
+        ROS_INFO_STREAM("Launch file call: " << cmd);
+
+    }
+    else {
+        ROS_ERROR_STREAM("Failed to call service get_id. my namespace is: " << my_ros_nh->getNamespace());
+    }
+    return created_namespace;
+}
+
+void Component::spin(){
+    if (my_ros_queue.get() == NULL) {
+        ros::spinOnce();
+    }
+    else {
+        my_ros_queue->callAvailable(ros::WallDuration());
+    }
+
+}
+
+unsigned int Component::how_many_client_from_type(std::string _type, bool up_only){
+    unsigned int nb = 0;
+    //ROS_INFO_STREAM("how_many_client_from_type: "<<_type<<" my id="<<get_id());
+    for (const auto& v: map_watchdog) {
+        if ((v.first.type == _type) && ((!up_only) || (is_it_recent_enough(v.second)))) {
+            nb++;
+        }
+    }
+    return nb;
+}
+
+void Component::get_connected_client_with_type(std::string _type, std::vector<ClientDescriptor> &vcd, bool up_only){
+    for (const auto& v: map_watchdog) {
+        if ((v.first.type == _type) && ((!up_only) || (is_it_recent_enough(v.second)))) {
+            vcd.push_back(v.first);
+        }
+    }
+
+}
+
+bool Component::is_it_recent_enough(ros::Time t){
+
+    ros::Duration d = ros::Time::now() - t;
+    return d <= rate->expectedCycleTime() * 2.;
+
+}
+
+void Component::wait_for_client(std::string ns, long id){
+
+    while (!is_client_up(ns, id)) {
+        spin();
+        sleep();
+    }
+    update();
+}
+
+void Component::wait_for_init(){
+
+    init();
+
+    while ((!is_client_up(get_namespace(), get_id())) && (!is_initialized())) {
+        ROS_INFO_STREAM("Component id=" << get_id() << " waiting for init.");
+        spin();
+        sleep();
+    }
+
+    ack_creation();
+
+    update();
+
+}
+
+void Component::kill_created_nodes()
+{
+    for (const auto& v: created_nodes) {
+        for (const auto& cd: v.second) {
+            send_complete_node_death(cd.ns, cd.id);
+        }
+    }
+}
+
+void Component::management_cb(const Management &mgmt){
+    //ROS_INFO_STREAM("management_cb my_id="<<get_id()<<" message: "<<std::endl<<mgmt<<std::flush);
+    switch (mgmt.type) {
+    case CHG_FREQ:
+        ROS_INFO_STREAM("Changing frequency: new frequency=" << mgmt.data_flt << " my_id=" << get_id());
+        rate.reset(new ros::Rate(mgmt.data_flt));
+        watchdog.reset(new ros::Timer(
+                           my_ros_nh->createTimer(ros::Duration(ros::Rate(mgmt.data_flt)), &Component::watchdog_cb,
+                                                  this)));
+        break;
+    case LOCAL_CLIENT_DEATH:
+        if ((mgmt.dest_node == "all") ||
+                ((mgmt.dest_node == my_ros_nh->getNamespace()) && (mgmt.dest_id == get_id()))) {
+            ROS_INFO_STREAM("LOCAL_CLIENT_DEATH");
+            terminate = true;
+        }
+        break;
+    case COMPLETE_NODE_DEATH:
+        if ((mgmt.dest_node == "all") ||
+                ((mgmt.dest_node == my_ros_nh->getNamespace()) && (mgmt.dest_id == get_id()))) {
+            ROS_INFO_STREAM("COMPLETE_NODE_DEATH called");
+            shutdown();
+        }
+        break;
+    case WATCHDOG:
+        update_watchdog(mgmt.src_node, mgmt.src_id, mgmt.src_type);
+        break;
+    case ACK_CREATION:
+        if ((mgmt.dest_node == "all") ||
+                ((mgmt.dest_node == my_ros_nh->getNamespace()) && (mgmt.dest_id == get_id()))) {
+            ROS_INFO_STREAM(
+                        "Ack received by the creator: mgmt.dest_node=" << mgmt.dest_node << " mgmt.dest_id=" <<
+                        mgmt.dest_node << " my_ns=" << my_ros_nh->getNamespace() << " my_id=" << get_id() <<
+                        " src_ns=" << mgmt.src_node << " src_id=" << mgmt.src_id << " src_type=" <<
+                        mgmt.src_type);
+            ClientDescriptor cd;
+            cd.ns = mgmt.src_node;
+            cd.id = mgmt.src_id;
+            cd.type = mgmt.src_type;
+            std::vector<ClientDescriptor>::iterator it = std::find(created_nodes[mgmt.data_str].begin(),
+                    created_nodes[mgmt.data_str].end(), cd);
+            if (it == created_nodes[mgmt.data_str].end()) {
+                created_nodes[mgmt.data_str].push_back(cd);
+            }
+        }
+        break;
+    case ASK_NEW_ACK:
+        ack_creation();
+        break;
+    default:
+        ROS_WARN_STREAM("component: received unknown message: type=" << mgmt.type);
+    }
+}
+
+void Component::ask_new_ack(){
+    cafer_core::Management msg;
+    msg.type = ASK_NEW_ACK;
+    msg.src_node = my_ros_nh->getNamespace();
+    msg.src_id = get_id();
+    msg.src_type = get_type();
+    msg.dest_node = "all";
+    msg.dest_id = -1;
+    msg.data_int = 0;
+    msg.data_flt = 0;
+    msg.data_str = "";
+    management_p->publish(msg);
+}
+
+void Component::ack_creation(){
+    if (creator_id != -1) {
+        cafer_core::Management msg;
+        msg.type = ACK_CREATION;
+        msg.src_node = my_ros_nh->getNamespace();
+        msg.src_id = get_id();
+        msg.src_type = get_type();
+        msg.dest_node = creator_ns;
+        msg.dest_id = creator_id;
+        msg.data_int = 0;
+        msg.data_flt = 0;
+        msg.data_str = created_ns;
+        // We may need to wait a bit so that the management publisher is connected.
+        ROS_INFO_STREAM(
+                    "ACK_CREATION: waiting for the connection to the creator (ns=" << creator_ns << " id=" <<
+                    creator_id << ").my_id=" << get_id());
+        wait_for_client(creator_ns, creator_id);
+        ROS_INFO_STREAM("ACK_CREATION: connection to the creator OK. my_id=" << get_id());
+        management_p->publish(msg);
+        ROS_INFO_STREAM("Sending ack after component creation: creator_ns=" << creator_ns << " creator_id=" <<
+                        creator_id << " created_ns=" << created_ns);
+    }
+    else {
+        ROS_WARN_STREAM(my_ros_nh->getNamespace() << ": No creator id provided, no ack has been sent.");
+    }
+
+}
+
+void Component::update_watchdog(std::string ns, long id, std::string _type){
+    ClientDescriptor cd;
+    cd.ns = ns;
+    cd.id = id;
+    cd.type = _type;
+    map_watchdog[cd] = ros::Time::now();
+    //ROS_INFO_STREAM("update_watchdog "<<ns<<" "<<id<<" "<<_type<<" my_id="<<get_id());
+}
+
+ros::Time Component::get_watchdog(std::string ns, long id){
+    ClientDescriptor cd;
+    cd.ns = ns;
+    cd.id = id;
+    cd.type = "undefined";
+    if (map_watchdog.find(cd) == map_watchdog.end()) {
+        //ROS_INFO_STREAM("get_watchdog uninitialized "<<ns<<" "<<id<<" time="<<ros::Time(0)<<" my id="<<get_id());
+        return ros::Time(0);
+
+    }
+    //ROS_INFO_STREAM("get_watchdog initialized "<<ns<<" time="<<map_watchdog[cd]<<" id="<<id<<" my id="<<get_id());
+    return map_watchdog[cd];
+
+}
+
+void Component::watchdog_cb(const ros::TimerEvent &event){
+    //ROS_INFO_STREAM("watchdog_cb my_id="<<get_id());
+    //ROS_INFO_STREAM("watchdog_cb, management topic="<<management_p->getTopic()<<" nb connected="<<management_p->getNumSubscribers()<<std::flush);
+    cafer_core::Management msg;
+    msg.type = WATCHDOG;
+    msg.src_node = my_ros_nh->getNamespace();
+    msg.src_id = get_id();
+    msg.src_type = get_type();
+    msg.dest_node = "all";
+    msg.dest_id = -1;
+    msg.data_int = 0;
+    msg.data_flt = 0;
+    msg.data_str = "";
+    management_p->publish(msg);
+}
+
+void Component::send_complete_node_death(std::string ns, long id){
+    ROS_INFO_STREAM("send_complete_node_death my_id=" << get_id());
+    cafer_core::Management msg;
+    msg.type = COMPLETE_NODE_DEATH;
+    msg.src_node = my_ros_nh->getNamespace();
+    msg.src_id = get_id();
+    msg.src_type = get_type();
+    msg.dest_node = ns;
+    msg.dest_id = id;
+    msg.data_int = 0;
+    msg.data_flt = 0;
+    msg.data_str = "";
+    management_p->publish(msg);
+}
+
+void Component::send_local_node_death(std::string ns, long id){
+
+    ROS_INFO_STREAM("send_local_node_death my_id=" << get_id());
+    cafer_core::Management msg;
+    msg.type = LOCAL_CLIENT_DEATH;
+    msg.src_node = my_ros_nh->getNamespace();
+    msg.src_id = get_id();
+    msg.src_type = get_type();
+    msg.dest_node = ns;
+    msg.dest_id = id;
+    msg.data_int = 0;
+    msg.data_flt = 0;
+    msg.data_str = "";
+    management_p->publish(msg);
+
+}
+
+
+
+// std::string get_node_group(std::string namespace_base, std::string launch_file, double frequency=30) {
+//   std::cout<<"Trying to get a node: "<<namespace_base<<" launch file: "<<launch_file<<std::endl;
+//   cafer_server::LaunchNode v;
+//   v.request.namespace_base = namespace_base;
+//   v.request.launch_file = launch_file;
+//   v.request.frequency = frequency;
+//   ros::ServiceClient client = ros_nh->serviceClient<cafer_server::LaunchNode>("/cafer_server/get_node_group");
+//   std::string ns="<Failed>";
+//   if (client.call(v))
+//     {
+// 	ns=v.response.created_namespace;
+// 	ROS_INFO("Obtained node(s): namespace=%s launch file=%s", ns.c_str(), launch_file.c_str());
+// 	tbb::concurrent_hash_map<std::string,std::string,MyHashCompare>::accessor a;
+// 	allocated_node_group.insert(a,ns);
+// 	a->second=namespace_base;
+//     }
+//   else
+//     {
+// 	ROS_ERROR("Failed to call service get_node_group");
+//     }
+//   return ns;
+// }
+
+// void release_node_group(std::string namespace_base, std::string gr_namespace) {
+//   cafer_server::ReleaseNode v;
+//   v.request.namespace_base=namespace_base;
+//   v.request. gr_namespace=gr_namespace;
+//   ros::ServiceClient client = ros_nh->serviceClient<cafer_server::ReleaseNode>("/cafer_server/release_node_group");
+//   std::string ns="<Failed>";
+//   if (client.call(v))
+//     {
+// 	ROS_INFO("Released node group=%s: %s", gr_namespace.c_str(),v.response.ack?"OK":"KO");
+//     }
+//   else
+//     {
+// 	ROS_ERROR("Failed to call service release_node_group");
+//     }
+
+// }
+// void kill_node_group(std::string namespace_base, std::string gr_namespace) {
+//   cafer_server::KillNodeGroup v;
+//   v.request.namespace_base=namespace_base;
+//   v.request.gr_namespace=gr_namespace;
+//   ros::ServiceClient client = ros_nh->serviceClient<cafer_server::KillNodeGroup>("/cafer_server/kill_node_group");
+//   std::string ns="<Failed>";
+//   if (client.call(v))
+//     {
+// 	ROS_INFO("Kill node group=%s: %s", gr_namespace.c_str(),v.response.ack?"OK":"KO");
+//     }
+//   else
+//     {
+// 	ROS_ERROR("Failed to call service kill_node_group");
+//     }
+
+// }
+
+// void kill_all_allocated_node_groups(void) {
+//   tbb::concurrent_hash_map<std::string,std::string,MyHashCompare>::iterator it,itn;
+//   for (it=allocated_node_group.begin();it!=allocated_node_group.end();++it) {
+//     kill_node_group(it->second,it->first);
+//   }
+// }

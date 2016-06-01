@@ -69,7 +69,10 @@ namespace cafer_core {
         CHG_FREQ = 0, LOCAL_CLIENT_DEATH, COMPLETE_NODE_DEATH, WATCHDOG, ACK_CREATION, ASK_NEW_ACK
     } MgmtType;
 
-    /** Client descriptor */
+    /**
+     * @brief class ClientDescriptor. To describe a client by his namspace (ns), an id and a type
+     *
+     */
     class ClientDescriptor {
     public:
         std::string ns;
@@ -77,6 +80,10 @@ namespace cafer_core {
         std::string type;
     };
 
+    /**
+     * @brief operator == for comparison between client.
+     * @return
+     */
     bool operator==(ClientDescriptor const&, ClientDescriptor const&);
 
     struct ClientDescriptorHasher {
@@ -95,7 +102,8 @@ namespace cafer_core {
     using CreatedNodes_t=std::unordered_map<std::string, std::vector<ClientDescriptor> >;
 
 
-    /** Abstract class for the Cafer client
+    /**
+     * @brief Abstract class for the Cafer client
      *  Main functionnalities:
      *  \li watchdog
      *  \li frequency management
@@ -105,34 +113,20 @@ namespace cafer_core {
 
     public:
 
-        shared_ptr<NodeHandle> my_ros_nh;
-        shared_ptr<ros::CallbackQueue> my_ros_queue;
-
-        int id;
-        std::string type;
-        int creator_id;
-        std::string creator_ns;
-        std::string created_ns;
-        std::string _mgmt_topic;
-        bool terminate;
-        /**< did we receive the order to stop the client ?*/
-
-        shared_ptr<ros::Rate> rate;
-        /**< ROS update rate */
-        shared_ptr<ros::Timer> watchdog;
-        /**< Watchdog */
+        /**
+         * @brief constructor of Component
+         * @param management topic
+         * @param type of this component
+         * @param frequence of update. 10 by default.
+         * @param true if a new nodehandle must be created. false by default
+         */
+        Component(std::string mgmt_topic, std::string _type, double freq = 10, bool new_nodehandle = false);
 
 
-        shared_ptr<Subscriber> management_s;
-        /**< subscriber to the management topic */
-        shared_ptr<Publisher> management_p;
-        /**<publisher to the management topic */
-
-        MapWatchDog_t map_watchdog;
-        /**< map in which is stored the last watchdog message received from each client connected to the management topic of this client */
-
-        CreatedNodes_t created_nodes;
-        /**< map in which are stored all nodes created by a call_launch_file. The key is the required namespace */
+        ~Component(void)
+        {
+            //disconnect_from_ros();
+        }
 
 
         /**
@@ -166,76 +160,41 @@ namespace cafer_core {
         virtual bool is_initialized()
         { return _is_init; }
 
-        Component(std::string mgmt_topic, std::string _type, double freq = 10, bool new_nodehandle = false) : type(
-                _type), terminate(false), map_watchdog(5)
-        {
-            rate.reset(new ros::Rate(freq));
-            if (new_nodehandle) {
-                ROS_INFO_STREAM("creation of a dedicated callback queue");
-                my_ros_nh.reset(new NodeHandle(*ros_nh.get()));
-                my_ros_queue.reset(new ros::CallbackQueue());
-                my_ros_nh->setCallbackQueue(my_ros_queue.get());
-            }
-            else {
-                my_ros_nh = ros_nh;
-                my_ros_queue.reset();
-            }
-            if (mgmt_topic == "") {
-                std::string default_value = "default_" + type;
-                my_ros_nh->param("management_topic", mgmt_topic, default_value);
-            }
-            ROS_INFO_STREAM("Creating a component connected to management_topic: " << mgmt_topic << " type=" << _type);
 
-            management_p.reset(new Publisher(my_ros_nh->advertise<cafer_core::Management>(mgmt_topic.c_str(), 0)));
-            management_s.reset(
-                    new Subscriber(my_ros_nh->subscribe(mgmt_topic.c_str(), 0, &Component::management_cb, this)));
-            watchdog.reset(new ros::Timer(
-                    my_ros_nh->createTimer(ros::Duration(ros::Rate(freq)), &Component::watchdog_cb, this)));
-
-            // We get a new and unique ID for this client
-            cafer_core::GetID v;
-            v.request.name = "component_id";
-            static ros::ServiceClient sclient = my_ros_nh->serviceClient<cafer_core::GetID>("/cafer_core/get_id");
-            if (sclient.call(v)) {
-                id = v.response.id;
-            }
-            else {
-                ROS_ERROR_STREAM("Failed to call service get_id. my namespace is: " << my_ros_nh->getNamespace());
-                id = -1;
-            }
-
-
-            my_ros_nh->param("creator_id", creator_id, -1);
-
-            my_ros_nh->param("created_ns", created_ns, std::string("<unset>"));
-            my_ros_nh->param("creator_ns", creator_ns, std::string("<unset>"));
-
-            //init();
-            //ack_creation();
-
-        }
-
-        ~Component(void)
-        {
-            //disconnect_from_ros();
-        }
-
-        /** Should the client terminate ? This needs to be taken into account in the user code */
+        /**
+         * Should the client terminate ? This needs to be taken into account in the user code */
+        /**
+         * @brief get_terminate return true if the client is down and false otherwise
+         * @return true or false
+         */
         bool get_terminate(void) const
         { return terminate; }
 
-        /** Type of the client */
+        /**
+         * @brief Get type of the client
+         * @return the type of client.
+         */
         std::string get_type(void) const
         { return type; }
 
-        /** Accessor to the client id (unique) */
+
+        /**
+         * @brief  Accessor to the client id (unique)
+         * @return the id of client
+         */
         long int get_id(void) const
         { return id; }
 
+        /**
+         * @brief this method inform if the subcriber, publisher or server are up or not.
+         * @return true if the node is connected to ros
+         */
         bool is_connected_to_ros() const
         { return _is_connected_to_ros; }
 
-        /** Disconnect the client from ROS, i.e. destroy subscribers and publishers */
+        /**
+         * @brief Connect the client to ROD, i.e. intantiate subscribers, publishers and services.
+         */
         void connect_to_ros(void)
         {
             // connection to management topic is done in the constructor only.
@@ -243,7 +202,9 @@ namespace cafer_core {
             _is_connected_to_ros = true;
         }
 
-        /** Disconnect the client from ROS, i.e. destroy subscribers and publishers */
+        /**
+         * @brief Disconnect the client from ROS, i.e. destroy subscribers and publishers
+         */
         void disconnect_from_ros(void)
         {
             client_disconnect_from_ros();
@@ -253,339 +214,198 @@ namespace cafer_core {
             sleep();
         }
 
-        /** Shutting down the component and the corresponding node */
+        /**
+         * @brief Shutting down the component and the corresponding node
+         */
         void shutdown(void)
         {
             disconnect_from_ros();
             ros::shutdown();
         }
 
-        /** Call a launch file. Corresponding nodes are to be launched in a namespace namespace_base_XX where XX is a unique id (provided by the getid service). It will be connected to the management_topic topic (the same than this class if this argument equals "").*/
-        std::string call_launch_file(std::string launch_file, std::string namespace_base,
-                                     std::string management_topic = "")
-        {
-            std::string created_namespace = "<Failed>";
-
-            if (management_topic == "") {
-                management_topic = management_p->getTopic();
-            }
-
-            cafer_core::GetID v;
-            v.request.name = namespace_base;
-            static ros::ServiceClient clients = my_ros_nh->serviceClient<cafer_core::GetID>("/cafer_core/get_id");
-            if (clients.call(v)) {
-                std::ostringstream os, osf;
-                os << "/" << namespace_base << "_" << v.response.id;
-                created_namespace = os.str();
-                std::string ns = "ns:=" + os.str();
-                osf << "frequency:=" << 1. / rate->expectedCycleTime().toSec() << " creator_ns:=" <<
-                my_ros_nh->getNamespace() << " creator_id:=" << get_id();
-                std::string mgmt = "management_topic:=" + management_topic;
-                std::string cmd = "roslaunch " + launch_file + " " + ns + " " + osf.str() + " " + mgmt + "&";
-                if (system(cmd.c_str()) == -1) {
-                    ROS_ERROR_STREAM("Failed to execute roslaunch. Called command: " << cmd);
-                    return created_namespace;
-                }
-                ROS_INFO_STREAM("Launch file call: " << cmd);
-
-            }
-            else {
-                ROS_ERROR_STREAM("Failed to call service get_id. my namespace is: " << my_ros_nh->getNamespace());
-            }
-            return created_namespace;
-        }
-
-        /** Sleep: should be called by the user code once all the things that have to be done during one iteration of the loop have been done */
-        void sleep(void)
-        {
-            rate->sleep();
-        }
-
-        void spin(void)
-        {
-            if (my_ros_queue.get() == NULL) {
-                ros::spinOnce();
-            }
-            else {
-                my_ros_queue->callAvailable(ros::WallDuration());
-            }
-
-        }
-
-        /** Check the number of client nodes that have been observed up to now (watchdog) and return their number.
-         * If up_only is set to true, only the nodes that are up are counted, otherwise, they are all counted.
+        /**
+         * @brief Call a launch file. Corresponding nodes are to be launched in a namespace namespace_base_XX where XX is a unique id (provided by the getid service). It will be connected to the management_topic topic (the same than this class if this argument equals "").
+         * @param name of the launch file
+         * @param base name of general namespace
+         * @param name of the management topic
+         * @return the namespace created for this Component
          */
-        unsigned int how_many_client_from_type(std::string _type, bool up_only = true)
-        {
-            unsigned int nb = 0;
-            //ROS_INFO_STREAM("how_many_client_from_type: "<<_type<<" my id="<<get_id());
-            for (const auto& v: map_watchdog) {
-                if ((v.first.type == _type) && ((!up_only) || (is_it_recent_enough(v.second)))) {
-                    nb++;
-                }
-            }
-            return nb;
-        }
+        std::string call_launch_file(std::string launch_file, std::string namespace_base,
+                                     std::string management_topic = "");
 
-        /** Get the ClientDescriptors of all clients connected to the same management topic and of a certain type */
-        void get_connected_client_with_type(std::string _type, std::vector<ClientDescriptor>& vcd, bool up_only = true)
-        {
-            for (const auto& v: map_watchdog) {
-                if ((v.first.type == _type) && ((!up_only) || (is_it_recent_enough(v.second)))) {
-                    vcd.push_back(v.first);
-                }
-            }
 
-        }
+        /**
+         * @brief Sleep: should be called by the user code once all the things that have to be done during one iteration of the loop have been done
+         */
+        void sleep(void)
+        {rate->sleep();}
 
-        /** Check if a given time is "recent" or not with respect to the node client frequency */
-        bool is_it_recent_enough(ros::Time t)
-        {
-            ros::Duration d = ros::Time::now() - t;
-            return d <= rate->expectedCycleTime() * 2.;
+        /**
+         * @brief encapsulation of ros::spinOnce()
+         */
+        void spin(void);
 
-        }
+        /**
+         * @brief Check the number of client nodes that have been observed up to now (watchdog) and return their number.
+         * If up_only is set to true, only the nodes that are up are counted, otherwise, they are all counted.
+         * @param _type of components that we want to check
+         * @param up_only boolean. true by default.
+         * @return number of client still up
+         */
+        unsigned int how_many_client_from_type(std::string _type, bool up_only = true);
 
-        /** Check whether a client is up or not (relies on the watchdog functionnality, works only for nodes that are on the same management topic) */
+
+        /**
+         * @brief Get the ClientDescriptors of all clients connected to the same management topic and of a certain type
+         * @param type of clients
+         * @param [out] vector of client descriptor
+         * @param if true, consider only the clients that are up. true by default
+         */
+        void get_connected_client_with_type(std::string _type, std::vector<ClientDescriptor>& vcd, bool up_only = true);
+
+        /** */
+        /**
+         * @brief Check if a given time is "recent" or not with respect to the node client frequency
+         * @param the time to check
+         * @return true if condition is fulfill, false otherwise
+         */
+        bool is_it_recent_enough(ros::Time t);
+
+        /**
+         * @brief Check whether a client is up or not (relies on the watchdog functionnality, works only for nodes that are on the same management topic)
+         * @param namespace of the client
+         * @param id of the client
+         * @return true if the client is up , false if not
+         */
         bool is_client_up(std::string ns, long int id)
         {
             return is_it_recent_enough(get_watchdog(ns, id));
         }
 
 
-        /** Waits until the client is up (it needs to be on the same management topic) */
-        void wait_for_client(std::string ns, long int id)
-        {
-            while (!is_client_up(ns, id)) {
-                spin();
-                sleep();
-            }
-            update();
-        }
+        /**
+         * @brief  Waits until the client is up (it needs to be on the same management topic)
+         * @param namespace of client
+         * @param id of client
+         */
+        void wait_for_client(std::string ns, long int id);
 
-        /** Waits for the initialization from the client specific side */
-        void wait_for_init(void)
-        {
-            init();
+        /**
+         * @brief  Waits for the initialization from the client specific side
+         */
+        void wait_for_init(void);
 
-            while ((!is_client_up(get_namespace(), get_id())) && (!is_initialized())) {
-                ROS_INFO_STREAM("Component id=" << get_id() << " waiting for init.");
-                spin();
-                sleep();
-            }
-
-            ack_creation();
-
-            update();
-        }
-
-        /** Gets node namespace */
+        /**
+         * @brief Gets node namespace
+         * @return
+         */
         std::string get_namespace(void) const
-        {
-            return my_ros_nh->getNamespace();
-        }
+        {return my_ros_nh->getNamespace();}
 
-        /** Gets the created_nodes */
+        /**
+         * @brief Gets the created_nodes
+         * @return
+         */
         CreatedNodes_t& get_created_nodes(void)
-        {
-            return created_nodes;
-        }
+        {return created_nodes;}
 
-        /** Gets the created_nodes */
+        /**
+         * @brief Gets the created_nodes
+         * @param created_ns
+         * @return
+         */
         std::vector<ClientDescriptor>& get_created_nodes(std::string created_ns)
-        {
-            return created_nodes[created_ns];
-        }
+        {return created_nodes[created_ns];}
 
-        void kill_created_nodes(void)
-        {
-            for (const auto& v: created_nodes) {
-                for (const auto& cd: v.second) {
-                    send_complete_node_death(cd.ns, cd.id);
-                }
-            }
-        }
+        /**
+         * @brief kill all nodes created by this component
+        */
+        void kill_created_nodes(void);
 
-        /** Management callback: what to do when a management message is received */
-        void management_cb(const cafer_core::Management& mgmt)
-        {
-            //ROS_INFO_STREAM("management_cb my_id="<<get_id()<<" message: "<<std::endl<<mgmt<<std::flush);
-            switch (mgmt.type) {
-                case CHG_FREQ:
-                    ROS_INFO_STREAM("Changing frequency: new frequency=" << mgmt.data_flt << " my_id=" << get_id());
-                    rate.reset(new ros::Rate(mgmt.data_flt));
-                    watchdog.reset(new ros::Timer(
-                            my_ros_nh->createTimer(ros::Duration(ros::Rate(mgmt.data_flt)), &Component::watchdog_cb,
-                                                   this)));
-                    break;
-                case LOCAL_CLIENT_DEATH:
-                    if ((mgmt.dest_node == "all") ||
-                        ((mgmt.dest_node == my_ros_nh->getNamespace()) && (mgmt.dest_id == get_id()))) {
-                        ROS_INFO_STREAM("LOCAL_CLIENT_DEATH");
-                        terminate = true;
-                    }
-                    break;
-                case COMPLETE_NODE_DEATH:
-                    if ((mgmt.dest_node == "all") ||
-                        ((mgmt.dest_node == my_ros_nh->getNamespace()) && (mgmt.dest_id == get_id()))) {
-                        ROS_INFO_STREAM("COMPLETE_NODE_DEATH called");
-                        shutdown();
-                    }
-                    break;
-                case WATCHDOG:
-                    update_watchdog(mgmt.src_node, mgmt.src_id, mgmt.src_type);
-                    break;
-                case ACK_CREATION:
-                    if ((mgmt.dest_node == "all") ||
-                        ((mgmt.dest_node == my_ros_nh->getNamespace()) && (mgmt.dest_id == get_id()))) {
-                        ROS_INFO_STREAM(
-                                "Ack received by the creator: mgmt.dest_node=" << mgmt.dest_node << " mgmt.dest_id=" <<
-                                mgmt.dest_node << " my_ns=" << my_ros_nh->getNamespace() << " my_id=" << get_id() <<
-                                " src_ns=" << mgmt.src_node << " src_id=" << mgmt.src_id << " src_type=" <<
-                                mgmt.src_type);
-                        ClientDescriptor cd;
-                        cd.ns = mgmt.src_node;
-                        cd.id = mgmt.src_id;
-                        cd.type = mgmt.src_type;
-                        std::vector<ClientDescriptor>::iterator it = std::find(created_nodes[mgmt.data_str].begin(),
-                                                                               created_nodes[mgmt.data_str].end(), cd);
-                        if (it == created_nodes[mgmt.data_str].end()) {
-                            created_nodes[mgmt.data_str].push_back(cd);
-                        }
-                    }
-                    break;
-                case ASK_NEW_ACK:
-                    ack_creation();
-                    break;
-                default:
-                    ROS_WARN_STREAM("component: received unknown message: type=" << mgmt.type);
-            }
-        }
+        /**
+         * @brief Management callback: what to do when a management message is received
+         * @param management message
+         */
+        void management_cb(const cafer_core::Management& mgmt);
 
-        void ask_new_ack()
-        {
-            cafer_core::Management msg;
-            msg.type = ASK_NEW_ACK;
-            msg.src_node = my_ros_nh->getNamespace();
-            msg.src_id = get_id();
-            msg.src_type = get_type();
-            msg.dest_node = "all";
-            msg.dest_id = -1;
-            msg.data_int = 0;
-            msg.data_flt = 0;
-            msg.data_str = "";
-            management_p->publish(msg);
+        /**
+         * @brief ask for acknowledgement to all nodes that are handled by this Component
+         */
+        void ask_new_ack();
 
-        }
+        /**
+         * @brief Creation of an acknowledgement to respond to an ask for acknowledgment
+         */
+        void ack_creation();
 
-        void ack_creation()
-        {
-            if (creator_id != -1) {
-                cafer_core::Management msg;
-                msg.type = ACK_CREATION;
-                msg.src_node = my_ros_nh->getNamespace();
-                msg.src_id = get_id();
-                msg.src_type = get_type();
-                msg.dest_node = creator_ns;
-                msg.dest_id = creator_id;
-                msg.data_int = 0;
-                msg.data_flt = 0;
-                msg.data_str = created_ns;
-                // We may need to wait a bit so that the management publisher is connected.
-                ROS_INFO_STREAM(
-                        "ACK_CREATION: waiting for the connection to the creator (ns=" << creator_ns << " id=" <<
-                        creator_id << ").my_id=" << get_id());
-                wait_for_client(creator_ns, creator_id);
-                ROS_INFO_STREAM("ACK_CREATION: connection to the creator OK. my_id=" << get_id());
-                management_p->publish(msg);
-                ROS_INFO_STREAM("Sending ack after component creation: creator_ns=" << creator_ns << " creator_id=" <<
-                                creator_id << " created_ns=" << created_ns);
-            }
-            else {
-                ROS_WARN_STREAM(my_ros_nh->getNamespace() << ": No creator id provided, no ack has been sent.");
-            }
+        /**
+         * @brief What to do when a watchdog message is received: update the corresponding time in the watchdog map
+         * @param namespace of client checked
+         * @param id of checked client
+         * @param type of checked client
+         */
+        void update_watchdog(std::string ns, long int id, std::string _type);
 
-        }
+        /**
+         * @brief Get the time of the last watchdog message for a particular client
+         * @param namespace of client
+         * @param id of client
+         * @return time of last watchdog message received
+         */
+        ros::Time get_watchdog(std::string ns, long int id);
 
-        /** What to do when a watchdog message is received: update the corresponding time in the watchdog map */
-        void update_watchdog(std::string ns, long int id, std::string _type)
-        {
-            ClientDescriptor cd;
-            cd.ns = ns;
-            cd.id = id;
-            cd.type = _type;
-            map_watchdog[cd] = ros::Time::now();
-            //ROS_INFO_STREAM("update_watchdog "<<ns<<" "<<id<<" "<<_type<<" my_id="<<get_id());
-        }
+        /**
+         * @brief Send a watchdog message telling that the client is still alive...
+         * @param event
+         */
+        void watchdog_cb(const ros::TimerEvent& event);
 
-        /** Get the time of the last watchdog message for a particular client */
-        ros::Time get_watchdog(std::string ns, long int id)
-        {
-            ClientDescriptor cd;
-            cd.ns = ns;
-            cd.id = id;
-            cd.type = "undefined";
-            if (map_watchdog.find(cd) == map_watchdog.end()) {
-                //ROS_INFO_STREAM("get_watchdog uninitialized "<<ns<<" "<<id<<" time="<<ros::Time(0)<<" my id="<<get_id());
-                return ros::Time(0);
+        /**
+         * @brief send a request of death to a specific client
+         * @param namespace of client
+         * @param id of client
+         */
+        void send_complete_node_death(std::string ns, long int id);
 
-            }
-            //ROS_INFO_STREAM("get_watchdog initialized "<<ns<<" time="<<map_watchdog[cd]<<" id="<<id<<" my id="<<get_id());
-            return map_watchdog[cd];
+        /**
+         * @brief send a request for client to disconect him from ros
+         * @param namespace of client
+         * @param id of client
+         */
+        void send_local_node_death(std::string ns, long int id);
 
-        }
+    public:
+        MapWatchDog_t map_watchdog;
+        /**< map in which is stored the last watchdog message received from each client connected to the management topic of this client */
 
-        /** Send a watchdog message telling that the client is still alive... */
-        void watchdog_cb(const ros::TimerEvent& event)
-        {
-            //ROS_INFO_STREAM("watchdog_cb my_id="<<get_id());
-            //ROS_INFO_STREAM("watchdog_cb, management topic="<<management_p->getTopic()<<" nb connected="<<management_p->getNumSubscribers()<<std::flush);
-            cafer_core::Management msg;
-            msg.type = WATCHDOG;
-            msg.src_node = my_ros_nh->getNamespace();
-            msg.src_id = get_id();
-            msg.src_type = get_type();
-            msg.dest_node = "all";
-            msg.dest_id = -1;
-            msg.data_int = 0;
-            msg.data_flt = 0;
-            msg.data_str = "";
-            management_p->publish(msg);
-        }
+        CreatedNodes_t created_nodes;
+        /**< map in which are stored all nodes created by a call_launch_file. The key is the required namespace */
+        shared_ptr<NodeHandle> my_ros_nh;
+        shared_ptr<ros::CallbackQueue> my_ros_queue;
 
-        void send_complete_node_death(std::string ns, long int id)
-        {
-            ROS_INFO_STREAM("send_complete_node_death my_id=" << get_id());
-            cafer_core::Management msg;
-            msg.type = COMPLETE_NODE_DEATH;
-            msg.src_node = my_ros_nh->getNamespace();
-            msg.src_id = get_id();
-            msg.src_type = get_type();
-            msg.dest_node = ns;
-            msg.dest_id = id;
-            msg.data_int = 0;
-            msg.data_flt = 0;
-            msg.data_str = "";
-            management_p->publish(msg);
-        }
 
-        void send_local_node_death(std::string ns, long int id)
-        {
-            ROS_INFO_STREAM("send_local_node_death my_id=" << get_id());
-            cafer_core::Management msg;
-            msg.type = LOCAL_CLIENT_DEATH;
-            msg.src_node = my_ros_nh->getNamespace();
-            msg.src_id = get_id();
-            msg.src_type = get_type();
-            msg.dest_node = ns;
-            msg.dest_id = id;
-            msg.data_int = 0;
-            msg.data_flt = 0;
-            msg.data_str = "";
-            management_p->publish(msg);
-        }
+        shared_ptr<Subscriber> management_s;
+        /**< subscriber to the management topic */
+        shared_ptr<Publisher> management_p;
+        /**<publisher to the management topic */
 
-    protected:
+    protected :
+        int id;
+        std::string type;
+        int creator_id;
+        std::string creator_ns;
+        std::string created_ns;
+        std::string _mgmt_topic;
+        bool terminate;
+        /**< did we receive the order to stop the client ?*/
+
+        shared_ptr<ros::Rate> rate;
+        /**< ROS update rate */
+        shared_ptr<ros::Timer> watchdog;
+        /**< Watchdog */
+
+
+
         bool _is_init = false;
         bool _is_connected_to_ros = false;
 
