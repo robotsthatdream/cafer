@@ -56,9 +56,9 @@ usage : two args : a topic and a type
 Example of use:
 1. Launch several nodes
 ```
-roslaunch basic_example_new_node.launch ns:=basic0 management_topic:=/basic_mgmt &
-roslaunch basic_example_new_node.launch ns:=basic1 management_topic:=/basic_mgmt &
-roslaunch basic_example_new_node.launch ns:=basic2 management_topic:=/basic_mgmt &
+roslaunch cafer_core basic_example_new_node.launch ns:=basic0 management_topic:=/basic_mgmt &
+roslaunch cafer_core basic_example_new_node.launch ns:=basic1 management_topic:=/basic_mgmt &
+roslaunch cafer_core basic_example_new_node.launch ns:=basic2 management_topic:=/basic_mgmt &
 ```
 rosnode list must display the 3 different nodes.
 
@@ -76,9 +76,9 @@ usage : two args : a management topic and a frequence value
 Example of use:
 1. Launch several nodes
 ```
-roslaunch basic_example_new_node.launch ns:=basic0 management_topic:=/basic_mgmt
-roslaunch basic_example_new_node.launch ns:=basic1 management_topic:=/basic_mgmt
-roslaunch basic_example_new_node.launch ns:=basic2 management_topic:=/basic_mgmt
+roslaunch cafer_core basic_example_new_node.launch ns:=basic0 management_topic:=/basic_mgmt &
+roslaunch cafer_core basic_example_new_node.launch ns:=basic1 management_topic:=/basic_mgmt &
+roslaunch cafer_core basic_example_new_node.launch ns:=basic2 management_topic:=/basic_mgmt &
 ```
 2. Change their frequency using the basic_example change frequency:
 ```
