@@ -96,7 +96,6 @@ Further information
 
 Available in the [Wiki](https://github.com/robotsthatdream/cafer/wiki)
 
-* [Compilation](https://github.com/robotsthatdream/cafer/blob/master/README.md)
 * [Reference Manual](https://github.com/robotsthatdream/cafer/wiki/Reference-Manual)
 * [Example execution (C++)](https://github.com/robotsthatdream/cafer/blob/master/example/README.md)
 * [Example explanation (C++)] (https://github.com/robotsthatdream/cafer/wiki/Example-explanation-(CPP))
