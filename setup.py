@@ -5,8 +5,8 @@ from catkin_pkg.python_setup import generate_distutils_setup
 
 # fetch values from package.xml
 setup_args = generate_distutils_setup(
-    packages=['cafer_core'],
-    package_dir={'': 'src'},
+    #packages=['cafer'],
+    package_dir={'': 'example_python'}
 )
 
 setup(**setup_args)

@@ -11,8 +11,9 @@ find_package(catkin REQUIRED COMPONENTS
   roslib
   tf
 )
-find_package(Boost REQUIRED)
+find_package(Boost COMPONENTS python REQUIRED)
 find_package(rostest REQUIRED)
+find_package(PythonLibs REQUIRED)
 
 set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 ## System dependencies are found with CMake's conventions
@@ -22,7 +23,7 @@ set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
+catkin_python_setup()
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -95,7 +96,7 @@ catkin_package(
 ###########
 
 include_directories(
-  include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${rostest_INCLUDE_DIRS}
+  include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${rostest_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS}
 )
 #link_directories($ENV{HOME}/git/libfastsim/build/src /usr/lib/i386-linux-gnu)
 
@@ -104,8 +105,14 @@ target_link_libraries(getid ${catkin_LIBRARIES})
 add_dependencies(getid cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 add_library(cafer_core src/component.cpp)
-target_link_libraries(cafer_core tbb ${catkin_LIBRARIES})
+target_link_libraries(cafer_core tbb ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PYTHON_LIBRARIES})
 add_dependencies(cafer_core cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+
+# Python wrapper SHARED library that wraps the CPP component
+add_library(component SHARED src/component.cpp)
+target_link_libraries(component tbb ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+add_dependencies(component cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+set_target_properties( component PROPERTIES PREFIX "" )
 
 install(TARGETS ${PROJECT_NAME}
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -115,27 +122,30 @@ install(TARGETS ${PROJECT_NAME}
 install(DIRECTORY include/${PROJECT_NAME}/
         DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
 
+#catkin_install_python(PROGRAMS example_python/basic_example_launch_set_nodes.py
+#  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
 # # 
 
 # Basic tests on the CAFER component
 add_executable(component_test_node test/component_test_node.cpp)
-target_link_libraries(component_test_node cafer_core ${catkin_LIBRARIES})
+target_link_libraries(component_test_node cafer_core ${Boost_LIBRARIES} ${catkin_LIBRARIES})
 add_dependencies(component_test_node cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 add_executable(component_test_chgt_freq_node test/component_test_chgt_freq_node.cpp)
-target_link_libraries(component_test_chgt_freq_node ${catkin_LIBRARIES})
+target_link_libraries(component_test_chgt_freq_node ${Boost_LIBRARIES} ${catkin_LIBRARIES})
 add_dependencies(component_test_chgt_freq_node cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 add_executable(component_test_death_node test/component_test_death_node.cpp)
-target_link_libraries(component_test_death_node ${catkin_LIBRARIES})
+target_link_libraries(component_test_death_node ${Boost_LIBRARIES} ${catkin_LIBRARIES})
 add_dependencies(component_test_death_node cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 add_executable(manager_test_subscribe_node test/manager_test_subscribe_node.cpp)
-target_link_libraries(manager_test_subscribe_node ${catkin_LIBRARIES})
+target_link_libraries(manager_test_subscribe_node ${Boost_LIBRARIES} ${catkin_LIBRARIES})
 add_dependencies(manager_test_subscribe_node cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 add_executable(manager_component_test_node test/manager_component_test.cpp)
-target_link_libraries(manager_component_test_node cafer_core ${catkin_LIBRARIES})
+target_link_libraries(manager_component_test_node cafer_core ${Boost_LIBRARIES} ${catkin_LIBRARIES})
 add_dependencies(manager_component_test_node cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 if(CATKIN_ENABLE_TESTING)
@@ -170,26 +180,26 @@ if(CATKIN_ENABLE_TESTING)
 endif()
 
 add_executable(data_publisher_example example/data_publisher_example.cpp)
-target_link_libraries(data_publisher_example ${catkin_LIBRARIES})
+target_link_libraries(data_publisher_example ${Boost_LIBRARIES} ${catkin_LIBRARIES})
 add_dependencies(data_publisher_example cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 #Examples
 add_executable(data_manager_example example/data_manager_example.cpp)
-target_link_libraries(data_manager_example cafer_core ${catkin_LIBRARIES})
+target_link_libraries(data_manager_example cafer_core ${Boost_LIBRARIES} ${catkin_LIBRARIES})
 add_dependencies(data_manager_example cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 add_executable(basic_example_change_frequency example/basic_example_change_frequency.cpp)
-target_link_libraries(basic_example_change_frequency cafer_core ${catkin_LIBRARIES})
+target_link_libraries(basic_example_change_frequency cafer_core ${Boost_LIBRARIES} ${catkin_LIBRARIES})
 add_dependencies(basic_example_change_frequency cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 add_executable(basic_example_kill_node_topic_type example/basic_example_kill_node_topic_type.cpp)
-target_link_libraries(basic_example_kill_node_topic_type cafer_core ${catkin_LIBRARIES})
+target_link_libraries(basic_example_kill_node_topic_type cafer_core ${Boost_LIBRARIES} ${catkin_LIBRARIES})
 add_dependencies(basic_example_kill_node_topic_type cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 add_executable(basic_example_launch_set_nodes example/basic_example_launch_set_nodes.cpp)
-target_link_libraries(basic_example_launch_set_nodes cafer_core ${catkin_LIBRARIES})
+target_link_libraries(basic_example_launch_set_nodes cafer_core ${Boost_LIBRARIES} ${catkin_LIBRARIES})
 add_dependencies(basic_example_launch_set_nodes cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 add_executable(basic_example_new_node example/basic_example_new_node.cpp)
-target_link_libraries(basic_example_new_node cafer_core ${catkin_LIBRARIES})
+target_link_libraries(basic_example_new_node cafer_core ${Boost_LIBRARIES} ${catkin_LIBRARIES})
 add_dependencies(basic_example_new_node cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
