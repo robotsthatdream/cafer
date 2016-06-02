@@ -9,6 +9,7 @@ The main CAFER features are:
 * Workflow management of an experiment
 * Storage and reuse of episodic memories
 * Information sharing within the different steps of an experiment, and among different experiments
+* Available in C++ (core) and Python (wrapper)
 
 Authors
 -------
@@ -68,7 +69,14 @@ catkin_make install
 ```
 It will install in ~/{YOUR_GIT_FOLDER}/cafer/install/
 
-4- Test CAFER
+4- Configure the Python wrapper
+
+```
+cd  ~/catkin_ws/src/cafer/example_python/
+ln -s ~/catkin_ws/devel/lib/component.so
+```
+
+5- Test CAFER
 
 CAFER comes with some tests. Some require up to several minutes to run. That is normal.
 
