@@ -11,8 +11,9 @@ find_package(catkin REQUIRED COMPONENTS
   roslib
   tf
 )
-find_package(Boost REQUIRED)
+find_package(Boost COMPONENTS python REQUIRED)
 find_package(rostest REQUIRED)
+find_package(PythonLibs REQUIRED)
 
 set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 ## System dependencies are found with CMake's conventions
@@ -22,7 +23,7 @@ set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
+catkin_python_setup()
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -95,7 +96,7 @@ catkin_package(
 ###########
 
 include_directories(
-  include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${rostest_INCLUDE_DIRS}
+  include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${rostest_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS}
 )
 #link_directories($ENV{HOME}/git/libfastsim/build/src /usr/lib/i386-linux-gnu)
 
@@ -104,8 +105,14 @@ target_link_libraries(getid ${catkin_LIBRARIES})
 add_dependencies(getid cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 add_library(cafer_core src/component.cpp)
-target_link_libraries(cafer_core tbb ${catkin_LIBRARIES})
+target_link_libraries(cafer_core tbb ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PYTHON_LIBRARIES})
 add_dependencies(cafer_core cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+
+# Python wrapper SHARED library that wraps the CPP component
+add_library(component SHARED src/component.cpp)
+target_link_libraries(component tbb ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+add_dependencies(component cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+set_target_properties( component PROPERTIES PREFIX "" )
 
 install(TARGETS ${PROJECT_NAME}
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -174,9 +181,9 @@ target_link_libraries(data_publisher_example ${catkin_LIBRARIES})
 add_dependencies(data_publisher_example cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 #Examples
-add_executable(managermap_example example/managermap_example.cpp)
-target_link_libraries(managermap_example cafer_core ${catkin_LIBRARIES})
-add_dependencies(managermap_example cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+#add_executable(managermap_example example/managermap_example.cpp)
+#target_link_libraries(managermap_example cafer_core ${catkin_LIBRARIES})
+#add_dependencies(managermap_example cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 add_executable(managerqueue_example example/managerqueue_example.cpp)
 target_link_libraries(managerqueue_example cafer_core ${catkin_LIBRARIES})

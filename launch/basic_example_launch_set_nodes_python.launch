@@ -1,0 +1,20 @@
+<launch>
+  <node name="getid" pkg="cafer_core" type="getid" ns="/cafer_core" />
+
+  <arg name="ns" default="basic_example_ns"/>
+  <arg name="management_topic" default="/basic_topic_mgmt"/>
+  <arg name="frequency" default="10"/>
+  <arg name="creator_ns" default="unset"/>
+  <arg name="creator_id" default="-1"/>
+  <arg name="nb_nodes" default="2"/>
+  <arg name="type_value" default="basic_example_launch_set_nodes"/>
+  <node name="basic_example_launch_set_nodes" pkg="cafer_core" type="basic_example_launch_set_nodes.py" ns="$(arg ns)" output="screen">
+      <param name="frequency" type="double" value="$(arg frequency)" />
+      <param name="management_topic" type="string" value="$(arg management_topic)" />
+      <param name="creator_ns" type="string" value="$(arg creator_ns)"/>
+      <param name="creator_id" type="int" value="$(arg creator_id)"/>
+      <param name="created_ns" type="string" value="$(arg ns)"/>
+      <param name="nb_nodes" type="int" value="$(arg nb_nodes)"/>
+      <param name="type_value" type="string" value="$(arg type_value)"/>
+  </node>
+</launch>
