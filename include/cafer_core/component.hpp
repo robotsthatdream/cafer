@@ -49,10 +49,14 @@
 #include <ros/spinner.h>
 #include <ros/callback_queue.h>
 
+#include <boost/foreach.hpp>
+
 
 namespace cafer_core {
 
     void init(int argc, char **argv, std::string node_name);
+    void python_init(std::string node_name);
+    std::string python_get_node_name();
     // std::string get_node_group(std::string namespace_base, std::string launch_file, double frequency);
     // void release_node_group(std::string namespace_base, std::string gr_namespace);
     // void kill_node_group(std::string namespace_base, std::string gr_namespace);
@@ -371,6 +375,23 @@ namespace cafer_core {
          * @param id of client
          */
         void send_local_node_death(std::string ns, long int id);
+
+        /**
+         * @brief wrapper for the Python API - get the number of the created nodes
+         */
+        int python_get_created_nodes_number();
+
+        /**
+         * @brief wrapper for the Python API - print the IDs of the created nodes
+         */
+
+        void python_print_created_nodes_id();
+
+        /**
+         * @brief wrapper for the Python API - check if the created clients are up
+         */
+
+        bool python_clients_status(std::string type);        
 
     public:
         MapWatchDog_t map_watchdog;

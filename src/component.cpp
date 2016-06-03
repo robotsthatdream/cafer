@@ -42,6 +42,8 @@
 
 #include <tbb/concurrent_hash_map.h>
 
+#include "component_python.cpp"
+
 namespace cafer_core {
 
 // Hashing for strings
@@ -76,6 +78,15 @@ void init(int argc, char **argv, std::string node_name)
     ROS_INFO_STREAM("Initialising ROS. Node name: " << node_name << std::endl);
 }
 
+void python_init(std::string node_name) {
+  int _argc = 0;
+  char **_argv = NULL;
+  init(_argc, _argv, node_name);
+}
+
+std::string python_get_node_name(){
+  return ros::this_node::getName();
+}
 
 bool operator==(ClientDescriptor const& cd1, ClientDescriptor const& cd2)
 {
@@ -408,7 +419,46 @@ void Component::send_local_node_death(std::string ns, long id){
 
 }
 
+int Component::python_get_created_nodes_number() {
+  return this->created_nodes.size();
+}
 
+void Component::python_print_created_nodes_id(){
+  // std::vector<int> node_id_vector;
+  BOOST_FOREACH(cafer_core::CreatedNodes_t::value_type & v, this->created_nodes) {
+    BOOST_FOREACH(cafer_core::ClientDescriptor cd, v.second) {
+      ROS_INFO_STREAM("Component: id="<<cd.id<<" ns="<<cd.ns);
+    }
+  }
+  return ;
+}
+
+bool Component::python_clients_status(std::string type){
+  if (type.compare("up") == 0 ){
+    bool all_up=true;
+    BOOST_FOREACH(cafer_core::CreatedNodes_t::value_type & v, this->created_nodes) {
+      BOOST_FOREACH(cafer_core::ClientDescriptor cd, v.second) {
+        all_up=all_up && this->is_client_up(cd.ns, cd.id);
+      }      
+    }
+    return all_up;
+  }
+
+  else if (type.compare("down") == 0 ){
+    bool all_down=true;
+    BOOST_FOREACH(cafer_core::CreatedNodes_t::value_type & v, this->created_nodes) {
+      BOOST_FOREACH(cafer_core::ClientDescriptor cd, v.second) {
+        all_down=all_down && !this->is_client_up(cd.ns, cd.id);
+      }
+    }      
+    return all_down;
+  }
+
+  else {
+    ROS_ERROR("python_clients_status was called with a wrong value");
+    exit(-1);
+  }
+}
 
 // std::string get_node_group(std::string namespace_base, std::string launch_file, double frequency=30) {
 //   std::cout<<"Trying to get a node: "<<namespace_base<<" launch file: "<<launch_file<<std::endl;
