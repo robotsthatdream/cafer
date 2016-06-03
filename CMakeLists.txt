@@ -178,6 +178,10 @@ add_executable(managermap_example example/managermap_example.cpp)
 target_link_libraries(managermap_example cafer_core ${catkin_LIBRARIES})
 add_dependencies(managermap_example cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
+add_executable(managerqueue_example example/managerqueue_example.cpp)
+target_link_libraries(managerqueue_example cafer_core ${catkin_LIBRARIES})
+add_dependencies(managerqueue_example cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+
 add_executable(basic_example_change_frequency example/basic_example_change_frequency.cpp)
 target_link_libraries(basic_example_change_frequency cafer_core ${catkin_LIBRARIES})
 add_dependencies(basic_example_change_frequency cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})

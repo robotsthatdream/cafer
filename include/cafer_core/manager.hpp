@@ -250,13 +250,19 @@ namespace cafer_core {
         * @brief search a precise msg by is identifier
         * @param id identifier of the searched msg
         */
-        Msg search(const u_int32_t& id)
+        bool search(const u_int32_t& id, Msg& msg)
         {
-            Msg return_msg;
+            bool res;
             Base::_container_mutex.lock();
-            return_msg = Base::_data_set.find(id)->second;
+            auto it = Base::_data_set.find(id);
+            if(it == Base::_data_set.end())
+                res = false;
+            else{
+                res = true;
+                msg = Base::_data_set.find(id)->second;
+            }
             Base::_container_mutex.unlock();
-            return return_msg;
+            return res;
         }
     };
 
