@@ -181,9 +181,9 @@ target_link_libraries(data_publisher_example ${catkin_LIBRARIES})
 add_dependencies(data_publisher_example cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 #Examples
-#add_executable(managermap_example example/managermap_example.cpp)
-#target_link_libraries(managermap_example cafer_core ${catkin_LIBRARIES})
-#add_dependencies(managermap_example cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_executable(managermap_example example/managermap_example.cpp)
+target_link_libraries(managermap_example cafer_core ${catkin_LIBRARIES})
+add_dependencies(managermap_example cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 add_executable(managerqueue_example example/managerqueue_example.cpp)
 target_link_libraries(managerqueue_example cafer_core ${catkin_LIBRARIES})
