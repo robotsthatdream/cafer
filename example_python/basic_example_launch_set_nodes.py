@@ -9,8 +9,6 @@ import rospkg
 import component
 
 class DummyClient (component.Component) :
-	# def __init__(self,*args, **kwargs):
-	# 	super(DummyClient, self ).__init__(*args, **kwargs)
 
 	def client_connect_to_ros(self):
 		pass
@@ -29,9 +27,6 @@ class DummyClient (component.Component) :
 
 def set_nodes_function():
 
-	## Parameters
-	nb_nodes = 2;
-
 	''' New node '''
 	component.python_init('basic_example_launch_set_nodes')
 
@@ -42,8 +37,6 @@ def set_nodes_function():
 	nb_nodes = param_dict['nb_nodes']
 	freq = param_dict['frequency']
 	ns = component.python_get_node_name()
-	# ns = rospy.get_namespace()
-	# print("Launching "+str(nb_nodes)+")  new nodes (name="+rospy.get_name()+")")	
 	print("Launching "+str(nb_nodes)+" new nodes (name="+ns+")")
 
 	''' Create the component in charge of calling the launch file for creating the new nodes '''
@@ -66,7 +59,6 @@ def set_nodes_function():
 	count = -1
 	while nb_tries > 0 :
 		count=20
-		# while (count>0) and len(cc.python_get_created_nodes_id) != nb_nodes :
 		print ('cc.python_get_created_nodes_number() : ', cc.python_get_created_nodes_number())
 		while (count>0) and cc.python_get_created_nodes_number() != nb_nodes :		
 			cc.spin()
@@ -77,10 +69,6 @@ def set_nodes_function():
 		if count == 0 :
 			print("PROBLEM: we haven't received the ack from some nodes. We ask for a new ack.")
 			print("============= Ack received from "+cc.get_created_nodes().size()+" components: ")
-			# node_id_vector = cc.python_get_created_nodes_id()
-
-			# for node_id in node_id_vector:
-			# 	print("Component: id="+cd.id)
 
 			cc.python_print_created_nodes_id()
 
