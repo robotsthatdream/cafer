@@ -99,8 +99,9 @@ Available in the [Wiki](https://github.com/robotsthatdream/cafer/wiki)
 * [Reference Manual](https://github.com/robotsthatdream/cafer/wiki/Reference-Manual)
 * [Example execution (C++)](https://github.com/robotsthatdream/cafer/blob/master/example/README.md)
 * [Example explanation (C++)] (https://github.com/robotsthatdream/cafer/wiki/Example-explanation-(CPP))
-* [Example execution (Python)] TBD
-* [Example explanation (Python)] TBD
+* [Example execution (Python)](https://github.com/robotsthatdream/cafer/tree/python_wrapper/example_python/README.md)
+* [Example explanation (Python)](https://github.com/robotsthatdream/cafer/wiki/Example-explanation-(Python))
+* [Data Manager Example (C++)](https://github.com/robotsthatdream/cafer/wiki/Data-Manager-Example)
 * [Code Reference](http://robotsthatdream.github.io/namespacecafer__core.html)
 
 IMPORTANT: CAFER is under development and current version should not be considered as stable.
