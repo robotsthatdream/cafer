@@ -58,15 +58,13 @@ namespace cafer_core {
     // void kill_node_group(std::string namespace_base, std::string gr_namespace);
     // void kill_all_allocated_node_groups(void);
 
-    /** Definition of message types
-    * - CHG_FREQ: changement of the ROS frequency
-    * - LOCAL_CLIENT_DEATH: ask for the death of the component. It is local as a node may have several components and what is asked here is only the death of the component. It should be noted that it only sets a boolean attribute (terminate) to true. Its value has to be taken into accounf for anything to happen...
-    * - COMPLETE_NODE_DEATH: ask for the whole node death (not just the component). It results in a ros:shutdown()
-    * - WATCHDOG: watchdog message, to tell that the component is still alive
-    * - ACK_CREATION: message to tell to a component that has required the creation of a node that the creation is complete. It also allows the creating component to get the id of the created component.
-    */
     typedef enum {
-        CHG_FREQ = 0, LOCAL_CLIENT_DEATH, COMPLETE_NODE_DEATH, WATCHDOG, ACK_CREATION, ASK_NEW_ACK
+        CHG_FREQ = 0,  ///< changement of the ROS frequency
+        LOCAL_CLIENT_DEATH, ///< ask for the death of the component. It is local as a node may have several components and what is asked here is only the death of the component. It should be noted that it only sets a boolean attribute (terminate) to true. Its value has to be taken into accounf for anything to happen...
+        COMPLETE_NODE_DEATH, ///< ask for the whole node death (not just the component). It results in a ros:shutdown()
+        WATCHDOG, ///< watchdog message, to tell that the component is still alive
+        ACK_CREATION, ///< message to tell to a component that has required the creation of a node that the creation is complete. It also allows the creating component to get the id of the created component.
+        ASK_NEW_ACK ///< ask for acknowledgement to all nodes that are handled by this Component
     } MgmtType;
 
     /**

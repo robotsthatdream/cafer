@@ -55,24 +55,29 @@ int main(int argc, char **argv)
 
     gen.seed(seed);
 
+    int i = 0;
+
     while (ros::ok()) {
 
         cafer_core::manager_test msg;
         std_msgs::Header header;
+        std::stringstream stream;
+        stream << i;
 
-        header.seq = gen();
+        header.seq = i;
         header.stamp = ros::Time(gen());
         header.frame_id = "0";
 
         msg.header = header;
-        msg.description = "I am a message";
+        msg.description = "I am the message" + stream.str();
         msg.tags = {"t", "d", "e"};
-        msg.content = "this is not a content";
+        msg.content = "this is not a content, but i am the " + stream.str() + "eme one";
 
 
         pub.publish(msg);
 
         ros::spinOnce();
+        i++;
     }
 
     return 0;

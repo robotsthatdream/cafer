@@ -55,8 +55,7 @@
 namespace cafer_core {
 
 /**
- *@brief class ManagerBase<Msg, DataContainer, DerivedClass>
- * A data manager to handle ROS messages (like images, features or policies).
+ *@brief Base class for manager component. A manager component handle ROS messages (like images, features or policies).
  */
     template<typename Msg, typename DataContainer, typename DerivedClass>
     class ManagerBase {
@@ -145,7 +144,7 @@ namespace cafer_core {
         }
 
 //    void search_service()
-//    /**
+//    /*
 //     * @brief AskTo Call a specific service
 //     * @param md
 //     */
@@ -174,7 +173,7 @@ namespace cafer_core {
 //    }
     protected:
 
-        DataContainer _data_set;
+        DataContainer _data_set; ///< the data container. All messages are stored in this container.
 
         long int _id;
         std::string _name;
@@ -182,13 +181,12 @@ namespace cafer_core {
         std::string _type;
 
         std::unique_ptr<ros::Publisher> _publisher;
-        std::unique_ptr<ros::Subscriber> _subcriber;
 
+
+        std::unique_ptr<ros::Subscriber> _subcriber; ///< subscriber to retrieve data
         std::mt19937 _gen;
 
-        //Mutex to protect the _data_set from concurrent access
-        std::mutex _container_mutex;
-
+        std::mutex _container_mutex; ///< Mutex to protect the _data_set from concurrent access
         //    shared_ptr<ros::ServiceServer> _start_to_publish;
         //    shared_ptr<ros::ServiceServer> _search_service;
     };
@@ -199,6 +197,7 @@ namespace cafer_core {
     };
 
     //Partial template specialization of the Manager class using unordered_map as container.
+
     template<typename Msg>
     class Manager<Msg, std::unordered_map<u_int32_t, Msg>>
             : public ManagerBase<Msg, std::unordered_map<u_int32_t, Msg>, Manager<Msg, std::unordered_map<u_int32_t, Msg>>> {
@@ -220,7 +219,7 @@ namespace cafer_core {
         }
 
         /**
-        * @brief Get an element from the data container.
+        * @brief Random access to an element from the data container.
         * @return The returned message/element.
         */
         Msg get()
@@ -272,7 +271,8 @@ namespace cafer_core {
     public:
 
         /**
-         * @brief add a msg to the container of Manager
+         * @brief add a msg to the container of Manager.
+         * Add the new message in the back of the queue.
          * @param msg the message to add
          */
         void add(const Msg& msg)
@@ -284,6 +284,7 @@ namespace cafer_core {
 
         /**
         * @brief Get an element from the data container.
+        * Get return the element in the front of the queue and suppress it, i.e. return the first element added.
         * @return The returned message/element.
         */
         Msg get()
@@ -300,9 +301,15 @@ namespace cafer_core {
     };
 
     //Namespace aliases to simplify template usage.
+    /**
+     * @brief Manager component which use std::unordered_map as container.
+     */
     template<typename Msg>
     using ManagerMap=Manager<Msg, std::unordered_map<u_int32_t, Msg>>;
 
+    /**
+     * @brief Manager component which use std::queue as container.
+     */
     template<typename Msg>
     using ManagerQueue=Manager<Msg, std::deque<Msg>>;
 }
