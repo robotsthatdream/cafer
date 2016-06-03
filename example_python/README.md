@@ -3,7 +3,7 @@ CAFER CORE EXAMPLE (Python)
 
 A simple example to show how to use cafer.
 
-New node generation and deletion
+Creating and deleting CAFER nodes
 --------------------------------
 
 This example shows how to define a simple CAFER node creating and deleting another 2 CAFER nodes. 
