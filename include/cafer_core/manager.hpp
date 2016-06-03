@@ -63,42 +63,27 @@ namespace cafer_core {
     public:
 
         /**
-         * @brief The io enum type of traitement to do with incoming data.
-         */
-        enum io {
-            ADD
-        };
-
-        /**
          * @brief Manager constructor
          * @param type specify which of data manager (and not the type of data)
          * @param name of the manager
          * @param description a short description of the manager (optionnal)
          */
-        ManagerBase(std::string type, std::string name, std::string description = "") :
-
-                _type(type), _name(name), _description(description)
+        ManagerBase(std::string data_topic, std::string type = "", std::string name = "", std::string description = "")
+                :
+                _type(type), _name(name), _description(description), _data_topic(data_topic)
         {
             //init random number generator for random access
             std::seed_seq seed = {std::time(0)};
             _gen.seed(seed);
-
-//        //init services
-//        std::stringstream sstream;
-//        sstream << _name << "_start_to_publish";
-//        _start_to_publish->reset(new ros::ServiceServer(ros_nh->advertiseService(sstream.str(),start_to_publish)));
-
-//        std::stringstream sstream2;
-//        sstream2 << _name << "_search_service";
-//        _search_service->reset(new ros::ServiceServer(ros_nh->advertiseService(sstream2.str(),search_service)));
-
         }
+
+        ManagerBase(ManagerBase&& manager) = default;
+
+        ManagerBase(const ManagerBase& manager) = delete;
 
         void disconnect_from_ros()
         {
             _subcriber.reset();
-//        _publisher.reset();
-//        _server.reset();
         }
 
         bool is_initialized()
@@ -111,24 +96,24 @@ namespace cafer_core {
 
         }
 
-        /**
-         * @brief The callback function used to process messages from the listened topic.
-         * @param msg
-         */
-        void add_cb(const shared_ptr<Msg>& msg)
+        void operator<<(const std::string& topic)
         {
-            static_cast<DerivedClass *>(this)->add(*msg);
+            _data_topic = topic;
+            listen_to(topic);
         }
 
         /**
          * @brief Connects to a specific topic and listen to it.
          * @param The topic to listen to.
          */
-        void listen_to(const std::string& topic, io type_io = ADD)
+        void listen_to(const std::string& topic = _data_topic)
         {
-            if (type_io == ADD) {
-                _subcriber.reset(new ros::Subscriber(ros_nh->subscribe(topic, 10, &ManagerBase::add_cb, this)));
-            }
+            auto add_callback = [](const shared_ptr<Msg>& msg)
+            {
+                static_cast<DerivedClass *>(this)->add(*msg);
+            };
+
+            _subcriber.reset(new ros::Subscriber<const shared_ptr<Msg>>(ros_nh->subscribe(topic, 10, add_callback)));
         }
 
         /**
@@ -144,34 +129,6 @@ namespace cafer_core {
             return _container_size;
         }
 
-//    void search_service()
-//    /**
-//     * @brief AskTo Call a specific service
-//     * @param md
-//     */
-//    void ask_to(const std::string& name){
-
-//        std::stringstream sstream;
-//        sstream << name << "_search_service";
-//        ros::ServiceClient client = ros_nh->serviceClient<>(sstream.str());
-
-
-//        while(!client.call(srv)){std::cout << "Wait for service " << service_name << std::endl;}
-//        //DO SOMETHING !!!!
-//    }
-
-//    void start_to_publish(cafer_core::start_to_talk::Request& req,
-//                          cafer_core::start_to_talk::Response& res){
-
-//        if(!req.want_to_listen)
-//            return;
-
-//        std::stringstream sstream;
-//        sstream << _name << "_talker";
-//        _publisher.reset(ros_nh->advertise(sstream.str(),talk_cb));
-//        res.start_to_talk = true;
-//        //do parallisation
-//    }
     protected:
 
         DataContainer _data_set;
@@ -180,17 +137,14 @@ namespace cafer_core {
         std::string _name;
         std::string _description;
         std::string _type;
+        std::string _data_topic;
 
-        std::unique_ptr<ros::Publisher> _publisher;
         std::unique_ptr<ros::Subscriber> _subcriber;
 
         std::mt19937 _gen;
 
         //Mutex to protect the _data_set from concurrent access
         std::mutex _container_mutex;
-
-        //    shared_ptr<ros::ServiceServer> _start_to_publish;
-        //    shared_ptr<ros::ServiceServer> _search_service;
     };
 
     //Declaring the Manager class, inheriting from ManagerBase.

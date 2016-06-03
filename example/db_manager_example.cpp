@@ -35,12 +35,53 @@
 //| The fact that you are presently reading this means that you have
 //| had knowledge of the CeCILL license and that you accept its terms.
 
-#ifndef _CAFER_CORE_HPP
-#define _CAFER_CORE_HPP
 
-#include "cafer_core/aliases.hpp"
-#include "cafer_core/component.hpp"
-#include "cafer_core/manager.hpp"
-#include "cafer_core/db_manager.hpp"
+#include <ros/ros.h>
+#include "cafer_core/cafer_core.hpp"
+#include "cafer_core/manager_test.h"
 
-#endif //_CAFER_CORE_HPP
+int main(int argc, char **argv)
+{
+
+    //initiate the cafer core
+    cafer_core::init(0, NULL, "manager_test_subcribe");
+
+    //create the data manager for the manager_test msg
+    cafer_core::DatabaseManager<cafer_core::ManagerMap<cafer_core::manager_test>> dummy_db_manager;
+
+    /*
+    //you can create a message
+    cafer_core::manager_test msg1;
+    std_msgs::Header header;
+    header.seq = 1;
+    header.stamp = ros::Time(2.0);
+    header.frame_id = "0";
+
+    msg1.header = header;
+    msg1.description = "I am a message";
+    msg1.tags = {"t", "d", "e"};
+    msg1.content = "this is not a content";
+
+    //and add it to the data manager
+    manager.add(msg1);
+
+    //and get it with the random access getter
+    manager.get();
+
+    //you can search it
+    manager.search(1);
+
+    //you can remove it
+    manager.remove(1);
+
+    //you can also subscribe to a topic to save some data from a external source
+    manager.listen_to("fake_topic");
+
+    //listen until manager have 10 messages in his data set
+    while (manager.data_size() < 10) {
+        ros::spinOnce();
+    }
+
+    */
+    return 0;
+}
