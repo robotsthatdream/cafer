@@ -1,12 +1,12 @@
 CAFER CORE EXAMPLE
 ==================
 
-These are simple examples to show how to use cafer.
+These are simple examples to show how to use CAFER.
 
 New node
 --------
 
-This example shows how to define a simple CAFER client that does nothing but send a message containing a counter that is incremented in the node. It is used by other examples. It requires to launch CAFER basic nodes first (other examples launch the required nodes)
+This example shows how to define a simple CAFER node that does nothing but send a message containing a counter that is incremented. It is used by other examples. It requires to launch CAFER basic functionality first (other examples launch it transparently to the user)
 
 ```
 roslaunch cafer_core cafer.launch
@@ -18,7 +18,7 @@ To see the messages published by the basic node:
 rostopic echo /basic_ns/basic_example_new_node/basic_example_topic
 ```
 
-The namespace, management_topic and frequency can be changed through command line arguments. If they are not specified, they take a default value. See  basic_example_new_node.launch for mode details.
+The namespace, management_topic and frequency can be changed through command line arguments. If they are not specified, they take a default value. See basic_example_new_node.launch for mode details.
 
 Example of use:
 ```
@@ -28,8 +28,7 @@ roslaunch cafer_core basic_example_new_node.launch ns=my_ns management_topic:=my
 Launch set nodes
 ----------------
 
-This is a basic example in which several nodes are created through the call to a launch_file. The program checks that they have been properly launched and then kills them and check that they have stopped appropriately.
-
+This is a basic example in which several nodes are created through the call to a _launch_ file. The program checks that they have been properly launched and then kills them and check that they have stopped appropriately.
 
 ```
 roslaunch cafer_core basic_example_launch_set_nodes.launch
@@ -39,8 +38,6 @@ See the launch files for the parameters that can be modified through the command
 ```
 roslaunch cafer_core basic_example_launch_set_nodes.launch nb_nodes:=10
 ```
-
-
 
 Kill node topic type
 --------------------
@@ -70,7 +67,10 @@ rosnode list should not display the nodes anymore.
 
 Change frequency
 ----------------
-command : rosrun  cafer_core  basic_example_change_frequency  
+command : 
+```
+rosrun  cafer_core  basic_example_change_frequency  
+```
 usage : two args : a management topic and a frequence value
 
 Example of use:
@@ -86,7 +86,6 @@ rosrun cafer_core basic_example_change_frequency /basic_mgmt 40
 ```
 
 ROS info log channel should contain messages saying that the frequency was modified.
-
 
 
 Data manager
