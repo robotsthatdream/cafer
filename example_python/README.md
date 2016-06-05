@@ -1,7 +1,7 @@
 CAFER CORE EXAMPLE (Python)
 ===========================
 
-A simple example to show how to use cafer.
+A simple example to show how to use CAFER.
 
 Creating and deleting CAFER nodes
 --------------------------------
