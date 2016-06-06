@@ -141,6 +141,10 @@ add_executable(manager_test_subscribe_node test/manager_test_subscribe_node.cpp)
 target_link_libraries(manager_test_subscribe_node ${catkin_LIBRARIES})
 add_dependencies(manager_test_subscribe_node cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
+#add_executable(manager_test_sub test/manager_test_subscribe.cpp)
+#target_link_libraries(manager_test_sub cafer_core ${catkin_LIBRARIES})
+#add_dependencies(manager_test_sub cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+
 add_executable(manager_component_test_node test/manager_component_test.cpp)
 target_link_libraries(manager_component_test_node cafer_core ${catkin_LIBRARIES})
 add_dependencies(manager_component_test_node cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
@@ -168,8 +172,8 @@ if(CATKIN_ENABLE_TESTING)
   add_rostest_gtest(manager_test test_launch/manager_test.launch test/manager_test.cpp)
   target_link_libraries(manager_test cafer_core tbb ${catkin_LIBRARIES})
   
-  add_rostest_gtest(manager_test_subscribe test_launch/manager_test_subscribe.launch test/manager_test.cpp)
-  target_link_libraries(manager_test_subscribe cafer_core tbb ${catkin_LIBRARIES})
+#  add_rostest_gtest(manager_test_subscribe test_launch/manager_test_subscribe.launch test/manager_test.cpp)
+#  target_link_libraries(manager_test_subscribe cafer_core tbb ${catkin_LIBRARIES})
 
   add_rostest_gtest(manager_component_test test_launch/manager_component_test.launch test/manager_test.cpp)
   target_link_libraries(manager_component_test cafer_core tbb ${catkin_LIBRARIES})
