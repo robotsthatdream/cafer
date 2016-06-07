@@ -306,6 +306,52 @@ namespace cafer_core {
         }
     };
 
+
+    //Partial template specialization of the Manager class using deque as container.
+    template<typename Msg>
+    class Manager<Msg, std::multimap<std::string,Msg>> : public ManagerBase<Msg, std::multimap<std::string,Msg>, Manager<Msg, std::multimap<std::string,Msg>>> {
+        //Defining Base as an alias for the template pattern.
+        using Base=ManagerBase<Msg, std::multimap<std::string,Msg>, Manager<Msg, std::multimap<std::string,Msg>>>;
+        //Inheriting base class constructor
+        using Base::Base;
+
+    public:
+
+        /**
+         * @brief add a msg to the container of Manager.
+         * Add the new message in the back of the queue.
+         * @param msg the message to add
+         */
+        void add(const Msg& msg)
+        {
+            Base::_container_mutex.lock();
+            Base::_data_set.emplace(msg.tag,msg);
+            Base::_container_mutex.unlock();
+        }
+
+
+        /**
+        * @brief search a precise msg by is identifier
+        * @param id identifier of the searched msg
+        */
+        bool search(const std::string& tag, std::vector<Msg>& vect_msg)
+        {
+            bool res;
+            Base::_container_mutex.lock();
+            auto it_pair = Base::_data_set.equal_range(tag);
+            if(it_pair.first == Base::_data_set.end() && it_pair.second == Base::_data_set.end())
+                res = false;
+            else{
+                res = true;
+                for(auto it = it_pair.first; it != it_pair.second; it++)
+                    vect_msg.push_back(it->second);
+            }
+            Base::_container_mutex.unlock();
+            return res;
+        }
+
+    };
+
     //Namespace aliases to simplify template usage.
     /**
      * @brief Manager component which use std::unordered_map as container.
@@ -314,10 +360,16 @@ namespace cafer_core {
     using ManagerMap=Manager<Msg, std::unordered_map<u_int32_t, Msg>>;
 
     /**
-     * @brief Manager component which use std::queue as container.
+     * @brief Manager component which use std::deque as container.
      */
     template<typename Msg>
     using ManagerQueue=Manager<Msg, std::deque<Msg>>;
+
+    /**
+     * @brief Manager component which use std::multimap as container with std::string as key.
+     */
+    template<typename Msg>
+    using ManagerTagMap=Manager<Msg, std::multimap<std::string,Msg>>;
 }
 
 #endif //_MANAGER_HPP
