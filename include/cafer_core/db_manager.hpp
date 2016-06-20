@@ -164,7 +164,7 @@ namespace cafer_core {
 
     private:
         std::tuple<Ts ...> _objects;
-        std::array<std::ofstream, std::tuple_size<decltype(_objects)>::value> _ofstreams;
+        std::array<std::ofstream, sizeof(Ts...)> _ofstreams;
 
         void write_data_cb()
         {
