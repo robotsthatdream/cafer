@@ -65,9 +65,9 @@ namespace cafer_core {
     * - WATCHDOG: watchdog message, to tell that the component is still alive
     * - ACK_CREATION: message to tell to a component that has required the creation of a node that the creation is complete. It also allows the creating component to get the id of the created component.
     */
-    typedef enum {
-        CHG_FREQ = 0, LOCAL_CLIENT_DEATH, COMPLETE_NODE_DEATH, WATCHDOG, ACK_CREATION, ASK_NEW_ACK
-    } MgmtType;
+    using MgmtType= enum class : uint8_t {
+        CHG_FREQ, LOCAL_CLIENT_DEATH, COMPLETE_NODE_DEATH, WATCHDOG, ACK_CREATION, ASK_NEW_ACK
+    };
 
     /** Client descriptor */
     class ClientDescriptor {
@@ -410,32 +410,32 @@ namespace cafer_core {
         void management_cb(const cafer_core::Management& mgmt)
         {
             //ROS_INFO_STREAM("management_cb my_id="<<get_id()<<" message: "<<std::endl<<mgmt<<std::flush);
-            switch (mgmt.type) {
-                case CHG_FREQ:
+            switch (static_cast<MgmtType >(mgmt.type)) {
+                case MgmtType::CHG_FREQ:
                     ROS_INFO_STREAM("Changing frequency: new frequency=" << mgmt.data_flt << " my_id=" << get_id());
                     rate.reset(new ros::Rate(mgmt.data_flt));
                     watchdog.reset(new ros::Timer(
                             my_ros_nh->createTimer(ros::Duration(ros::Rate(mgmt.data_flt)), &Component::watchdog_cb,
                                                    this)));
                     break;
-                case LOCAL_CLIENT_DEATH:
-                    if ((mgmt.dest_node == "all") ||
-                        ((mgmt.dest_node == my_ros_nh->getNamespace()) && (mgmt.dest_id == get_id()))) {
+                case MgmtType::LOCAL_CLIENT_DEATH:
+                    if (mgmt.dest_node == "all" ||
+                        (mgmt.dest_node == my_ros_nh->getNamespace() && mgmt.dest_id == get_id())) {
                         ROS_INFO_STREAM("LOCAL_CLIENT_DEATH");
                         terminate = true;
                     }
                     break;
-                case COMPLETE_NODE_DEATH:
+                case MgmtType::COMPLETE_NODE_DEATH:
                     if ((mgmt.dest_node == "all") ||
                         ((mgmt.dest_node == my_ros_nh->getNamespace()) && (mgmt.dest_id == get_id()))) {
                         ROS_INFO_STREAM("COMPLETE_NODE_DEATH called");
                         shutdown();
                     }
                     break;
-                case WATCHDOG:
+                case MgmtType::WATCHDOG:
                     update_watchdog(mgmt.src_node, mgmt.src_id, mgmt.src_type);
                     break;
-                case ACK_CREATION:
+                case MgmtType::ACK_CREATION:
                     if ((mgmt.dest_node == "all") ||
                         ((mgmt.dest_node == my_ros_nh->getNamespace()) && (mgmt.dest_id == get_id()))) {
                         ROS_INFO_STREAM(
@@ -454,7 +454,7 @@ namespace cafer_core {
                         }
                     }
                     break;
-                case ASK_NEW_ACK:
+                case MgmtType::ASK_NEW_ACK:
                     ack_creation();
                     break;
                 default:
@@ -465,7 +465,7 @@ namespace cafer_core {
         void ask_new_ack()
         {
             cafer_core::Management msg;
-            msg.type = ASK_NEW_ACK;
+            msg.type = static_cast<uint8_t>(MgmtType::ASK_NEW_ACK);
             msg.src_node = my_ros_nh->getNamespace();
             msg.src_id = get_id();
             msg.src_type = get_type();
@@ -482,7 +482,7 @@ namespace cafer_core {
         {
             if (creator_id != -1) {
                 cafer_core::Management msg;
-                msg.type = ACK_CREATION;
+                msg.type = static_cast<uint8_t>(MgmtType::ACK_CREATION);
                 msg.src_node = my_ros_nh->getNamespace();
                 msg.src_id = get_id();
                 msg.src_type = get_type();

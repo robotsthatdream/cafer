@@ -18,8 +18,6 @@
 
 #include <boost/filesystem.hpp>
 
-using namespace cafer_core;
-
 /**
  * Facilities for meta-programming
  */
@@ -157,14 +155,14 @@ namespace cafer_core {
 
     };
 
-//At the moment no constraint exist on the type Ts. A compile-time static_assert check must be added in the future.
-    template<typename... Ts>
     class DatabaseManager : public Component {
         using Component::Component;
 
     private:
         std::tuple<Ts ...> _objects;
-        std::array<std::ofstream, sizeof(Ts...)> _ofstreams;
+        std::array<std::ofstream, sizeof...(Ts)> _ofstreams;
+
+        std::vector<cafer_core::Manager> _managers;
 
         void write_data_cb()
         {
@@ -262,11 +260,12 @@ namespace cafer_core {
         DatabaseManager()
         { }
 
-        template<std::size_t I>
-        auto get_object() -> decltype(std::get<I>(_objects))
-        {
-            return std::get<I>(_objects);
-        }
+
+//        template<std::size_t I>
+//        auto get_object() -> decltype(std::get<I>(_objects))
+//        {
+//            return std::get<I>(_objects);
+//        }
 
         ~DatabaseManager()
         {
@@ -303,12 +302,18 @@ namespace cafer_core {
             cafer_core::ros_nh->getParam("/dream_babbling/motion_detector_topic", motion_detector_topic_name);
             cafer_core::ros_nh->getParam("/dream_babbling/robot_controller_feedback_topic", joints_topic_name);
 
-            //TODO for each manager listen to topic
+            for(const auto& manager:_managers)
+            {
+                manager.listen_to();
+            }
         }
 
         void client_disconnect_from_ros() override
         {
-            //TODO for each manager disconnect from ros
+            for(const auto& manager:_managers)
+            {
+                manager.disconnect_from_ros();
+            }
         }
 
         void update() override

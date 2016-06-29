@@ -54,19 +54,18 @@
 namespace cafer_core {
 
     /**
-     * @brief namespace details
-     * This namespace shall not be accessed by users, it is meant to hide some implementation details.
+     * The details namespace shall not be accessed by users, it is meant to hide some implementation details.
      */
     namespace details {
-        template<typename ElementType>
-        using MapContainer=std::unordered_map<u_int32_t, ElementType>;
+        template<typename Msg>
+        using Map=std::unordered_map<u_int32_t, Msg>;
 
-        template<typename ElementType>
-        using QueueContainer=std::deque<ElementType>;
+        template<typename Msg>
+        using Queue=std::deque<Msg>;
     }
 
     /**
-     *@brief class Manager<Msg, DataContainer, DerivedClass>
+     * class Manager<Msg, DataContainer, DerivedClass> \n
      * A data manager to handle ROS messages (like images, features or policies).
      */
     template<typename Msg, template<typename> class DataContainer,
@@ -80,9 +79,12 @@ namespace cafer_core {
          * @param name of the manager
          * @param description a short description of the manager (optionnal)
          */
-        ManagerBase(std::string data_topic, std::string type = "", std::string name = "", std::string description = "")
-                : _type(type), _name(name), _description(description), _data_topic(data_topic)
+        ManagerBase(std::string data_topic_param, std::string type = "", std::string name = "",
+                    std::string description = "")
+                : _type(type), _name(name), _description(description)
         {
+            //Retrieve data_topic from ROS parameter
+            ros_nh->getParam(data_topic_param, _data_topic);
             //init random number generator for random access
             std::seed_seq seed = {std::time(0)};
             _gen.seed(seed);
@@ -173,10 +175,10 @@ namespace cafer_core {
 
     //Partial template specialization of the Manager class using unordered_map as container.
     template<typename Msg>
-    class Manager<Msg, details::MapContainer> : public ManagerBase<Msg, details::MapContainer, Manager> {
+    class Manager<Msg, details::Map> : public ManagerBase<Msg, details::Map, Manager> {
         //Defining Base as a private alias for the template pattern.
         //Here the namespace ::cafer_core:: should be specified, depending on the compiler to find the Manager template.
-        using Base=ManagerBase<Msg, details::MapContainer, Manager>;
+        using Base=ManagerBase<Msg, details::Map, Manager>;
         //Inheriting base class constructor
         using Base::Base;
     public:
@@ -236,10 +238,10 @@ namespace cafer_core {
 
     //Partial template specialization of the Manager class using deque as container.
     template<typename Msg>
-    class Manager<Msg, details::QueueContainer> : public ManagerBase<Msg, details::QueueContainer, Manager> {
+    class Manager<Msg, details::Queue> : public ManagerBase<Msg, details::Queue, Manager> {
         //Defining Base as a private alias for the template pattern.
         //Here the namespace ::cafer_core:: should be specified, depending on the compiler to find the Manager template.
-        using Base=ManagerBase<Msg, details::QueueContainer, Manager>;
+        using Base=ManagerBase<Msg, details::Queue, Manager>;
         //Inheriting base class constructor
         using Base::Base;
 
@@ -275,10 +277,10 @@ namespace cafer_core {
 
     //Namespace aliases to simplify template usage.
     template<typename Msg>
-    using ManagerMap=Manager<Msg, details::MapContainer>;
+    using ManagerMap=Manager<Msg, details::Map>;
 
     template<typename Msg>
-    using ManagerQueue=Manager<Msg, details::QueueContainer>;
+    using ManagerQueue=Manager<Msg, details::Queue>;
 }
 
 #endif //_MANAGER_HPP
