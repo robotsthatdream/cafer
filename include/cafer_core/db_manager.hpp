@@ -286,7 +286,7 @@ namespace cafer_core {
             _write_data_action_server->registerGoalCallback(boost::bind(&DatabaseManager::write_data_cb, this));
             _write_data_action_server->registerPreemptCallback(boost::bind(&DatabaseManager::preempt_cb, this));
 
-            _processing_thread.reset(new std::thread(std::bind(&DatabaseManager::processing, this)));
+            _processing_thread.reset(new std::thread(&DatabaseManager::processing, this));
 
             _write_data_action_server->start();
 

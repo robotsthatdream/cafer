@@ -195,7 +195,7 @@ namespace cafer_core {
             // We get a new and unique ID for this client
             cafer_core::GetID v;
             v.request.name = "component_id";
-            static ros::ServiceClient sclient = my_ros_nh->serviceClient<cafer_core::GetID>("/cafer_core/get_id");
+            ros::ServiceClient sclient = my_ros_nh->serviceClient<cafer_core::GetID>("/cafer_core/get_id");
             if (sclient.call(v)) {
                 id = v.response.id;
             }

@@ -44,7 +44,7 @@
 
 int main(int argc, char **argv)
 {
-    std::unordered_map<std::string, long int> map_ID;
+    std::unordered_map<std::string, uint32_t> map_ID;
 
     auto id_generator = [&map_ID](cafer_core::GetID::Request& req, cafer_core::GetID::Response& res)
     {
@@ -57,7 +57,7 @@ int main(int argc, char **argv)
         res.id = map_ID[req.name];
 
         ROS_INFO("ID request value received: %s", req.name.c_str());
-        ROS_INFO("Assigned ID: %ld", (long int) res.id);
+        ROS_INFO("Assigned ID: %ld", static_cast<uint32_t>(res.id));
 
         return true;
     };
