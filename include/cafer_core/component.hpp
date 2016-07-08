@@ -55,7 +55,9 @@
 namespace cafer_core {
 
     void init(int argc, char **argv, std::string node_name);
+
     void python_init(std::string node_name);
+
     std::string python_get_node_name();
     // std::string get_node_group(std::string namespace_base, std::string launch_file, double frequency);
     // void release_node_group(std::string namespace_base, std::string gr_namespace);
@@ -77,8 +79,8 @@ namespace cafer_core {
      */
     class ClientDescriptor {
     public:
+        uint64_t id;
         std::string ns;
-        long int id;
         std::string type;
     };
 
@@ -91,7 +93,6 @@ namespace cafer_core {
     struct ClientDescriptorHasher {
         std::size_t operator()(const ClientDescriptor& cd) const
         {
-
             std::ostringstream oss;
             oss << cd.ns << "_" << cd.id;
             std::hash<std::string> string_hash;
@@ -112,8 +113,21 @@ namespace cafer_core {
      *  \li waits for initialization
      */
     class Component {
-
     public:
+        ClientDescriptor descriptor;
+
+        MapWatchDog_t map_watchdog;
+        /**< map in which is stored the last watchdog message received from each client connected to the management topic of this client */
+
+        CreatedNodes_t created_nodes;
+        /**< map in which are stored all nodes created by a call_launch_file. The key is the required namespace */
+        shared_ptr<NodeHandle> my_ros_nh;
+        shared_ptr<ros::CallbackQueue> my_ros_queue;
+
+        shared_ptr<Subscriber> management_s;
+        /**< subscriber to the management topic */
+        shared_ptr<Publisher> management_p;
+        /**<publisher to the management topic */
 
         /**
          * @brief constructor of Component
@@ -124,12 +138,10 @@ namespace cafer_core {
          */
         Component(std::string mgmt_topic, std::string _type, double freq = 10, bool new_nodehandle = false);
 
-
         ~Component(void)
         {
             //disconnect_from_ros();
         }
-
 
         /**
          * @brief update
@@ -177,15 +189,14 @@ namespace cafer_core {
          * @return the type of client.
          */
         std::string get_type(void) const
-        { return type; }
-
+        { return descriptor.type; }
 
         /**
          * @brief  Accessor to the client id (unique)
          * @return the id of client
          */
         long int get_id(void) const
-        { return id; }
+        { return descriptor.id; }
 
         /**
          * @brief this method inform if the subcriber, publisher or server are up or not.
@@ -240,7 +251,7 @@ namespace cafer_core {
          * @brief Sleep: should be called by the user code once all the things that have to be done during one iteration of the loop have been done
          */
         void sleep(void)
-        {rate->sleep();}
+        { rate->sleep(); }
 
         /**
          * @brief encapsulation of ros::spinOnce()
@@ -255,7 +266,6 @@ namespace cafer_core {
          * @return number of client still up
          */
         unsigned int how_many_client_from_type(std::string _type, bool up_only = true);
-
 
         /**
          * @brief Get the ClientDescriptors of all clients connected to the same management topic and of a certain type
@@ -284,7 +294,6 @@ namespace cafer_core {
             return is_it_recent_enough(get_watchdog(ns, id));
         }
 
-
         /**
          * @brief  Waits until the client is up (it needs to be on the same management topic)
          * @param namespace of client
@@ -302,14 +311,14 @@ namespace cafer_core {
          * @return
          */
         std::string get_namespace(void) const
-        {return my_ros_nh->getNamespace();}
+        { return my_ros_nh->getNamespace(); }
 
         /**
          * @brief Gets the created_nodes
          * @return
          */
         CreatedNodes_t& get_created_nodes(void)
-        {return created_nodes;}
+        { return created_nodes; }
 
         /**
          * @brief Gets the created_nodes
@@ -317,7 +326,7 @@ namespace cafer_core {
          * @return
          */
         std::vector<ClientDescriptor>& get_created_nodes(std::string created_ns)
-        {return created_nodes[created_ns];}
+        { return created_nodes[created_ns]; }
 
         /**
          * @brief kill all nodes created by this component
@@ -391,26 +400,10 @@ namespace cafer_core {
          * @brief wrapper for the Python API - check if the created clients are up
          */
 
-        bool python_clients_status(std::string type);        
-
-    public:
-        MapWatchDog_t map_watchdog;
-        /**< map in which is stored the last watchdog message received from each client connected to the management topic of this client */
-
-        CreatedNodes_t created_nodes;
-        /**< map in which are stored all nodes created by a call_launch_file. The key is the required namespace */
-        shared_ptr<NodeHandle> my_ros_nh;
-        shared_ptr<ros::CallbackQueue> my_ros_queue;
-
-
-        shared_ptr<Subscriber> management_s;
-        /**< subscriber to the management topic */
-        shared_ptr<Publisher> management_p;
-        /**<publisher to the management topic */
+        bool python_clients_status(std::string type);
 
     protected :
-        int id;
-        std::string type;
+
         int creator_id;
         std::string creator_ns;
         std::string created_ns;
@@ -422,8 +415,6 @@ namespace cafer_core {
         /**< ROS update rate */
         shared_ptr<ros::Timer> watchdog;
         /**< Watchdog */
-
-
 
         bool _is_init = false;
         bool _is_connected_to_ros = false;
