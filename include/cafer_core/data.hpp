@@ -7,23 +7,24 @@
 
 #include <ros/ros.h>
 
-template<typename Msg>
-class Data {
-public:
-    const data_type;
+namespace cafer_core {
+    template<typename Msg>
+    class Data {
+    public:
+        using type = Msg;
 
-    //TODO Complete this class
-    Data() : data_type(ros::message_traits::DataType<Msg>::value())
-    { }
+        Data(Msg msg) : _stored_msg(msg)
+        { }
 
-    friend std::ostream& operator<<(std::ostream& os, const Data& obj)
-    {
-        obj.stream(os);
-        return os;
-    }
+        const Msg get_stored_msg const
+        {
+            return _stored_msg;
+        };
 
-protected:
-    virtual void stream(std::ostream& os) = 0;
-};
+    protected:
+        Msg _stored_msg;
 
+        virtual std::map<std::string, std::string> get_serialized_data() const = 0;
+    };
+}
 #endif //CAFER_CORE_DATA_HPP
