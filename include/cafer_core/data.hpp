@@ -11,7 +11,7 @@ namespace cafer_core {
     template<typename Msg>
     class Data {
     public:
-        using type = Msg;
+        using type = typename Msg;
 
         Data(Msg msg) : _stored_msg(msg)
         { }

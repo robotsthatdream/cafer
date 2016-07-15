@@ -10,8 +10,6 @@ find_package(catkin REQUIRED COMPONENTS
         message_generation
         roslib
         tf
-        actionlib
-        actionlib_msgs
         )
 find_package(Boost REQUIRED)
 find_package(rostest REQUIRED)
@@ -54,6 +52,8 @@ set(CMAKE_CXX_COMPILER /usr/local/bin/clang++)
 ## Generate messages in the 'msg' folder
 add_message_files(
         FILES
+        db_manager_request.msg
+        db_manager_status.msg
         Management.msg
         manager_test.msg
 )
@@ -64,17 +64,10 @@ add_service_files(
         GetID.srv
 )
 
-## Generate actions in the 'action' folder
-add_action_files(
-        FILES
-        WriteData.action
-)
-
 #Generate added messages and services with any dependencies listed here
 generate_messages(
         DEPENDENCIES
         std_msgs
-        actionlib_msgs
 )
 
 ###################################
@@ -106,7 +99,7 @@ add_executable(getid src/getid.cpp)
 target_link_libraries(getid ${catkin_LIBRARIES})
 add_dependencies(getid cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
-add_library(cafer_core src/component.cpp)
+add_library(cafer_core src/component.cpp src/db_manager/db_manager.cpp src/db_manager/db_filesystem.cpp src/db_manager/_wave.cpp src/db_manager/_write_worker.cpp)
 target_link_libraries(cafer_core tbb ${catkin_LIBRARIES})
 add_dependencies(cafer_core cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 

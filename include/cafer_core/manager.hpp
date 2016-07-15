@@ -129,12 +129,12 @@ namespace cafer_core {
          */
         void listen_to(const std::string& topic)
         {
-            auto add_callback = [this](const shared_ptr<Data::type>& msg)
+            auto add_callback = [this](const shared_ptr<typename Data::type>& msg)
             {
                 static_cast<DerivedClass<Data, DataContainer> *>(this)->add(*msg);
             };
 
-            _subcriber.reset(new Subscriber(ros_nh->subscribe<const shared_ptr<Data::type>>(topic, 10, add_callback)));
+            _subcriber.reset(new Subscriber(ros_nh->subscribe<const shared_ptr<typename Data::type>>(topic, 10, add_callback)));
         }
 
         /**
@@ -178,7 +178,7 @@ namespace cafer_core {
     class Manager<Data, details::Map> : public ManagerBase<Data, details::Map, Manager> {
         //Defining Base as a private alias for the template pattern.
         //Here the namespace ::cafer_core:: should be specified, depending on the compiler to find the Manager template.
-        using Base=ManagerBase<Data, details::Map, Manager>;
+        using Base=ManagerBase<Data, details::Map, ::cafer_core::Manager>;
         //Inheriting base class constructor
         using Base::Base;
     public:
@@ -241,7 +241,7 @@ namespace cafer_core {
     class Manager<Data, details::Queue> : public ManagerBase<Data, details::Queue, Manager> {
         //Defining Base as a private alias for the template pattern.
         //Here the namespace ::cafer_core:: should be specified, depending on the compiler to find the Manager template.
-        using Base=ManagerBase<Data, details::Queue, Manager>;
+        using Base=ManagerBase<Data, details::Queue, ::cafer_core::Manager>;
         //Inheriting base class constructor
         using Base::Base;
 

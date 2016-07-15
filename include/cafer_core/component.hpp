@@ -65,7 +65,7 @@ namespace cafer_core {
     * - WATCHDOG: watchdog message, to tell that the component is still alive
     * - ACK_CREATION: message to tell to a component that has required the creation of a node that the creation is complete. It also allows the creating component to get the id of the created component.
     */
-    using MgmtType= enum class : uint8_t {
+    enum class MgmtType : uint8_t {
         CHG_FREQ, LOCAL_CLIENT_DEATH, COMPLETE_NODE_DEATH, WATCHDOG, ACK_CREATION, ASK_NEW_ACK
     };
 
@@ -541,7 +541,7 @@ namespace cafer_core {
             //ROS_INFO_STREAM("watchdog_cb my_id="<<get_id());
             //ROS_INFO_STREAM("watchdog_cb, management topic="<<management_p->getTopic()<<" nb connected="<<management_p->getNumSubscribers()<<std::flush);
             cafer_core::Management msg;
-            msg.type = WATCHDOG;
+            msg.type = static_cast<int8_t>(MgmtType::WATCHDOG);
             msg.src_node = my_ros_nh->getNamespace();
             msg.src_id = get_id();
             msg.src_type = get_type();
@@ -557,7 +557,7 @@ namespace cafer_core {
         {
             ROS_INFO_STREAM("send_complete_node_death my_id=" << get_id());
             cafer_core::Management msg;
-            msg.type = COMPLETE_NODE_DEATH;
+            msg.type = static_cast<int8_t>(MgmtType::COMPLETE_NODE_DEATH);
             msg.src_node = my_ros_nh->getNamespace();
             msg.src_id = get_id();
             msg.src_type = get_type();
@@ -573,7 +573,7 @@ namespace cafer_core {
         {
             ROS_INFO_STREAM("send_local_node_death my_id=" << get_id());
             cafer_core::Management msg;
-            msg.type = LOCAL_CLIENT_DEATH;
+            msg.type = static_cast<int8_t>(MgmtType::LOCAL_CLIENT_DEATH);
             msg.src_node = my_ros_nh->getNamespace();
             msg.src_id = get_id();
             msg.src_type = get_type();

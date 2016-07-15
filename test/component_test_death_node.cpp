@@ -52,7 +52,7 @@ int main(int argc, char **argv)
     sleep(3);
 
     cafer_core::Management msg;
-    msg.type = cafer_core::COMPLETE_NODE_DEATH;
+    msg.type = static_cast<int8_t>(cafer_core::MgmtType::COMPLETE_NODE_DEATH);
     msg.src_node = "";
     msg.src_id = -1;
     msg.dest_node = "all";
