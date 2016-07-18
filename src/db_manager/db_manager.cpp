@@ -2,7 +2,7 @@
 // Created by phlf on 11/04/16.
 //
 
-#include "cafer_core/db_manager.hpp"
+#include "cafer_core/db_manager/db_manager.hpp"
 
 using namespace cafer_core;
 
@@ -80,7 +80,7 @@ void DatabaseManager::_request_cb(const cafer_core::db_manager_requestConstPtr& 
     }
 }
 
-void DatabaseManager::_record_data(uint32_t& id)
+void DatabaseManager::_record_data(const uint32_t& id)
 {
     //This commented part may be useful in a dynamic scenario (adding waves during experiment)
 
@@ -91,7 +91,7 @@ void DatabaseManager::_record_data(uint32_t& id)
     _connected_waves[id].connect();
 }
 
-void DatabaseManager::_stop_recording(uint32_t& id)
+void DatabaseManager::_stop_recording(const uint32_t& id)
 {
     _connected_waves[id].disconnect();
 }

@@ -2,11 +2,11 @@
 // Created by phlf on 07/07/16.
 //
 
-#include "cafer_core/db_manager.hpp"
+#include "cafer_core/db_manager/_db_filesystem.hpp"
 
 using namespace cafer_core;
 
-DatabaseManager::_FilesystemManager::_FilesystemManager(_Wave* parent) : _wave(parent)
+_details::_FilesystemManager::_FilesystemManager(_Wave* parent) : _wave(parent)
 {
     std::string ros_home;
     ros::get_environment_variable(ros_home, "ROS_HOME");
@@ -14,12 +14,12 @@ DatabaseManager::_FilesystemManager::_FilesystemManager(_Wave* parent) : _wave(p
     _ros_home = ros_home;
 }
 
-DatabaseManager::_FilesystemManager::~_FilesystemManager()
+_details::_FilesystemManager::~_FilesystemManager()
 {
     close_records();
 }
 
-void DatabaseManager::_FilesystemManager::close_records()
+void _details::_FilesystemManager::close_records()
 {
     for (auto& record:_records) {
         if (record.second.is_open()) {
@@ -28,13 +28,14 @@ void DatabaseManager::_FilesystemManager::close_records()
     }
 }
 
-void DatabaseManager::_FilesystemManager::new_records()
+void _details::_FilesystemManager::new_records()
 {
     boost::filesystem::path path = _ros_home;
 
     if (_wave->sequential) {
         do {
-            path = path + "/cafer_db/" + _wave->name + "/iteration_" + std::to_string(_counter) + "/";
+            path = path /
+                   boost::filesystem::path("cafer_db/" + _wave->name + "/iteration_" + std::to_string(_counter) + "/");
             ++_counter;
         }
         while (boost::filesystem::exists(path));
@@ -45,7 +46,7 @@ void DatabaseManager::_FilesystemManager::new_records()
         }
     }
     else {
-        path = path + "/cafer_db/" + _wave->name + "/";
+        path = path / boost::filesystem::path("cafer_db/" + _wave->name + "/");
         if (!boost::filesystem::exists(path)) {
             boost::filesystem::create_directories(path);
         }
@@ -57,9 +58,9 @@ void DatabaseManager::_FilesystemManager::new_records()
     }
 }
 
-void DatabaseManager::_FilesystemManager::save_data(std::map<std::string, std::string>& data)
+void _details::_FilesystemManager::save_data(Data&& data)
 {
-    for (auto& data_to_save:data) {
+    for (auto& data_to_save:data.get_serialized_data()) {
         _records[data_to_save.first] << data_to_save.second;
     }
 }

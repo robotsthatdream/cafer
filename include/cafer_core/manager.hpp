@@ -45,18 +45,20 @@
 #include <mutex>
 #include <unordered_map>
 #include <deque>
+#include <type_traits>
 
 #include <std_msgs/Time.h>
 #include <std_msgs/Header.h>
 
 #include "cafer_core/component.hpp"
+#include "cafer_core/data.hpp"
 
 namespace cafer_core {
 
     /**
      * This namespace shall not be accessed by users, it is meant to hide some implementation details.
      */
-    namespace details {
+    namespace _details {
         template<typename Data>
         using Map=std::unordered_map<uint32_t, Data>;
 
@@ -68,9 +70,7 @@ namespace cafer_core {
      * class Manager<Data, DataContainer, DerivedClass> \n
      * A data manager to handle ROS messages (like images, features or policies).
      */
-    template<typename Data, template<typename> class DataContainer,
-            template<typename, template<typename> class> class DerivedClass>
-    class ManagerBase {
+    class IManager {
     public:
 
         /**
@@ -79,8 +79,8 @@ namespace cafer_core {
          * @param name of the manager
          * @param description a short description of the manager (optionnal)
          */
-        ManagerBase(std::string data_topic_param, std::string type = "", std::string name = "",
-                    std::string description = "")
+        IManager(std::string data_topic_param, std::string type = "", std::string name = "",
+                 std::string description = "")
                 : _type(type), _name(name), _description(description)
         {
             //Retrieve data_topic from ROS parameter
@@ -90,9 +90,9 @@ namespace cafer_core {
             _gen.seed(seed);
         }
 
-        ManagerBase(ManagerBase&& manager) = default;
+        IManager(IManager&& manager) = default;
 
-        ManagerBase(const ManagerBase& manager) = delete;
+        IManager(const IManager& manager) = delete;
 
         void disconnect_from_ros()
         {
@@ -127,32 +127,17 @@ namespace cafer_core {
          * @brief Connects to a specific topic and listen to it.
          * @param The topic to listen to.
          */
-        void listen_to(const std::string& topic)
-        {
-            auto add_callback = [this](const shared_ptr<typename Data::type>& msg)
-            {
-                static_cast<DerivedClass<Data, DataContainer> *>(this)->add(*msg);
-            };
-
-            _subcriber.reset(new Subscriber(ros_nh->subscribe<const shared_ptr<typename Data::type>>(topic, 10, add_callback)));
-        }
+        virtual void listen_to(const std::string& topic) = 0;
 
         /**
         * @brief Returns the number of elements in the data container.
         * @return The manager container's size.
         */
-        size_t data_size()
-        {
-            size_t _container_size;
-            _container_mutex.lock();
-            _container_size = _data_set.size();
-            _container_mutex.unlock();
-            return _container_size;
-        }
+        virtual size_t data_size() = 0;
+
+        virtual cafer_core::Data get() = 0;
 
     protected:
-
-        DataContainer<Data> _data_set;
 
         long int _id;
         std::string _name;
@@ -168,6 +153,56 @@ namespace cafer_core {
         std::mutex _container_mutex;
     };
 
+    /**
+     * class Manager<Data, DataContainer, DerivedClass> \n
+     * A data manager to handle ROS messages (like images, features or policies).
+     */
+    template<typename Data, template<typename> class DataContainer,
+            template<typename, template<typename> class> class DerivedClass>
+    class ManagerBase : public IManager {
+        static_assert(std::is_base_of<cafer_core::Data, Data>::value,
+                      "The Data template argument should be derived from Data");
+    public:
+        using IManager::IManager;
+
+        /**
+         * @brief Connects to a specific topic and listen to it.
+         * @param The topic to listen to.
+         */
+        void listen_to(const std::string& topic) override
+        {
+            auto add_callback = [this](const shared_ptr<topic_tools::ShapeShifter>& msg)
+            {
+                static_cast<DerivedClass<Data, DataContainer>*>(this)->add(*msg);
+            };
+
+            _subcriber.reset(new Subscriber(
+                    ros_nh->subscribe<const shared_ptr<topic_tools::ShapeShifter>>(topic, 10, add_callback)));
+        }
+
+        /**
+        * @brief Returns the number of elements in the data container.
+        * @return The manager container's size.
+        */
+        size_t data_size() override
+        {
+            size_t _container_size;
+            _container_mutex.lock();
+            _container_size = _data_set.size();
+            _container_mutex.unlock();
+            return _container_size;
+        }
+
+        cafer_core::Data get() override
+        {
+            return static_cast<DerivedClass<Data, DataContainer>*>(this)->get();
+        }
+
+    protected:
+
+        DataContainer<Data> _data_set;
+    };
+
     //Declaring the Manager class, inheriting from ManagerBase.
     template<typename Data, template<typename> class DataContainer>
     class Manager : public ManagerBase<Data, DataContainer, Manager> {
@@ -175,10 +210,10 @@ namespace cafer_core {
 
     //Partial template specialization of the Manager class using unordered_map as container.
     template<typename Data>
-    class Manager<Data, details::Map> : public ManagerBase<Data, details::Map, Manager> {
+    class Manager<Data, _details::Map> : public ManagerBase<Data, _details::Map, Manager> {
         //Defining Base as a private alias for the template pattern.
         //Here the namespace ::cafer_core:: should be specified, depending on the compiler to find the Manager template.
-        using Base=ManagerBase<Data, details::Map, ::cafer_core::Manager>;
+        using Base=ManagerBase<Data, _details::Map, ::cafer_core::Manager>;
         //Inheriting base class constructor
         using Base::Base;
     public:
@@ -187,8 +222,10 @@ namespace cafer_core {
          * @brief add a data object to the container of Manager
          * @param data the message to add
          */
-        void add(const Data& data)
+        void add(const topic_tools::ShapeShifter& msg)
         {
+            Data data(msg);
+
             Base::_container_mutex.lock();
             Base::_data_set.emplace(data.get_stored_msg.header.seq, data);
             Base::_container_mutex.unlock();
@@ -198,14 +235,15 @@ namespace cafer_core {
         * @brief Get an element from the data container.
         * @return The returned message/element.
         */
-        Data get()
+        cafer_core::Data get()
         {
             std::uniform_int_distribution<> dist(0., Base::_data_set.size() - 1);
             Base::_container_mutex.lock();
             auto random_it = std::next(std::begin(Base::_data_set), dist(Base::_gen));
             Base::_container_mutex.unlock();
             Data res = random_it->second;
-            return res;
+
+            return static_cast<cafer_core::Data>(res);
         }
 
         /**
@@ -229,19 +267,21 @@ namespace cafer_core {
         Data search(const uint32_t& id)
         {
             Data return_data;
+
             Base::_container_mutex.lock();
             return_data = Base::_data_set.find(id)->second;
             Base::_container_mutex.unlock();
+
             return return_data;
         }
     };
 
     //Partial template specialization of the Manager class using deque as container.
     template<typename Data>
-    class Manager<Data, details::Queue> : public ManagerBase<Data, details::Queue, Manager> {
+    class Manager<Data, _details::Queue> : public ManagerBase<Data, _details::Queue, Manager> {
         //Defining Base as a private alias for the template pattern.
         //Here the namespace ::cafer_core:: should be specified, depending on the compiler to find the Manager template.
-        using Base=ManagerBase<Data, details::Queue, ::cafer_core::Manager>;
+        using Base=ManagerBase<Data, _details::Queue, ::cafer_core::Manager>;
         //Inheriting base class constructor
         using Base::Base;
 
@@ -251,8 +291,10 @@ namespace cafer_core {
          * @brief add a data object to the container of Manager
          * @param data the data object to add
          */
-        void add(const Data& data)
+        void add(const topic_tools::ShapeShifter& msg)
         {
+            Data data(msg);
+
             Base::_container_mutex.lock();
             Base::_data_set.push_back(data);
             Base::_container_mutex.unlock();
@@ -262,7 +304,7 @@ namespace cafer_core {
         * @brief Get an element from the data container.
         * @return The returned message/element.
         */
-        Data get()
+        cafer_core::Data get()
         {
             Data data;
 
@@ -271,16 +313,16 @@ namespace cafer_core {
             Base::_data_set.pop_front();
             Base::_container_mutex.unlock();
 
-            return data;
+            return static_cast<cafer_core::Data>(data);
         }
     };
 
     //Namespace aliases to simplify template usage.
     template<typename Data>
-    using ManagerMap=Manager<Data, details::Map>;
+    using ManagerMap=Manager<Data, _details::Map>;
 
     template<typename Data>
-    using ManagerQueue=Manager<Data, details::Queue>;
+    using ManagerQueue=Manager<Data, _details::Queue>;
 }
 
 #endif //_MANAGER_HPP

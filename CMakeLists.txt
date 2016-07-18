@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
         message_generation
         roslib
         tf
+        topic_tools
         )
 find_package(Boost REQUIRED)
 find_package(rostest REQUIRED)
