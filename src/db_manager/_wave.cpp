@@ -2,11 +2,11 @@
 // Created by phlf on 13/07/16.
 //
 
-#include "cafer_core/db_manager/_wave.hpp"
+#include "cafer_core/db_manager.hpp"
 
 using namespace cafer_core;
 
-//_details::_Wave::_Wave(std::string& wave_name) : name(wave_name), sequential(false)
+//DatabaseManager::_Wave::_Wave(std::string& wave_name) : name(wave_name), sequential(false)
 //{
 //    XmlRpc::XmlRpcValue wave_data;
 //    if (cafer_core::ros_nh->searchParam(wave_name, wave_data)) {
@@ -23,10 +23,10 @@ using namespace cafer_core;
 //    }
 //}
 
-_details::_Wave::_Wave(std::string& wave_name, cafer_core::Publisher& publisher) : name(wave_name),
-                                                                                   sequential(false),
-                                                                                   fs_manager(this),
-                                                                                   status_publisher(publisher)
+DatabaseManager::_Wave::_Wave(std::string& wave_name, cafer_core::Publisher& publisher) : name(wave_name),
+                                                                                          sequential(false),
+                                                                                          fs_manager(this),
+                                                                                          status_publisher(&publisher)
 {
     XmlRpc::XmlRpcValue wave_data;
     if (cafer_core::ros_nh->searchParam(wave_name, wave_data)) {
@@ -41,18 +41,18 @@ _details::_Wave::_Wave(std::string& wave_name, cafer_core::Publisher& publisher)
 
     }
     else {
-        ROS_WARN_STREAM("Wave " << wave_name << " not found");
+        ROS_WARN_STREAM("Wave " << wave_name << " not found!");
     }
 
     _write_worker.link_to_wave(this);
 }
 
-void _details::_Wave::add_manager(cafer_core::IManager& manager)
+void DatabaseManager::_Wave::add_manager(cafer_core::IManager& manager)
 {
     managers.push_back(std::unique_ptr<cafer_core::IManager>(&manager));
 }
 
-bool _details::_Wave::no_data_left()
+bool DatabaseManager::_Wave::no_data_left()
 {
     bool no_data_left = true;
 
@@ -63,7 +63,7 @@ bool _details::_Wave::no_data_left()
     return no_data_left;
 }
 
-void _details::_Wave::connect()
+void DatabaseManager::_Wave::connect()
 {
     for (const auto& manager:managers) {
         manager->listen_to();
@@ -71,7 +71,7 @@ void _details::_Wave::connect()
     _write_worker.awake_worker();
 }
 
-void _details::_Wave::disconnect()
+void DatabaseManager::_Wave::disconnect()
 {
     for (const auto& manager:managers) {
         manager->disconnect_from_ros();

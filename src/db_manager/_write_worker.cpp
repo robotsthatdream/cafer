@@ -2,21 +2,21 @@
 // Created by phlf on 13/07/16.
 //
 
-#include "cafer_core/db_manager/_write_worker.hpp"
+#include "cafer_core/db_manager.hpp"
 
 using namespace cafer_core;
 
-_details::_WriteWorker::_WriteWorker()
+DatabaseManager::_WriteWorker::_WriteWorker()
 {
     _processing_thread.reset(new std::thread(&_WriteWorker::_processing, this));
 }
 
-_details::_WriteWorker::_WriteWorker(_Wave* parent) : _WriteWorker()
+DatabaseManager::_WriteWorker::_WriteWorker(_Wave* parent) : _WriteWorker()
 {
     link_to_wave(parent);
 }
 
-void _details::_WriteWorker::_processing()
+void DatabaseManager::_WriteWorker::_processing()
 {
     std::unique_lock<std::mutex> lock(_signal_process_mutex);
     cafer_core::db_manager_status db_status_msg;
@@ -46,7 +46,7 @@ void _details::_WriteWorker::_processing()
     }
 }
 
-_details::_WriteWorker::~_WriteWorker()
+DatabaseManager::_WriteWorker::~_WriteWorker()
 {
     _signal_process_mutex.lock();
     //Let the _processing thread go to the end of the loop.
@@ -58,7 +58,7 @@ _details::_WriteWorker::~_WriteWorker()
     _processing_thread.reset();
 }
 
-void _details::_WriteWorker::awake_worker()
+void DatabaseManager::_WriteWorker::awake_worker()
 {
     //Try to acquire _signal_process_mutex: wait for the _processing thread to finish previous task.
     _signal_process_mutex.lock();
@@ -68,12 +68,12 @@ void _details::_WriteWorker::awake_worker()
     _signal_process_mutex.unlock();
 }
 
-void _details::_WriteWorker::pause_worker()
+void DatabaseManager::_WriteWorker::pause_worker()
 {
     _is_active.store(false);
 }
 
-void _details::_WriteWorker::link_to_wave(_Wave* wave)
+void DatabaseManager::_WriteWorker::link_to_wave(_Wave* wave)
 {
     _signal_process_mutex.lock();
     _wave.reset(wave);

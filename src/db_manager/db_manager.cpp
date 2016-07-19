@@ -2,7 +2,7 @@
 // Created by phlf on 11/04/16.
 //
 
-#include "cafer_core/db_manager/db_manager.hpp"
+#include "cafer_core/db_manager.hpp"
 
 using namespace cafer_core;
 
@@ -29,8 +29,8 @@ void DatabaseManager::init()
     //Subscriber
     _request_subscriber.reset(new Subscriber(
             ros_nh->subscribe<cafer_core::db_manager_request>("request", 10,
-                                                                  boost::bind(&DatabaseManager::_request_cb, this,
-                                                                              _1))));
+                                                              boost::bind(&DatabaseManager::_request_cb, this,
+                                                                          _1))));
 
     _send_data_thread.reset(new std::thread(&DatabaseManager::_send_data, this));
 
@@ -88,10 +88,32 @@ void DatabaseManager::_record_data(const uint32_t& id)
 //        _connected_waves[id]=_Wave(map_watchdog.find());
 //    }
 
-    _connected_waves[id].connect();
+    auto wave = _connected_waves.find(id);
+    if (wave == _connected_waves.end()) {
+        ROS_WARN_STREAM("Unable to find wave " << id);
+    }
+    else {
+        wave->second.connect();
+    }
 }
 
 void DatabaseManager::_stop_recording(const uint32_t& id)
 {
-    _connected_waves[id].disconnect();
+    auto wave = _connected_waves.find(id);
+    if (wave == _connected_waves.end()) {
+        ROS_WARN_STREAM("Unable to find wave " << id);
+    }
+    else {
+        wave->second.disconnect();
+    }
+}
+
+void DatabaseManager::operator[](uint32_t&& id)
+{
+    std::string test = "toto";
+    auto wave = _connected_waves.find(id);
+
+    if (wave == _connected_waves.end()) {
+        _connected_waves.emplace(id, _Wave(test, *_status_publisher));
+    }
 }
