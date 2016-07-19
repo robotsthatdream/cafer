@@ -3,7 +3,7 @@
 //| Copyright 2015, ISIR / Universite Pierre et Marie Curie (UPMC)
 //| Main contributor(s):
 //|   * Stephane Doncieux, stephane.doncieux@isir.upmc.fr
-//|
+//|   * Léni Le Goff, le_goff@isir.upmc.fr
 //|
 //| This experiment allows to generate neural networks for simple
 //| navigation tasks (obstacle avoidance and maze navigation).
@@ -37,51 +37,50 @@
 
 
 #include <ros/ros.h>
+#include "cafer_core/cafer_core.hpp"
 #include "cafer_core/manager_test.h"
-#include <random>
-
 
 int main(int argc, char **argv)
 {
 
-    ros::init(argc, argv, "manager_test_subcribe_node");
 
-    ros::NodeHandle nh;
+    //initiate the cafer core
+    cafer_core::init(argc, argv, "managerqueue_example");
 
     std::string topic;
-    nh.getParam("/manager_ns/manager_test/topic",topic);
+    cafer_core::ros_nh->getParam("/manager_ns/managerqueue_example/topic",topic);
 
-    ros::Publisher pub = nh.advertise<cafer_core::manager_test>(topic, 1);
+    //create the data manager for the manager_test msg
+    cafer_core::ManagerQueue<cafer_core::manager_test> manager("example", "example1");
 
-    std::mt19937 gen;
-    std::seed_seq seed = {std::time(0)};
-
-    gen.seed(seed);
-
-    int cpt = 0;
-
-    while (ros::ok()) {
-
-        cafer_core::manager_test msg;
-        std_msgs::Header header;
-        std::stringstream stream;
-        stream << cpt;
-
-        header.seq = cpt;
-        header.stamp = ros::Time(gen());
-        header.frame_id = "0";
-
-        msg.header = header;
-        msg.description = "I am the message " + stream.str();
-        msg.tags = {"t", "d", "e"};
-        msg.content = "this is not a content, but i am the " + stream.str() + "eme";
+    //listen to a specific topic
+    manager.listen_to(topic);
 
 
-        pub.publish(msg);
-
+    //listen until manager have 10 messages in his data set
+    while (manager.data_size() < 10) {
         ros::spinOnce();
-        cpt++;
     }
+
+    cafer_core::manager_test msg;
+
+    //and get the first message arrived
+    msg = manager.get();
+
+    ROS_INFO_STREAM( "Message info :\n"
+              << "   id : " << msg.header.seq << std::endl
+              << "   timestamp : " << msg.header.stamp << std::endl
+              << "   description : " << msg.description << std::endl
+              << "   content :" << msg.content << std::endl);
+
+    //and get the second message arrived
+    msg = manager.get();
+
+    ROS_INFO_STREAM( "Message info :\n"
+              << "   id : " << msg.header.seq << std::endl
+              << "   timestamp : " << msg.header.stamp << std::endl
+              << "   description : " << msg.description << std::endl
+              << "   content :" << msg.content << std::endl);
 
     return 0;
 }

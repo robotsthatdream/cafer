@@ -88,8 +88,10 @@ TEST(Manager, ManagerMap)
 
     manager.add(msg3);
 
-    cafer_core::manager_test msg4 = manager.search(2);
+    cafer_core::manager_test msg4;
+    bool is_exist = manager.search(2,msg4);
 
+    EXPECT_TRUE(is_exist);
     EXPECT_TRUE(msg3.header.seq == msg4.header.seq);
     EXPECT_FALSE(msg4.header.seq == msg2.header.seq);
     EXPECT_TRUE(msg3.header.stamp == msg4.header.stamp);

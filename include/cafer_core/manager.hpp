@@ -54,7 +54,6 @@
 #include "cafer_core/data.hpp"
 
 namespace cafer_core {
-
     /**
      * This namespace shall not be accessed by users, it is meant to hide some implementation details.
      */
@@ -209,6 +208,7 @@ namespace cafer_core {
     };
 
     //Partial template specialization of the Manager class using unordered_map as container.
+
     template<typename TData>
     class Manager<TData, _details::Map> : public ManagerBase<TData, _details::Map, Manager> {
         //Defining Base as a private alias for the template pattern.
@@ -232,7 +232,7 @@ namespace cafer_core {
         }
 
         /**
-        * @brief Get an element from the data container.
+        * @brief Random access to an element from the data container.
         * @return The returned message/element.
         */
         std::unique_ptr<cafer_core::Data> get()
@@ -264,15 +264,20 @@ namespace cafer_core {
         * @brief search specific data by its identifier
         * @param id identifier of the searched data object
         */
-        TData search(const uint32_t& id)
+        bool search(const u_int32_t& id, cafer_core::Data& data)
         {
-            TData return_data;
-
+            bool res;
             Base::_container_mutex.lock();
-            return_data = Base::_data_set.find(id)->second;
+            auto it = Base::_data_set.find(id);
+            if (it == Base::_data_set.end()) {
+                res = false;
+            }
+            else {
+                res = true;
+                data = Base::_data_set.find(id)->second;
+            }
             Base::_container_mutex.unlock();
-
-            return return_data;
+            return res;
         }
     };
 
@@ -302,6 +307,7 @@ namespace cafer_core {
 
         /**
         * @brief Get an element from the data container.
+        * Get return the element in the front of the queue and suppress it, i.e. return the first element added.
         * @return The returned message/element.
         */
         std::unique_ptr<cafer_core::Data> get()
@@ -313,7 +319,7 @@ namespace cafer_core {
             Base::_data_set.pop_front();
             Base::_container_mutex.unlock();
 
-           return data;
+            return data;
         }
     };
 
