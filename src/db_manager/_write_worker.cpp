@@ -11,7 +11,7 @@ DatabaseManager::_WriteWorker::_WriteWorker()
     _processing_thread.reset(new std::thread(&_WriteWorker::_processing, this));
 }
 
-DatabaseManager::_WriteWorker::_WriteWorker(Wave* parent) : _WriteWorker()
+DatabaseManager::_WriteWorker::_WriteWorker(_Wave* parent) : _WriteWorker()
 {
     link_to_wave(parent);
 }
@@ -73,7 +73,7 @@ void DatabaseManager::_WriteWorker::pause_worker()
     _is_active.store(false);
 }
 
-void DatabaseManager::_WriteWorker::link_to_wave(Wave* wave)
+void DatabaseManager::_WriteWorker::link_to_wave(_Wave* wave)
 {
     _signal_process_mutex.lock();
     _wave.reset(wave);

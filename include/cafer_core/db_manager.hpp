@@ -46,16 +46,16 @@ namespace cafer_core {
 
     private:
 
-        class Wave;
+        class _Wave;
 
         /**
-            * Class manipulating the filesystem.
-            */
-        class _FilesystemManager {
+        * Class manipulating the filesystem.
+        */
+        class _DBFileSystem {
         public:
-            _FilesystemManager(Wave*);
+            _DBFileSystem(_Wave*);
 
-            ~_FilesystemManager();
+            ~_DBFileSystem();
 
             void new_records();
 
@@ -64,7 +64,7 @@ namespace cafer_core {
             void save_data(std::unique_ptr<cafer_core::Data>);
 
         private:
-            cafer_core::shared_ptr<Wave> _wave;
+            cafer_core::shared_ptr<_Wave> _wave;
 
             uint32_t _counter = 0;
             std::map<std::string, std::ofstream> _records;
@@ -77,7 +77,7 @@ namespace cafer_core {
         public:
             _WriteWorker();
 
-            _WriteWorker(Wave*);
+            _WriteWorker(_Wave*);
 
             ~_WriteWorker();
 
@@ -85,10 +85,10 @@ namespace cafer_core {
 
             void pause_worker();
 
-            void link_to_wave(Wave*);
+            void link_to_wave(_Wave*);
 
         private:
-            cafer_core::shared_ptr<Wave> _wave;
+            cafer_core::shared_ptr<_Wave> _wave;
 
             std::atomic<bool> _is_active{false};
             std::unique_ptr<std::thread> _processing_thread;
@@ -98,20 +98,20 @@ namespace cafer_core {
             void _processing();
         };
 
-        class Wave {
+        class _Wave {
         public:
             std::string name;
             bool sequential;
             std::map<std::string, std::string> data_topics;
             std::map<std::string, std::string> data_structure;
 
-            _FilesystemManager fs_manager;
+            _DBFileSystem fs_manager;
             std::vector<std::unique_ptr<cafer_core::IManager>> managers;
             cafer_core::shared_ptr<cafer_core::Publisher> status_publisher;
 
-            Wave(Wave&&);
+            _Wave(_Wave&&);
 
-            Wave(std::string&, Publisher*);
+            _Wave(std::string&, Publisher*);
 
             void add_manager(cafer_core::IManager&);
 
@@ -133,7 +133,7 @@ namespace cafer_core {
         std::condition_variable _signal_send_data_thread;
         std::mutex _signal_send_data_mutex;
 
-        std::map<uint32_t, Wave> _connected_waves;
+        std::map<uint32_t, _Wave> _connected_waves;
 
         void _request_cb(const cafer_core::db_manager_requestConstPtr& request_msg);
 

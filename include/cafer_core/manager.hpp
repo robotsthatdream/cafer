@@ -72,8 +72,7 @@ namespace cafer_core {
     class IManager {
     public:
 
-        IManager(std::string type = "", std::string name = "", std::string description = "")
-                : _type(type), _name(name), _description(description)
+        IManager() : _type(""), _name(""), _description(""), _id(0)
         {
             //init random number generator for random access
             std::seed_seq seed = {std::time(0)};
@@ -222,7 +221,7 @@ namespace cafer_core {
     class Manager<TData, _details::Map> : public ManagerBase<TData, _details::Map, Manager> {
         //Defining Base as a private alias for the template pattern.
         //Here the namespace ::cafer_core:: should be specified, depending on the compiler to find the Manager template.
-        using Base=ManagerBase<TData, _details::Map, ::cafer_core::Manager>;
+        using Base=ManagerBase<TData, _details::Map, Manager>;
         //Inheriting base class constructor
         using Base::Base;
     public:
@@ -295,7 +294,7 @@ namespace cafer_core {
     class Manager<TData, _details::Queue> : public ManagerBase<TData, _details::Queue, Manager> {
         //Defining Base as a private alias for the template pattern.
         //Here the namespace ::cafer_core:: should be specified, depending on the compiler to find the Manager template.
-        using Base=ManagerBase<TData, _details::Queue, ::cafer_core::Manager>;
+        using Base=ManagerBase<TData, _details::Queue, Manager>;
         //Inheriting base class constructor
         using Base::Base;
 

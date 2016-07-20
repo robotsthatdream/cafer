@@ -6,7 +6,7 @@
 
 using namespace cafer_core;
 
-//DatabaseManager::Wave::Wave(std::string& wave_name) : name(wave_name), sequential(false)
+//DatabaseManager::_Wave::_Wave(std::string& wave_name) : name(wave_name), sequential(false)
 //{
 //    XmlRpc::XmlRpcValue wave_data;
 //    if (cafer_core::ros_nh->searchParam(wave_name, wave_data)) {
@@ -23,7 +23,7 @@ using namespace cafer_core;
 //    }
 //}
 
-DatabaseManager::Wave::Wave(Wave&& moved_wave) : name(moved_wave.name), sequential(moved_wave.sequential),
+DatabaseManager::_Wave::_Wave(_Wave&& moved_wave) : name(moved_wave.name), sequential(moved_wave.sequential),
                                                  status_publisher(moved_wave.status_publisher.get()),
                                                  managers(std::move(moved_wave.managers)), fs_manager(this)
 {
@@ -37,7 +37,7 @@ DatabaseManager::Wave::Wave(Wave&& moved_wave) : name(moved_wave.name), sequenti
     _write_worker.link_to_wave(this);
 }
 
-DatabaseManager::Wave::Wave(std::string& wave_name, Publisher* publisher) : name(wave_name),
+DatabaseManager::_Wave::_Wave(std::string& wave_name, Publisher* publisher) : name(wave_name),
                                                                             sequential(false),
                                                                             fs_manager(this),
                                                                             status_publisher(publisher)
@@ -61,12 +61,12 @@ DatabaseManager::Wave::Wave(std::string& wave_name, Publisher* publisher) : name
     _write_worker.link_to_wave(this);
 }
 
-void DatabaseManager::Wave::add_manager(cafer_core::IManager& manager)
+void DatabaseManager::_Wave::add_manager(cafer_core::IManager& manager)
 {
     managers.push_back(std::unique_ptr<cafer_core::IManager>(&manager));
 }
 
-bool DatabaseManager::Wave::no_data_left()
+bool DatabaseManager::_Wave::no_data_left()
 {
     bool no_data_left = true;
 
@@ -77,7 +77,7 @@ bool DatabaseManager::Wave::no_data_left()
     return no_data_left;
 }
 
-void DatabaseManager::Wave::connect()
+void DatabaseManager::_Wave::connect()
 {
     for (const auto& manager:managers) {
         manager->listen_to();
@@ -85,7 +85,7 @@ void DatabaseManager::Wave::connect()
     _write_worker.awake_worker();
 }
 
-void DatabaseManager::Wave::disconnect()
+void DatabaseManager::_Wave::disconnect()
 {
     for (const auto& manager:managers) {
         manager->disconnect_from_ros();

@@ -6,7 +6,7 @@
 
 using namespace cafer_core;
 
-DatabaseManager::_FilesystemManager::_FilesystemManager(Wave* parent) : _wave(parent)
+DatabaseManager::_DBFileSystem::_DBFileSystem(_Wave* parent) : _wave(parent)
 {
     std::string ros_home;
     ros::get_environment_variable(ros_home, "ROS_HOME");
@@ -14,12 +14,12 @@ DatabaseManager::_FilesystemManager::_FilesystemManager(Wave* parent) : _wave(pa
     _ros_home = ros_home;
 }
 
-DatabaseManager::_FilesystemManager::~_FilesystemManager()
+DatabaseManager::_DBFileSystem::~_DBFileSystem()
 {
     close_records();
 }
 
-void DatabaseManager::_FilesystemManager::close_records()
+void DatabaseManager::_DBFileSystem::close_records()
 {
     for (auto& record:_records) {
         if (record.second.is_open()) {
@@ -28,7 +28,7 @@ void DatabaseManager::_FilesystemManager::close_records()
     }
 }
 
-void DatabaseManager::_FilesystemManager::new_records()
+void DatabaseManager::_DBFileSystem::new_records()
 {
     boost::filesystem::path path = _ros_home;
 
@@ -57,7 +57,7 @@ void DatabaseManager::_FilesystemManager::new_records()
     }
 }
 
-void DatabaseManager::_FilesystemManager::save_data(std::unique_ptr<cafer_core::Data> data)
+void DatabaseManager::_DBFileSystem::save_data(std::unique_ptr<cafer_core::Data> data)
 {
     for (auto& data_to_save:data->get_serialized_data()) {
         _records[data_to_save.first] << data_to_save.second;

@@ -18,7 +18,7 @@ find_package(rostest REQUIRED)
 find_package(PythonLibs REQUIRED)
 
 set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
-set(CMAKE_CXX_COMPILER /usr/local/bin/clang++)
+#set(CMAKE_CXX_COMPILER /usr/local/bin/clang++)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -102,7 +102,7 @@ add_executable(getid src/getid.cpp)
 target_link_libraries(getid ${catkin_LIBRARIES})
 add_dependencies(getid cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
-add_library(cafer_core src/component.cpp src/db_manager/db_manager.cpp src/db_manager/db_filesystem.cpp src/db_manager/wave.cpp src/db_manager/_write_worker.cpp)
+add_library(cafer_core src/component.cpp src/db_manager/db_manager.cpp src/db_manager/_db_filesystem.cpp src/db_manager/_wave.cpp src/db_manager/_write_worker.cpp)
 target_link_libraries(cafer_core tbb ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PYTHON_LIBRARIES})
 
 add_dependencies(cafer_core cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
