@@ -51,7 +51,7 @@ namespace cafer_core {
         static size_t hash(const std::string& x)
         {
             size_t h = 0;
-            for (const char *s = x.c_str(); *s; ++s) {
+            for (const char* s = x.c_str(); *s; ++s) {
                 h = (h * 17) ^ *s;
             }
             return h;
@@ -71,7 +71,7 @@ namespace cafer_core {
 
     shared_ptr<ros::NodeHandle> ros_nh;
 
-    void init(int argc, char **argv, std::string node_name)
+    void init(int argc, char** argv, std::string node_name)
     {
         ros::init(argc, argv, node_name);
         ros_nh.reset(new ros::NodeHandle("~"));
@@ -81,7 +81,7 @@ namespace cafer_core {
     void python_init(std::string node_name)
     {
         int _argc = 0;
-        char **_argv = NULL;
+        char** _argv = NULL;
         init(_argc, _argv, node_name);
     }
 
@@ -436,6 +436,38 @@ void Component::send_local_node_death(std::string ns, long id)
     msg.data_str = "";
     management_p->publish(msg);
 
+}
+
+bool Component::find_by_id(uint32_t& id, ClientDescriptor& returned_descriptor)
+{
+    bool found = false;
+
+    for (auto& descriptor:map_watchdog) {
+        if (descriptor.first.id == id) {
+            found = true;
+
+            returned_descriptor.id = id;
+            returned_descriptor.ns = descriptor.first.ns;
+            returned_descriptor.type = descriptor.first.type;
+        }
+    }
+    return found;
+}
+
+bool Component::find_by_name(std::string& name, ClientDescriptor& returned_descriptor)
+{
+    bool found = false;
+
+    for (auto& descriptor:map_watchdog) {
+        if (descriptor.first.ns == name) {
+            found = true;
+
+            returned_descriptor.id = descriptor.first.id;
+            returned_descriptor.ns = name;
+            returned_descriptor.type = descriptor.first.type;
+        }
+    }
+    return found;
 }
 
 int Component::python_get_created_nodes_number()

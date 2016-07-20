@@ -40,6 +40,35 @@
 #include "cafer_core/cafer_core.hpp"
 #include "cafer_core/manager_test.h"
 
+class DummyData : public cafer_core::Data {
+    using cafer_core::Data::Data;
+
+public:
+    std::map<std::string, std::string> get_serialized_data() const override
+    {
+        std::stringstream data;
+        std::map<std::string, std::string> serialized_data;
+        cafer_core::shared_ptr<cafer_core::manager_test> msg;
+
+        msg = _stored_msg.instantiate<cafer_core::manager_test>();
+
+        data << "header: " << std::endl;
+        data << "  frame_id: " << msg->header.frame_id << std::endl;
+        data << "  seq: " << msg->header.seq << std::endl;
+        data << "  stamp: " << msg->header.stamp << std::endl;
+        data << "description: " << msg->description << std::endl;
+        data << "tags:" << std::endl;
+        for (uint32_t i = 0; i < msg->tags.size(); ++i) {
+            data << "  tag_" << i << ": " << msg->tags[i] << std::endl;
+        }
+        data << "content: " << msg->content << std::endl;
+
+        serialized_data["test_record"] = data.str();
+
+        return serialized_data;
+    }
+};
+
 int main(int argc, char **argv)
 {
 
@@ -47,7 +76,7 @@ int main(int argc, char **argv)
     cafer_core::init(0, NULL, "manager_test_subcribe");
 
     //create the data manager for the manager_test msg
-    cafer_core::ManagerMap<cafer_core::manager_test> manager("example", "example1");
+    cafer_core::ManagerMap<DummyData> manager;
 
     //you can create a message
     cafer_core::manager_test msg1;
@@ -62,19 +91,19 @@ int main(int argc, char **argv)
     msg1.content = "this is not a content";
 
     //and add it to the data manager
-    manager.add(msg1);
+    //manager.add(msg1);
 
     //and get it with the random access getter
-    manager.get();
+    //manager.get();
 
     //you can search it
-    manager.search(1);
+    //manager.search(1);
 
     //you can remove it
-    manager.remove(1);
+    //manager.remove(1);
 
     //you can also subscribe to a topic to save some data from a external source
-    manager.listen_to("fake_topic");
+    manager<<("fake_topic");
 
     //listen until manager have 10 messages in his data set
     while (manager.data_size() < 10) {

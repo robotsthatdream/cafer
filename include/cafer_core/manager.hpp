@@ -72,6 +72,14 @@ namespace cafer_core {
     class IManager {
     public:
 
+        IManager(std::string type = "", std::string name = "", std::string description = "")
+                : _type(type), _name(name), _description(description)
+        {
+            //init random number generator for random access
+            std::seed_seq seed = {std::time(0)};
+            _gen.seed(seed);
+        }
+
         /**
          * @brief Manager constructor
          * @param type specify which of data manager (and not the type of data)
@@ -119,7 +127,9 @@ namespace cafer_core {
         */
         void listen_to()
         {
-            listen_to(_data_topic);
+            if (!_data_topic.empty()) {
+                listen_to(_data_topic);
+            }
         }
 
         /**
@@ -170,13 +180,12 @@ namespace cafer_core {
          */
         void listen_to(const std::string& topic) override
         {
-            auto add_callback = [this](const shared_ptr<topic_tools::ShapeShifter>& msg)
+            auto add_callback = [this](topic_tools::ShapeShifter& msg)
             {
-                static_cast<DerivedClass<TData, DataContainer>*>(this)->add(*msg);
+                static_cast<DerivedClass<TData, DataContainer>*>(this)->add(msg);
             };
 
-            _subcriber.reset(new Subscriber(
-                    ros_nh->subscribe<const shared_ptr<topic_tools::ShapeShifter>>(topic, 10, add_callback)));
+            _subcriber.reset(new Subscriber(ros_nh->subscribe<topic_tools::ShapeShifter>(topic, 10, add_callback)));
         }
 
         /**
@@ -227,7 +236,7 @@ namespace cafer_core {
             TData data(msg);
 
             Base::_container_mutex.lock();
-            Base::_data_set.emplace(data.get_stored_msg.header.seq, data);
+            Base::_data_set.emplace(ros::Time::now().nsec, data);
             Base::_container_mutex.unlock();
         }
 

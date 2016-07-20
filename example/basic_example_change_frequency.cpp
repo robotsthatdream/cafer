@@ -43,7 +43,7 @@
 #include <sstream>
 
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
 
     int freq_value = 10;
@@ -66,7 +66,7 @@ int main(int argc, char **argv)
     sleep(1);
 
     cafer_core::Management msg;
-    msg.type = cafer_core::CHG_FREQ;
+    msg.type = static_cast<uint8_t>(cafer_core::MgmtType::CHG_FREQ);
     msg.src_node = "";
     msg.src_id = -1;
     msg.dest_node = "all";

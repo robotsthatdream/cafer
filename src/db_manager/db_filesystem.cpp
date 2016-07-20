@@ -6,7 +6,7 @@
 
 using namespace cafer_core;
 
-DatabaseManager::_FilesystemManager::_FilesystemManager(_Wave* parent) : _wave(parent)
+DatabaseManager::_FilesystemManager::_FilesystemManager(Wave* parent) : _wave(parent)
 {
     std::string ros_home;
     ros::get_environment_variable(ros_home, "ROS_HOME");
@@ -52,7 +52,6 @@ void DatabaseManager::_FilesystemManager::new_records()
         }
 
         for (const auto& data:_wave->data_structure) {
-
             _records[data.first] = std::ofstream(path.string() + data.second, std::ios::out);
         }
     }

@@ -102,7 +102,7 @@ add_executable(getid src/getid.cpp)
 target_link_libraries(getid ${catkin_LIBRARIES})
 add_dependencies(getid cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
-add_library(cafer_core src/component.cpp src/db_manager/db_manager.cpp src/db_manager/db_filesystem.cpp src/db_manager/_wave.cpp src/db_manager/_write_worker.cpp)
+add_library(cafer_core src/component.cpp src/db_manager/db_manager.cpp src/db_manager/db_filesystem.cpp src/db_manager/wave.cpp src/db_manager/_write_worker.cpp)
 target_link_libraries(cafer_core tbb ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PYTHON_LIBRARIES})
 
 add_dependencies(cafer_core cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
@@ -183,7 +183,6 @@ add_executable(data_publisher_example example/data_publisher_example.cpp)
 target_link_libraries(data_publisher_example ${catkin_LIBRARIES})
 add_dependencies(data_publisher_example cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
-
 add_executable(data_manager_example example/data_manager_example.cpp)
 target_link_libraries(data_manager_example cafer_core ${catkin_LIBRARIES})
 add_dependencies(data_manager_example cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
@@ -195,10 +194,6 @@ add_dependencies(managermap_example cafer_core_generate_messages_cpp ${catkin_EX
 add_executable(managerqueue_example example/managerqueue_example.cpp)
 target_link_libraries(managerqueue_example cafer_core ${catkin_LIBRARIES})
 add_dependencies(managerqueue_example cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-
-add_executable(db_manager_example example/db_manager_example.cpp)
-target_link_libraries(db_manager_example cafer_core ${catkin_LIBRARIES})
-add_dependencies(db_manager_example cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 add_executable(basic_example_change_frequency example/basic_example_change_frequency.cpp)
 target_link_libraries(basic_example_change_frequency cafer_core ${catkin_LIBRARIES})

@@ -40,21 +40,50 @@
 #include "cafer_core/cafer_core.hpp"
 #include "cafer_core/manager_test.h"
 
-int main(int argc, char **argv)
+//In this example, the data in the message will be stored in one record in the yaml format.
+//One key on the "serialized_data" map must matches one key of the data structure declared in the wave description file,
+// for it to be used with the DB_Manager. This example doesn't take that into account.
+class DummyData : public cafer_core::Data {
+    using cafer_core::Data::Data;
+
+public:
+    std::map<std::string, std::string> get_serialized_data() const override
+    {
+        std::stringstream data;
+        std::map<std::string, std::string> serialized_data;
+        cafer_core::shared_ptr<cafer_core::manager_test> msg;
+
+        msg = _stored_msg.instantiate<cafer_core::manager_test>();
+        data << "header: " << std::endl;
+        data << "  frame_id: " << msg->header.frame_id << std::endl;
+        data << "  seq: " << msg->header.seq << std::endl;
+        data << "  stamp: " << msg->header.stamp << std::endl;
+        data << "description: " << msg->description << std::endl;
+        data << "tags:" << std::endl;
+        for (uint32_t i = 0; i < msg->tags.size(); ++i) {
+            data << "  tag_" << i << ": " << msg->tags[i] << std::endl;
+        }
+        data << "content: " << msg->content << std::endl;
+
+        serialized_data["test_record"] = data.str();
+
+        return serialized_data;
+    }
+};
+
+int main(int argc, char** argv)
 {
-
-
     //initiate the cafer core
     cafer_core::init(argc, argv, "managermap_example");
 
     std::string topic;
-    cafer_core::ros_nh->getParam("/manager_ns/managermap_example/topic",topic);
+    cafer_core::ros_nh->getParam("/manager_ns/managermap_example/topic", topic);
 
     //create the data manager for the manager_test msg
-    cafer_core::ManagerMap<cafer_core::manager_test> manager("example", "example1");
+    cafer_core::ManagerMap<DummyData> manager;
 
     //listen to a specific topic
-    manager.listen_to(topic);
+    manager << topic;
 
 
     //listen until manager have 10 messages in his data set
@@ -62,32 +91,34 @@ int main(int argc, char **argv)
         ros::spinOnce();
     }
 
-    cafer_core::manager_test msg;
+    std::unique_ptr<cafer_core::Data> data;
 
     //and get it with the random access getter
-    msg = manager.get();
+    data = manager.get();
+    cafer_core::shared_ptr<cafer_core::manager_test> msg = data->get_stored_msg().instantiate<cafer_core::manager_test>();
 
-    ROS_INFO_STREAM( "Message info :\n"
-              << "   id : " << msg.header.seq << std::endl
-              << "   timestamp : " << msg.header.stamp << std::endl
-              << "   description : " << msg.description << std::endl
-              << "   content :" << msg.content << std::endl);
+    ROS_INFO_STREAM("Message info :\n"
+                    << "   id : " << msg->header.seq << std::endl
+                    << "   timestamp : " << msg->header.stamp << std::endl
+                    << "   description : " << msg->description << std::endl
+                    << "   content :" << msg->content << std::endl);
 
-    //you can search the first message arrived
-    int i = 0;
-    while(!manager.search(i,msg))
-        i++;
-
-    ROS_INFO_STREAM( "Message info :\n"
-              << "   id : " << msg.header.seq << std::endl
-              << "   timestamp : " << msg.header.stamp << std::endl
-              << "   description : " << msg.description << std::endl
-              << "   content :" << msg.content << std::endl);
-
-    //you can remove it
-    manager.remove(i);
-    if(!manager.search(i,msg))
-        ROS_INFO_STREAM("the message with id " << i << " doesn't exist");
+//    //you can search the first message arrived
+//    int i = 0;
+//    while (!manager.search(i, msg)) {
+//        i++;
+//    }
+//
+//    ROS_INFO_STREAM("Message info :\n"
+//                    << "   id : " << msg.header.seq << std::endl
+//                    << "   timestamp : " << msg.header.stamp << std::endl
+//                    << "   description : " << msg.description << std::endl
+//                    << "   content :" << msg.content << std::endl);
+//
+//    //you can remove it
+//    manager.remove(i);
+//    if (!manager.search(i, msg))
+//        ROS_INFO_STREAM("the message with id " << i << " doesn't exist");
 
 
     return 0;

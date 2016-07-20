@@ -6,12 +6,6 @@
 
 using namespace cafer_core;
 
-DatabaseManager::DatabaseManager(std::string&& management_topic, std::string&& cafer_type, double&& freq)
-        : cafer_core::Component(management_topic, cafer_type, freq)
-{
-    //TODO: init waves
-}
-
 DatabaseManager::~DatabaseManager()
 {
     client_disconnect_from_ros();
@@ -85,7 +79,7 @@ void DatabaseManager::_record_data(const uint32_t& id)
     //This commented part may be useful in a dynamic scenario (adding waves during experiment)
 
 //    if(_connected_waves.find(id)!=_connected_waves.end()) {
-//        _connected_waves[id]=_Wave(map_watchdog.find());
+//        _connected_waves[id]=Wave(map_watchdog.find());
 //    }
 
     auto wave = _connected_waves.find(id);
@@ -108,12 +102,26 @@ void DatabaseManager::_stop_recording(const uint32_t& id)
     }
 }
 
-void DatabaseManager::operator[](uint32_t&& id)
+bool DatabaseManager::add_wave(std::string&& name)
 {
-    std::string test = "toto";
-    auto wave = _connected_waves.find(id);
+    bool succeed = false;
+    ClientDescriptor descriptor;
 
-    if (wave == _connected_waves.end()) {
-        _connected_waves.emplace(id, _Wave(test, *_status_publisher));
+    if (find_by_name(name, descriptor)) {
+        auto wave_it = _connected_waves.find(descriptor.id);
+
+        if (wave_it == _connected_waves.end()) {
+            _connected_waves.emplace(descriptor.id, std::move(Wave(name, _status_publisher.get())));
+        }
+        else {
+            ROS_WARN_STREAM("The wave " << name << " is already linked to the DB_Manager!");
+        }
     }
+    else {
+        ROS_WARN_STREAM("The wave " << name << " doesn't exist in the experiment!");
+    }
+
+    return succeed;
 }
+
+

@@ -54,7 +54,7 @@
 
 namespace cafer_core {
 
-    void init(int argc, char **argv, std::string node_name);
+    void init(int argc, char** argv, std::string node_name);
 
     void python_init(std::string node_name);
 
@@ -419,6 +419,10 @@ namespace cafer_core {
 
         bool _is_init = false;
         bool _is_connected_to_ros = false;
+
+        bool find_by_id(uint32_t&, ClientDescriptor&);
+
+        bool find_by_name(std::string&, ClientDescriptor&);
 
     };
 

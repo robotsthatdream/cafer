@@ -11,7 +11,7 @@ DatabaseManager::_WriteWorker::_WriteWorker()
     _processing_thread.reset(new std::thread(&_WriteWorker::_processing, this));
 }
 
-DatabaseManager::_WriteWorker::_WriteWorker(_Wave* parent) : _WriteWorker()
+DatabaseManager::_WriteWorker::_WriteWorker(Wave* parent) : _WriteWorker()
 {
     link_to_wave(parent);
 }
@@ -38,7 +38,7 @@ void DatabaseManager::_WriteWorker::_processing()
             ROS_INFO_STREAM("DB is now recording data from " << _wave->name);
             _wave->fs_manager.new_records();
         }
-        for (const auto& manager:_wave->managers) {
+        for (auto& manager:_wave->managers) {
             if (manager->data_size() != 0) {
                 _wave->fs_manager.save_data(manager->get());
             }
@@ -73,7 +73,7 @@ void DatabaseManager::_WriteWorker::pause_worker()
     _is_active.store(false);
 }
 
-void DatabaseManager::_WriteWorker::link_to_wave(_Wave* wave)
+void DatabaseManager::_WriteWorker::link_to_wave(Wave* wave)
 {
     _signal_process_mutex.lock();
     _wave.reset(wave);

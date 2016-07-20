@@ -6,7 +6,7 @@
 
 using namespace cafer_core;
 
-//DatabaseManager::_Wave::_Wave(std::string& wave_name) : name(wave_name), sequential(false)
+//DatabaseManager::Wave::Wave(std::string& wave_name) : name(wave_name), sequential(false)
 //{
 //    XmlRpc::XmlRpcValue wave_data;
 //    if (cafer_core::ros_nh->searchParam(wave_name, wave_data)) {
@@ -23,10 +23,24 @@ using namespace cafer_core;
 //    }
 //}
 
-DatabaseManager::_Wave::_Wave(std::string& wave_name, cafer_core::Publisher& publisher) : name(wave_name),
-                                                                                          sequential(false),
-                                                                                          fs_manager(this),
-                                                                                          status_publisher(&publisher)
+DatabaseManager::Wave::Wave(Wave&& moved_wave) : name(moved_wave.name), sequential(moved_wave.sequential),
+                                                 status_publisher(moved_wave.status_publisher.get()),
+                                                 managers(std::move(moved_wave.managers)), fs_manager(this)
+{
+    for (auto& topic:moved_wave.data_topics) {
+        data_topics[topic.first] = static_cast<std::string>(topic.second);
+    }
+    for (auto& record:moved_wave.data_structure) {
+        data_structure[record.first] = static_cast<std::string>(record.second);
+    }
+
+    _write_worker.link_to_wave(this);
+}
+
+DatabaseManager::Wave::Wave(std::string& wave_name, Publisher* publisher) : name(wave_name),
+                                                                            sequential(false),
+                                                                            fs_manager(this),
+                                                                            status_publisher(publisher)
 {
     XmlRpc::XmlRpcValue wave_data;
     if (cafer_core::ros_nh->searchParam(wave_name, wave_data)) {
@@ -47,12 +61,12 @@ DatabaseManager::_Wave::_Wave(std::string& wave_name, cafer_core::Publisher& pub
     _write_worker.link_to_wave(this);
 }
 
-void DatabaseManager::_Wave::add_manager(cafer_core::IManager& manager)
+void DatabaseManager::Wave::add_manager(cafer_core::IManager& manager)
 {
     managers.push_back(std::unique_ptr<cafer_core::IManager>(&manager));
 }
 
-bool DatabaseManager::_Wave::no_data_left()
+bool DatabaseManager::Wave::no_data_left()
 {
     bool no_data_left = true;
 
@@ -63,7 +77,7 @@ bool DatabaseManager::_Wave::no_data_left()
     return no_data_left;
 }
 
-void DatabaseManager::_Wave::connect()
+void DatabaseManager::Wave::connect()
 {
     for (const auto& manager:managers) {
         manager->listen_to();
@@ -71,7 +85,7 @@ void DatabaseManager::_Wave::connect()
     _write_worker.awake_worker();
 }
 
-void DatabaseManager::_Wave::disconnect()
+void DatabaseManager::Wave::disconnect()
 {
     for (const auto& manager:managers) {
         manager->disconnect_from_ros();
