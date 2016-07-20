@@ -180,9 +180,9 @@ namespace cafer_core {
          */
         void listen_to(const std::string& topic) override
         {
-            auto add_callback = [this](topic_tools::ShapeShifter& msg)
+            auto add_callback = [this](const shared_ptr<const topic_tools::ShapeShifter>& msg)
             {
-                static_cast<DerivedClass<TData, DataContainer>*>(this)->add(msg);
+                static_cast<DerivedClass<TData, DataContainer>*>(this)->add(*msg);
             };
 
             _subcriber.reset(new Subscriber(ros_nh->subscribe<topic_tools::ShapeShifter>(topic, 10, add_callback)));
