@@ -19,12 +19,12 @@ DatabaseManager::~DatabaseManager()
 void DatabaseManager::init()
 {
     //Publisher
-    _status_publisher.reset(new Publisher(ros_nh->advertise<cafer_core::db_manager_status>("status", 10)));
+    _status_publisher.reset(new Publisher(ros_nh->advertise<cafer_core::DBManager>("status", 10)));
     //Subscriber
     _request_subscriber.reset(new Subscriber(
-            ros_nh->subscribe<cafer_core::db_manager_request>("request", 10,
-                                                              boost::bind(&DatabaseManager::_request_cb, this,
-                                                                          _1))));
+            ros_nh->subscribe<cafer_core::DBManager>("request", 10,
+                                                     boost::bind(&DatabaseManager::_request_cb, this,
+                                                                 _1))));
 
     _send_data_thread.reset(new std::thread(&DatabaseManager::_send_data, this));
 
@@ -48,6 +48,9 @@ void DatabaseManager::client_disconnect_from_ros()
 void DatabaseManager::_send_data()
 {
     std::unique_lock<std::mutex> lock(_signal_send_data_mutex);
+    cafer_core::DBManager db_manager_response;
+
+    db_manager_response.type = static_cast<uint8_t>(Response::DATA);
 
     //Processing loop
     while (ros::ok()) {
@@ -55,13 +58,16 @@ void DatabaseManager::_send_data()
         _signal_send_data_thread.wait(lock);
         //Thread notified: acquires _signal_process_mutex and resume.
 
-        //TODO: Define task here.
+        db_manager_response.id = requester_id;
+        db_manager_response.
+
+
     }
 }
 
-void DatabaseManager::_request_cb(const cafer_core::db_manager_requestConstPtr& request_msg)
+void DatabaseManager::_request_cb(const cafer_core::DBManagerConstPtr& request_msg)
 {
-    switch (static_cast<Request>(request_msg->request)) {
+    switch (static_cast<Request>(request_msg->type)) {
         case Request::RECORD_DATA:
             _record_data(request_msg->id);
             break;
@@ -69,6 +75,13 @@ void DatabaseManager::_request_cb(const cafer_core::db_manager_requestConstPtr& 
             _stop_recording(request_msg->id);
             break;
         case Request::REQUEST_DATA:
+            requester_id = request_msg->id;
+            _data_request = request_msg->data;
+
+            _signal_send_data_mutex.lock();
+            _signal_send_data_thread.notify_one();
+            _signal_send_data_mutex.unlock();
+            break;
         default:
             ROS_WARN_STREAM("Received unknown request.");
     }
@@ -111,7 +124,7 @@ bool DatabaseManager::add_wave(std::string&& name)
         auto wave_it = _connected_waves.find(descriptor.id);
 
         if (wave_it == _connected_waves.end()) {
-            _connected_waves.emplace(descriptor.id, std::move(_Wave(name, _status_publisher.get())));
+            _connected_waves.emplace(descriptor.id, std::move(_Wave(descriptor.id, name, _status_publisher.get())));
         }
         else {
             ROS_WARN_STREAM("The wave " << name << " is already linked to the DB_Manager!");

@@ -18,8 +18,7 @@
 
 #include "cafer_core/cafer_core.hpp"
 
-#include <cafer_core/db_manager_request.h>
-#include <cafer_core/db_manager_status.h>
+#include <cafer_core/DBManager.h>
 
 namespace cafer_core {
 
@@ -27,6 +26,10 @@ namespace cafer_core {
     public:
         enum class Request : uint8_t {
             RECORD_DATA, STOP_RECORDING, REQUEST_DATA
+        };
+
+        enum class Response : uint8_t {
+            STATUS_READY, STATUS_ACTIVE, ERROR, DATA
         };
 
         using Component::Component;
@@ -40,7 +43,7 @@ namespace cafer_core {
         void client_disconnect_from_ros() override;
 
         void update() override
-        { };
+        {};
 
         bool add_wave(std::string&& name);
 
@@ -100,7 +103,9 @@ namespace cafer_core {
 
         class _Wave {
         public:
-            std::string name;
+            const uint32_t id;
+            const std::string name;
+            const std::string type;
             bool sequential;
             std::map<std::string, std::string> data_topics;
             std::map<std::string, std::string> data_structure;
@@ -111,7 +116,7 @@ namespace cafer_core {
 
             _Wave(_Wave&&);
 
-            _Wave(std::string&, Publisher*);
+            _Wave(uint32_t id_, std::string&, Publisher*);
 
             void add_manager(cafer_core::IManager&);
 
@@ -126,6 +131,9 @@ namespace cafer_core {
 
         };
 
+        uint32_t requester_id;
+        std::string _data_request;
+
         cafer_core::shared_ptr<cafer_core::Publisher> _status_publisher;
         std::unique_ptr<cafer_core::Subscriber> _request_subscriber;
 
@@ -135,7 +143,7 @@ namespace cafer_core {
 
         std::map<uint32_t, _Wave> _connected_waves;
 
-        void _request_cb(const cafer_core::db_manager_requestConstPtr& request_msg);
+        void _request_cb(const cafer_core::DBManagerConstPtr& request_msg);
 
         void _send_data();
 

@@ -19,10 +19,10 @@ DatabaseManager::_WriteWorker::_WriteWorker(_Wave* parent) : _WriteWorker()
 void DatabaseManager::_WriteWorker::_processing()
 {
     std::unique_lock<std::mutex> lock(_signal_process_mutex);
-    cafer_core::db_manager_status db_status_msg;
+    cafer_core::DBManager db_status_msg;
 
-    db_status_msg.state = static_cast<uint8_t>(true);
-    db_status_msg.recipient=_wave->name;
+    db_status_msg.type = static_cast<uint8_t>(Response::STATUS_READY);
+    db_status_msg.id = _wave->id;
 
     //Processing loop
     while (ros::ok()) {

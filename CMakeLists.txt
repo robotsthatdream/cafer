@@ -55,8 +55,7 @@ catkin_python_setup()
 ## Generate messages in the 'msg' folder
 add_message_files(
         FILES
-        db_manager_request.msg
-        db_manager_status.msg
+        DBManager.msg
         Management.msg
         manager_test.msg
 )

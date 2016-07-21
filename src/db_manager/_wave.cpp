@@ -23,9 +23,10 @@ using namespace cafer_core;
 //    }
 //}
 
-DatabaseManager::_Wave::_Wave(_Wave&& moved_wave) : name(moved_wave.name), sequential(moved_wave.sequential),
-                                                 status_publisher(moved_wave.status_publisher.get()),
-                                                 managers(std::move(moved_wave.managers)), fs_manager(this)
+DatabaseManager::_Wave::_Wave(_Wave&& moved_wave) : id(moved_wave.id), name(moved_wave.name),
+                                                    sequential(moved_wave.sequential),
+                                                    status_publisher(moved_wave.status_publisher.get()),
+                                                    managers(std::move(moved_wave.managers)), fs_manager(this)
 {
     for (auto& topic:moved_wave.data_topics) {
         data_topics[topic.first] = static_cast<std::string>(topic.second);
@@ -37,10 +38,10 @@ DatabaseManager::_Wave::_Wave(_Wave&& moved_wave) : name(moved_wave.name), seque
     _write_worker.link_to_wave(this);
 }
 
-DatabaseManager::_Wave::_Wave(std::string& wave_name, Publisher* publisher) : name(wave_name),
-                                                                            sequential(false),
-                                                                            fs_manager(this),
-                                                                            status_publisher(publisher)
+DatabaseManager::_Wave::_Wave(uint32_t id_, std::string& wave_name, Publisher* publisher) : id(id_), name(wave_name),
+                                                                                            sequential(false),
+                                                                                            fs_manager(this),
+                                                                                            status_publisher(publisher)
 {
     XmlRpc::XmlRpcValue wave_data;
     if (cafer_core::ros_nh->searchParam(wave_name, wave_data)) {
