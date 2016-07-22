@@ -49,19 +49,25 @@ void DatabaseManager::_send_data()
 {
     std::unique_lock<std::mutex> lock(_signal_send_data_mutex);
     cafer_core::DBManager db_manager_response;
-
-    db_manager_response.type = static_cast<uint8_t>(Response::DATA);
+    std::vector<std::string> waves_uris;
 
     //Processing loop
     while (ros::ok()) {
+        waves_uris.clear();
         //Release _signal_process_mutex and blocks the thread.
         _signal_send_data_thread.wait(lock);
         //Thread notified: acquires _signal_process_mutex and resume.
 
-        db_manager_response.id = requester_id;
-        db_manager_response.
-
-
+        if (_find_wave_by_type(_data_request, waves_uris)) {
+            db_manager_response.id = requester_id;
+            db_manager_response.type = static_cast<uint8_t>(Response::DATA);
+            db_manager_response.data = waves_uris;
+        }
+        else {
+            db_manager_response.id = requester_id;
+            db_manager_response.type = static_cast<uint8_t>(Response::ERROR);
+            db_manager_response.data[0] = "No wave of requested type: " + _data_request + " !";
+        }
     }
 }
 
@@ -76,7 +82,7 @@ void DatabaseManager::_request_cb(const cafer_core::DBManagerConstPtr& request_m
             break;
         case Request::REQUEST_DATA:
             requester_id = request_msg->id;
-            _data_request = request_msg->data;
+            _data_request = request_msg->data[0];
 
             _signal_send_data_mutex.lock();
             _signal_send_data_thread.notify_one();
@@ -89,12 +95,7 @@ void DatabaseManager::_request_cb(const cafer_core::DBManagerConstPtr& request_m
 
 void DatabaseManager::_record_data(const uint32_t& id)
 {
-    //This commented part may be useful in a dynamic scenario (adding waves during experiment)
-
-//    if(_connected_waves.find(id)!=_connected_waves.end()) {
-//        _connected_waves[id]=_Wave(map_watchdog.find());
-//    }
-
+    //TODO: In a dynamic scenario call add_waves() for new waves that connect to the DB Manager.
     auto wave = _connected_waves.find(id);
     if (wave == _connected_waves.end()) {
         ROS_WARN_STREAM("Unable to find wave " << id);
@@ -125,6 +126,7 @@ bool DatabaseManager::add_wave(std::string&& name)
 
         if (wave_it == _connected_waves.end()) {
             _connected_waves.emplace(descriptor.id, std::move(_Wave(descriptor.id, name, _status_publisher.get())));
+            succeed = true;
         }
         else {
             ROS_WARN_STREAM("The wave " << name << " is already linked to the DB_Manager!");
@@ -132,6 +134,20 @@ bool DatabaseManager::add_wave(std::string&& name)
     }
     else {
         ROS_WARN_STREAM("The wave " << name << " doesn't exist in the experiment!");
+    }
+
+    return succeed;
+}
+
+bool DatabaseManager::_find_wave_by_type(std::string& type, std::vector<std::string>& waves_uris)
+{
+    bool succeed = false;
+
+    for (const auto& wave:_connected_waves) {
+        if (wave.second.type == type) {
+            waves_uris.push_back(wave.second.name);
+            succeed = true;
+        }
     }
 
     return succeed;

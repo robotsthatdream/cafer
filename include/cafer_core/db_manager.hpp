@@ -147,9 +147,11 @@ namespace cafer_core {
 
         void _send_data();
 
-        void _record_data(const uint32_t&);
+        void _record_data(const uint32_t& id);
 
-        void _stop_recording(const uint32_t&);
+        void _stop_recording(const uint32_t& id);
+
+        bool _find_wave_by_type(std::string& type, std::vector<std::string>& waves_uris);
     };
 }
 
