@@ -7,6 +7,7 @@
 
 #include <ros/ros.h>
 #include <boost/shared_ptr.hpp>
+#include <cstdint>
 
 namespace cafer_core {
 

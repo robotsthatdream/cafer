@@ -32,6 +32,8 @@ namespace cafer_core {
             STATUS_READY, STATUS_ACTIVE, ERROR, DATA
         };
 
+        class _Wave;
+
         using Component::Component;
 
         ~DatabaseManager();
@@ -47,9 +49,9 @@ namespace cafer_core {
 
         bool add_wave(std::string&& name);
 
-    private:
+        std::unique_ptr<_Wave> find_wave_by_name(std::string&& name);
 
-        class _Wave;
+    private:
 
         /**
         * Class manipulating the filesystem.
@@ -101,11 +103,36 @@ namespace cafer_core {
             void _processing();
         };
 
+        uint32_t requester_id;
+        std::string _data_request;
+
+        cafer_core::shared_ptr<cafer_core::Publisher> _status_publisher;
+        std::unique_ptr<cafer_core::Subscriber> _request_subscriber;
+
+        std::unique_ptr<std::thread> _send_data_thread;
+        std::condition_variable _signal_send_data_thread;
+        std::mutex _signal_send_data_mutex;
+
+        std::map<uint32_t, _Wave> _connected_waves;
+
+        void _request_cb(const cafer_core::DBManagerConstPtr& request_msg);
+
+        void _send_data();
+
+        void _record_data(const uint32_t& id);
+
+        void _stop_recording(const uint32_t& id);
+
+        bool _find_waves_by_type(std::string& type, std::vector<std::string>& waves_uris);
+
+    public:
+
+        //It is necessary for this class to be in the public scope for static wave declaration.
         class _Wave {
         public:
-            const uint32_t id;
+            uint32_t id;
             const std::string name;
-            const std::string type;
+            std::string type;
             bool sequential;
             std::map<std::string, std::string> data_topics;
             std::map<std::string, std::string> data_structure;
@@ -131,27 +158,6 @@ namespace cafer_core {
 
         };
 
-        uint32_t requester_id;
-        std::string _data_request;
-
-        cafer_core::shared_ptr<cafer_core::Publisher> _status_publisher;
-        std::unique_ptr<cafer_core::Subscriber> _request_subscriber;
-
-        std::unique_ptr<std::thread> _send_data_thread;
-        std::condition_variable _signal_send_data_thread;
-        std::mutex _signal_send_data_mutex;
-
-        std::map<uint32_t, _Wave> _connected_waves;
-
-        void _request_cb(const cafer_core::DBManagerConstPtr& request_msg);
-
-        void _send_data();
-
-        void _record_data(const uint32_t& id);
-
-        void _stop_recording(const uint32_t& id);
-
-        bool _find_wave_by_type(std::string& type, std::vector<std::string>& waves_uris);
     };
 }
 

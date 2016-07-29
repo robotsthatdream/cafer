@@ -10,6 +10,11 @@ DatabaseManager::~DatabaseManager()
 {
     client_disconnect_from_ros();
 
+    _signal_send_data_mutex.lock();
+    _signal_send_data_thread.notify_one();
+    _signal_send_data_mutex.unlock();
+    _send_data_thread->join();
+
     _send_data_thread.reset();
 
     _status_publisher.reset();
@@ -58,7 +63,7 @@ void DatabaseManager::_send_data()
         _signal_send_data_thread.wait(lock);
         //Thread notified: acquires _signal_process_mutex and resume.
 
-        if (_find_wave_by_type(_data_request, waves_uris)) {
+        if (_find_waves_by_type(_data_request, waves_uris)) {
             db_manager_response.id = requester_id;
             db_manager_response.type = static_cast<uint8_t>(Response::DATA);
             db_manager_response.data = waves_uris;
@@ -75,12 +80,15 @@ void DatabaseManager::_request_cb(const cafer_core::DBManagerConstPtr& request_m
 {
     switch (static_cast<Request>(request_msg->type)) {
         case Request::RECORD_DATA:
+            ROS_INFO_STREAM("Received record request from Wave " << request_msg->id);
             _record_data(request_msg->id);
             break;
         case Request::STOP_RECORDING:
+            ROS_INFO_STREAM("Received stop recording request from Wave " << request_msg->id);
             _stop_recording(request_msg->id);
             break;
         case Request::REQUEST_DATA:
+            ROS_INFO_STREAM("Received data request from Wave " << request_msg->id);
             requester_id = request_msg->id;
             _data_request = request_msg->data[0];
 
@@ -139,7 +147,7 @@ bool DatabaseManager::add_wave(std::string&& name)
     return succeed;
 }
 
-bool DatabaseManager::_find_wave_by_type(std::string& type, std::vector<std::string>& waves_uris)
+bool DatabaseManager::_find_waves_by_type(std::string& type, std::vector<std::string>& waves_uris)
 {
     bool succeed = false;
 
@@ -151,6 +159,17 @@ bool DatabaseManager::_find_wave_by_type(std::string& type, std::vector<std::str
     }
 
     return succeed;
+}
+
+std::unique_ptr<DatabaseManager::_Wave> DatabaseManager::find_wave_by_name(std::string&& name)
+{
+    std::unique_ptr<DatabaseManager::_Wave> wave_ptr = nullptr;
+    for (auto& wave:_connected_waves) {
+        if (wave.second.name == name) {
+            wave_ptr.reset(&wave.second);
+        }
+    }
+    return wave_ptr;
 }
 
 

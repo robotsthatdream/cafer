@@ -43,9 +43,13 @@ DatabaseManager::_Wave::_Wave(uint32_t id_, std::string& wave_name, Publisher* p
                                                                                             fs_manager(this),
                                                                                             status_publisher(publisher)
 {
+    std::string key;
     XmlRpc::XmlRpcValue wave_data;
-    if (cafer_core::ros_nh->searchParam(wave_name, wave_data)) {
+    if (cafer_core::ros_nh->searchParam(wave_name, key)) {
+        cafer_core::ros_nh->getParam(key, wave_data);
+
         sequential = wave_data["sequential"];
+        type = static_cast<std::string>(wave_data["type"]);
 
         for (auto& topic:wave_data["topics"]["data"]) {
             data_topics[topic.first] = static_cast<std::string>(topic.second);

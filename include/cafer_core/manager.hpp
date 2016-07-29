@@ -72,7 +72,7 @@ namespace cafer_core {
     class IManager {
     public:
 
-        IManager() : _type(""), _name(""), _description(""), _id(0)
+        IManager() : _id(0), _name(""), _description(""), _type("")
         {
             //init random number generator for random access
             std::seed_seq seed = {std::time(0)};
@@ -87,7 +87,7 @@ namespace cafer_core {
          */
         IManager(std::string data_topic_param, std::string type = "", std::string name = "",
                  std::string description = "")
-                : _type(type), _name(name), _description(description)
+                : _name(name), _description(description), _type(type)
         {
             //Retrieve data_topic from ROS parameter
             ros_nh->getParam(data_topic_param, _data_topic);

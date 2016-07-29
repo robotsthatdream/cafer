@@ -84,7 +84,7 @@ generate_messages(
 catkin_package(
         INCLUDE_DIRS include
         LIBRARIES cafer_core
-        CATKIN_DEPENDS roscpp std_msgs message_runtime roslib
+        CATKIN_DEPENDS roscpp std_msgs message_runtime roslib topic_tools
         DEPENDS system_lib
 )
 
