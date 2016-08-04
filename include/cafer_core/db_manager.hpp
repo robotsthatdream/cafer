@@ -47,9 +47,9 @@ namespace cafer_core {
         void update() override
         {};
 
-        bool add_wave(std::string&& name);
+        bool add_wave(std::string name);
 
-        std::unique_ptr<_Wave> find_wave_by_name(std::string&& name);
+        std::unique_ptr<_Wave> find_wave_by_name(std::string name);
 
     private:
 
@@ -69,7 +69,7 @@ namespace cafer_core {
             void save_data(std::unique_ptr<cafer_core::Data>);
 
         private:
-            cafer_core::shared_ptr<_Wave> _wave;
+            _Wave* _wave;
 
             uint32_t _counter = 0;
             std::map<std::string, std::ofstream> _records;
@@ -93,9 +93,10 @@ namespace cafer_core {
             void link_to_wave(_Wave*);
 
         private:
-            cafer_core::shared_ptr<_Wave> _wave;
+            _Wave* _wave;
 
             std::atomic<bool> _is_active{false};
+            std::atomic<bool> _finish{false};
             std::unique_ptr<std::thread> _processing_thread;
             std::condition_variable _signal_processing_thread;
             std::mutex _signal_process_mutex;
@@ -141,11 +142,11 @@ namespace cafer_core {
             std::vector<std::unique_ptr<cafer_core::IManager>> managers;
             cafer_core::shared_ptr<cafer_core::Publisher> status_publisher;
 
-            _Wave(_Wave&&);
+            _Wave(_Wave&& moved_wave);
 
             _Wave(uint32_t id_, std::string&, Publisher*);
 
-            void add_manager(cafer_core::IManager&);
+            void add_manager(cafer_core::IManager* manager);
 
             bool no_data_left();
 

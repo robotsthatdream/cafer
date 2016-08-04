@@ -100,6 +100,8 @@ namespace cafer_core {
 
         IManager(const IManager& manager) = delete;
 
+        virtual ~IManager() = default;
+
         void disconnect_from_ros()
         {
             _subcriber.reset();
@@ -173,6 +175,8 @@ namespace cafer_core {
     public:
         using IManager::IManager;
 
+        virtual ~ManagerBase() = default;
+
         /**
          * @brief Connects to a specific topic and listen to it.
          * @param The topic to listen to.
@@ -221,7 +225,7 @@ namespace cafer_core {
     class Manager<TData, _details::Map> : public ManagerBase<TData, _details::Map, Manager> {
         //Defining Base as a private alias for the template pattern.
         //Here the namespace ::cafer_core:: should be specified, depending on the compiler to find the Manager template.
-        using Base=ManagerBase<TData, _details::Map, Manager>;
+        using Base=ManagerBase<TData, _details::Map, ::cafer_core::Manager>;
         //Inheriting base class constructor
         using Base::Base;
     public:
@@ -294,7 +298,7 @@ namespace cafer_core {
     class Manager<TData, _details::Queue> : public ManagerBase<TData, _details::Queue, Manager> {
         //Defining Base as a private alias for the template pattern.
         //Here the namespace ::cafer_core:: should be specified, depending on the compiler to find the Manager template.
-        using Base=ManagerBase<TData, _details::Queue, Manager>;
+        using Base=ManagerBase<TData, _details::Queue, ::cafer_core::Manager>;
         //Inheriting base class constructor
         using Base::Base;
 

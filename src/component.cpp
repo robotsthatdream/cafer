@@ -69,7 +69,7 @@ namespace cafer_core {
 //tbb::concurrent_hash_map<std::string, std::string, MyHashCompare> allocated_node_group;
 
 
-    shared_ptr<ros::NodeHandle> ros_nh;
+    shared_ptr <ros::NodeHandle> ros_nh;
 
     void init(int argc, char** argv, std::string node_name)
     {
@@ -101,7 +101,7 @@ namespace cafer_core {
 using namespace cafer_core;
 
 
-Component::Component(std::string mgmt_topic, std::string _type, double freq, bool new_nodehandle, std::string uuid)
+Component::Component(std::string mgmt_topic, std::string _type, double freq, std::string uuid, bool new_nodehandle)
         : terminate(false), map_watchdog(5)
 {
     rate.reset(new ros::Rate(freq));
@@ -121,9 +121,9 @@ Component::Component(std::string mgmt_topic, std::string _type, double freq, boo
     }
     ROS_INFO_STREAM("Creating a component connected to management_topic: " << mgmt_topic << " type=" << _type);
 
-    management_p.reset(new Publisher(my_ros_nh->advertise<cafer_core::Management>(mgmt_topic.c_str(), 0)));
+    management_p.reset(new Publisher(my_ros_nh->advertise<cafer_core::Management>(mgmt_topic.c_str(), 1000)));
     management_s.reset(
-            new Subscriber(my_ros_nh->subscribe(mgmt_topic.c_str(), 0, &Component::management_cb, this)));
+            new Subscriber(my_ros_nh->subscribe(mgmt_topic.c_str(), 1000, &Component::management_cb, this)));
     watchdog.reset(new ros::Timer(
             my_ros_nh->createTimer(ros::Duration(ros::Rate(freq)), &Component::watchdog_cb, this)));
 
@@ -190,7 +190,9 @@ Component::call_launch_file(std::string launch_file, std::string namespace_base,
         cmd = "roslaunch " + launch_file + " " + ns + " " + osf.str() + " " + mgmt + uuid;
 
         std::packaged_task<int()> task([cmd]()
-                                       { return std::system(cmd.c_str()); });
+                                       {
+                                           return std::system(cmd.c_str());
+                                       });
         future_ret_val = task.get_future();
         std::thread(std::move(task)).detach();
         status = future_ret_val.wait_for(std::chrono::milliseconds(250));
@@ -220,7 +222,7 @@ Component::call_launch_file(std::string launch_file, std::string namespace_base,
 }
 
 bool
-Component::call_external_launch_file(std::string launch_file, const std::map<std::string, std::string>& subst_args)
+Component::call_external_launch_file(std::string launch_file, const std::map <std::string, std::string>& subst_args)
 {
     bool succeed = false;
     int32_t exit_value;
@@ -234,10 +236,12 @@ Component::call_external_launch_file(std::string launch_file, const std::map<std
         args_list << " " << arg.first << ":=" << arg.second;
     }
 
-    cmd = "roslaunch " + launch_file + args_list.str() + "&";
+    cmd = "roslaunch " + launch_file + args_list.str();
 
     std::packaged_task<int()> task([cmd]()
-                                   { return std::system(cmd.c_str()); });
+                                   {
+                                       return std::system(cmd.c_str());
+                                   });
     future_ret_val = task.get_future();
     std::thread(std::move(task)).detach();
 
@@ -258,7 +262,6 @@ Component::call_external_launch_file(std::string launch_file, const std::map<std
         default:
             break;
     }
-    ROS_INFO_STREAM("Launch file call: " << cmd);
 
     return succeed;
 }
@@ -286,7 +289,7 @@ unsigned int Component::how_many_client_from_type(std::string _type, bool up_onl
     return nb;
 }
 
-void Component::get_connected_client_with_type(std::string _type, std::vector<ClientDescriptor>& vcd, bool up_only)
+void Component::get_connected_client_with_type(std::string _type, std::vector <ClientDescriptor>& vcd, bool up_only)
 {
     for (const auto& v: map_watchdog) {
         if ((v.first.type == _type) && ((!up_only) || (is_it_recent_enough(v.second)))) {
@@ -300,7 +303,8 @@ bool Component::is_it_recent_enough(ros::Time t)
 {
 
     ros::Duration d = ros::Time::now() - t;
-    return d <= rate->expectedCycleTime() * 2.;
+    ROS_INFO_STREAM("time delta: " << d << " expected cycle time: " << (rate->expectedCycleTime() * 2.0));
+    return d <= (rate->expectedCycleTime() * 2.0);
 
 }
 
@@ -316,7 +320,6 @@ void Component::wait_for_client(std::string ns, long id)
 
 void Component::wait_for_init()
 {
-
     init();
 
     while ((!is_client_up(get_namespace(), get_id())) && (!is_initialized())) {
@@ -366,7 +369,7 @@ void Component::management_cb(const Management& mgmt)
             }
             break;
         case MgmtType::WATCHDOG:
-            update_watchdog(mgmt.src_node, mgmt.src_id, mgmt.src_type);
+            update_watchdog(mgmt.src_node, mgmt.src_id, mgmt.src_type, mgmt.data_str);
             break;
         case MgmtType::ACK_CREATION:
             if ((mgmt.dest_node == "all") ||
@@ -444,12 +447,13 @@ void Component::ack_creation()
 
 }
 
-void Component::update_watchdog(std::string ns, long id, std::string _type)
+void Component::update_watchdog(std::string ns, long id, std::string _type, std::string _uuid)
 {
     ClientDescriptor cd;
     cd.ns = ns;
     cd.id = id;
     cd.type = _type;
+    cd.managed_uuid = _uuid;
     map_watchdog[cd] = ros::Time::now();
     //ROS_INFO_STREAM("update_watchdog "<<ns<<" "<<id<<" "<<_type<<" my_id="<<get_id());
 }
@@ -483,7 +487,7 @@ void Component::watchdog_cb(const ros::TimerEvent& event)
     msg.dest_id = -1;
     msg.data_int = 0;
     msg.data_flt = 0;
-    msg.data_str = "";
+    msg.data_str = descriptor.managed_uuid;
     management_p->publish(msg);
 }
 
@@ -558,7 +562,7 @@ bool Component::find_by_uuid(std::string& uuid, ClientDescriptor& returned_descr
     bool found = false;
 
     for (auto& descriptor:map_watchdog) {
-        if (descriptor.first.ns == uuid) {
+        if (descriptor.first.managed_uuid == uuid) {
             found = true;
 
             returned_descriptor.id = descriptor.first.id;

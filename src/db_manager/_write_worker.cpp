@@ -7,11 +7,9 @@
 using namespace cafer_core;
 
 DatabaseManager::_WriteWorker::_WriteWorker()
-{
-    _processing_thread.reset(new std::thread(&_WriteWorker::_processing, this));
-}
+{}
 
-DatabaseManager::_WriteWorker::_WriteWorker(_Wave* parent) : _WriteWorker()
+DatabaseManager::_WriteWorker::_WriteWorker(_Wave* parent)
 {
     link_to_wave(parent);
 }
@@ -25,7 +23,7 @@ void DatabaseManager::_WriteWorker::_processing()
     db_status_msg.id = _wave->id;
 
     //Processing loop
-    while (ros::ok()) {
+    while (!_finish) {
         //Wait for signal to process data if server is inactive/preempted and there is no data.
         //The thread can be spuriously woken-up inconsequently.
         if (!_is_active && _wave->no_data_left()) {
@@ -35,7 +33,9 @@ void DatabaseManager::_WriteWorker::_processing()
             //Release _signal_process_mutex and blocks the thread.
             _signal_processing_thread.wait(lock);
             //Thread notified: acquires _signal_process_mutex and resume.
-            ROS_INFO_STREAM("DB is now recording data from " << _wave->name);
+            if(!_finish) {
+                ROS_INFO_STREAM("DB is now recording data from " << _wave->name);
+            }
             _wave->fs_manager.new_records();
         }
         for (auto& manager:_wave->managers) {
@@ -52,6 +52,7 @@ DatabaseManager::_WriteWorker::~_WriteWorker()
     //Let the _processing thread go to the end of the loop.
     _is_active.store(true);
     _signal_processing_thread.notify_one();
+    _finish.store(true);
     _signal_process_mutex.unlock();
     _processing_thread->join();
 
@@ -75,7 +76,6 @@ void DatabaseManager::_WriteWorker::pause_worker()
 
 void DatabaseManager::_WriteWorker::link_to_wave(_Wave* wave)
 {
-    _signal_process_mutex.lock();
-    _wave.reset(wave);
-    _signal_process_mutex.unlock();
+    _wave = wave;
+    _processing_thread.reset(new std::thread(&_WriteWorker::_processing, this));
 }

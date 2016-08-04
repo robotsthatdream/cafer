@@ -38,6 +38,7 @@ DatabaseManager::_Wave::_Wave(_Wave&& moved_wave) : id(moved_wave.id), name(move
     _write_worker.link_to_wave(this);
 }
 
+
 DatabaseManager::_Wave::_Wave(uint32_t id_, std::string& wave_name, Publisher* publisher) : id(id_), name(wave_name),
                                                                                             sequential(false),
                                                                                             fs_manager(this),
@@ -66,9 +67,10 @@ DatabaseManager::_Wave::_Wave(uint32_t id_, std::string& wave_name, Publisher* p
     _write_worker.link_to_wave(this);
 }
 
-void DatabaseManager::_Wave::add_manager(cafer_core::IManager& manager)
+void DatabaseManager::_Wave::add_manager(cafer_core::IManager* manager)
 {
-    managers.push_back(std::unique_ptr<cafer_core::IManager>(&manager));
+    std::unique_ptr<cafer_core::IManager> temp{manager};
+    managers.push_back(std::move(temp));
 }
 
 bool DatabaseManager::_Wave::no_data_left()

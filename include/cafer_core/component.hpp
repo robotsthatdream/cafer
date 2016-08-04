@@ -139,10 +139,13 @@ namespace cafer_core {
          * @param frequence of update. 10 by default.
          * @param true if a new nodehandle must be created. false by default
          */
-        Component(std::string mgmt_topic, std::string _type, double freq = 10, bool new_nodehandle = false,
-                  std::string uuid = "none");
+        Component(std::string mgmt_topic, std::string _type, double freq = 10, std::string uuid = "none",
+                  bool new_nodehandle = false);
 
-        ~Component(void)
+        /**
+         * Component destructor (specified virtual to allow deletion of a derived instance through a pointer of Component type).
+         */
+        virtual ~Component(void)
         {
             //disconnect_from_ros();
         }
@@ -369,7 +372,7 @@ namespace cafer_core {
          * @param id of checked client
          * @param type of checked client
          */
-        void update_watchdog(std::string ns, long int id, std::string _type);
+        void update_watchdog(std::string ns, long int id, std::string _type, std::string _uuid);
 
         /**
          * @brief Get the time of the last watchdog message for a particular client

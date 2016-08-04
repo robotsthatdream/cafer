@@ -124,7 +124,7 @@ void DatabaseManager::_stop_recording(const uint32_t& id)
     }
 }
 
-bool DatabaseManager::add_wave(std::string&& name)
+bool DatabaseManager::add_wave(std::string name)
 {
     bool succeed = false;
     ClientDescriptor descriptor;
@@ -133,7 +133,7 @@ bool DatabaseManager::add_wave(std::string&& name)
         auto wave_it = _connected_waves.find(descriptor.id);
 
         if (wave_it == _connected_waves.end()) {
-            _connected_waves.emplace(descriptor.id, std::move(_Wave(descriptor.id, name, _status_publisher.get())));
+            _connected_waves.emplace(descriptor.id, _Wave(descriptor.id, name, _status_publisher.get()));
             succeed = true;
         }
         else {
@@ -161,7 +161,7 @@ bool DatabaseManager::_find_waves_by_type(std::string& type, std::vector<std::st
     return succeed;
 }
 
-std::unique_ptr<DatabaseManager::_Wave> DatabaseManager::find_wave_by_name(std::string&& name)
+std::unique_ptr<DatabaseManager::_Wave> DatabaseManager::find_wave_by_name(std::string name)
 {
     std::unique_ptr<DatabaseManager::_Wave> wave_ptr = nullptr;
     for (auto& wave:_connected_waves) {
