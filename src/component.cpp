@@ -179,7 +179,7 @@ Component::call_launch_file(std::string launch_file, std::string namespace_base,
     clients = my_ros_nh->serviceClient<cafer_core::GetID>("/cafer_core/get_id");
 
     if (clients.call(id_msg)) {
-        created_namespace = "/" + namespace_base + "_" + std::to_string(id_msg.response.id);
+        created_namespace = "/" + namespace_base;//+ "_" + std::to_string(id_msg.response.id);
         ns = "ns:=" + created_namespace;
 
         osf << "frequency:=" << 1. / rate->expectedCycleTime().toSec()
@@ -303,7 +303,6 @@ bool Component::is_it_recent_enough(ros::Time t)
 {
 
     ros::Duration d = ros::Time::now() - t;
-    ROS_INFO_STREAM("time delta: " << d << " expected cycle time: " << (rate->expectedCycleTime() * 2.0));
     return d <= (rate->expectedCycleTime() * 2.0);
 
 }
