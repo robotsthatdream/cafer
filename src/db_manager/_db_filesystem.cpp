@@ -30,11 +30,11 @@ void DatabaseManager::_DBFileSystem::close_records()
 
 void DatabaseManager::_DBFileSystem::new_records()
 {
-    boost::filesystem::path path = _ros_home;
+    boost::filesystem::path path;
 
     if (_wave->sequential) {
         do {
-            path = path /
+            path = _ros_home /
                    boost::filesystem::path("cafer_db/" + _wave->name + "/iteration_" + std::to_string(_counter) + "/");
             ++_counter;
         }
@@ -46,7 +46,7 @@ void DatabaseManager::_DBFileSystem::new_records()
         }
     }
     else {
-        path = path / boost::filesystem::path("cafer_db/" + _wave->name + "/");
+        path = _ros_home / boost::filesystem::path("cafer_db/" + _wave->name + "/");
         if (!boost::filesystem::exists(path)) {
             boost::filesystem::create_directories(path);
         }

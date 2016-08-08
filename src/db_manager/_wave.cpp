@@ -67,8 +67,11 @@ DatabaseManager::_Wave::_Wave(uint32_t id_, std::string& wave_name, Publisher* p
     _write_worker.link_to_wave(this);
 }
 
-void DatabaseManager::_Wave::add_manager(cafer_core::IManager* manager)
+void DatabaseManager::_Wave::add_manager(cafer_core::IManager* manager, std::string topic)
 {
+    if (!topic.empty()) {
+        *manager << topic;
+    }
     std::unique_ptr<cafer_core::IManager> temp{manager};
     managers.push_back(std::move(temp));
 }

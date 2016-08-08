@@ -49,7 +49,7 @@ namespace cafer_core {
 
         bool add_wave(std::string name);
 
-        std::unique_ptr<_Wave> find_wave_by_name(std::string name);
+        bool find_wave_by_name(std::string name, shared_ptr<_Wave>& wave_ptr);
 
     private:
 
@@ -114,7 +114,7 @@ namespace cafer_core {
         std::condition_variable _signal_send_data_thread;
         std::mutex _signal_send_data_mutex;
 
-        std::map<uint32_t, _Wave> _connected_waves;
+        std::map<uint32_t, cafer_core::shared_ptr<_Wave>> _connected_waves;
 
         void _request_cb(const cafer_core::DBManagerConstPtr& request_msg);
 
@@ -146,7 +146,7 @@ namespace cafer_core {
 
             _Wave(uint32_t id_, std::string&, Publisher*);
 
-            void add_manager(cafer_core::IManager* manager);
+            void add_manager(cafer_core::IManager* manager, std::string topic = "");
 
             bool no_data_left();
 

@@ -120,7 +120,6 @@ namespace cafer_core {
         void operator<<(const std::string& topic)
         {
             _data_topic = topic;
-            listen_to(topic);
         }
 
         /**
@@ -236,7 +235,10 @@ namespace cafer_core {
          */
         void add(const topic_tools::ShapeShifter& msg)
         {
-            TData data(msg);
+            topic_tools::ShapeShifter msg_bis;
+            msg_bis = msg;
+
+            TData data(msg_bis);
 
             Base::_container_mutex.lock();
             Base::_data_set.emplace(ros::Time::now().nsec, data);
@@ -310,10 +312,8 @@ namespace cafer_core {
          */
         void add(const topic_tools::ShapeShifter& msg)
         {
-            TData data(msg);
-
             Base::_container_mutex.lock();
-            Base::_data_set.push_back(data);
+            Base::_data_set.push_back(TData(msg));
             Base::_container_mutex.unlock();
         }
 
@@ -327,7 +327,8 @@ namespace cafer_core {
             std::unique_ptr<cafer_core::Data> data;
 
             Base::_container_mutex.lock();
-            data.reset(&Base::_data_set.front());
+
+            data.reset(new TData(Base::_data_set.front()));
             Base::_data_set.pop_front();
             Base::_container_mutex.unlock();
 

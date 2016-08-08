@@ -39,22 +39,22 @@ void DatabaseManager::init()
 void DatabaseManager::client_connect_to_ros()
 {
     for (auto& wave:_connected_waves) {
-        wave.second.connect();
+        wave.second->connect();
     }
 }
 
 void DatabaseManager::client_disconnect_from_ros()
 {
     for (auto& wave:_connected_waves) {
-        wave.second.disconnect();
+        wave.second->disconnect();
     }
 }
 
 void DatabaseManager::_send_data()
 {
-    std::unique_lock<std::mutex> lock(_signal_send_data_mutex);
+    std::unique_lock <std::mutex> lock(_signal_send_data_mutex);
     cafer_core::DBManager db_manager_response;
-    std::vector<std::string> waves_uris;
+    std::vector <std::string> waves_uris;
 
     //Processing loop
     while (ros::ok()) {
@@ -109,7 +109,7 @@ void DatabaseManager::_record_data(const uint32_t& id)
         ROS_WARN_STREAM("Unable to find wave " << id);
     }
     else {
-        wave->second.connect();
+        wave->second->connect();
     }
 }
 
@@ -120,7 +120,7 @@ void DatabaseManager::_stop_recording(const uint32_t& id)
         ROS_WARN_STREAM("Unable to find wave " << id);
     }
     else {
-        wave->second.disconnect();
+        wave->second->disconnect();
     }
 }
 
@@ -128,12 +128,14 @@ bool DatabaseManager::add_wave(std::string name)
 {
     bool succeed = false;
     ClientDescriptor descriptor;
+    shared_ptr <_Wave> wave_ptr;
 
     if (find_by_name(name, descriptor)) {
         auto wave_it = _connected_waves.find(descriptor.id);
 
         if (wave_it == _connected_waves.end()) {
-            _connected_waves.emplace(descriptor.id, _Wave(descriptor.id, name, _status_publisher.get()));
+            wave_ptr.reset(new _Wave(descriptor.id, name, _status_publisher.get()));
+            _connected_waves.emplace(descriptor.id, wave_ptr);
             succeed = true;
         }
         else {
@@ -147,13 +149,13 @@ bool DatabaseManager::add_wave(std::string name)
     return succeed;
 }
 
-bool DatabaseManager::_find_waves_by_type(std::string& type, std::vector<std::string>& waves_uris)
+bool DatabaseManager::_find_waves_by_type(std::string& type, std::vector <std::string>& waves_uris)
 {
     bool succeed = false;
 
     for (const auto& wave:_connected_waves) {
-        if (wave.second.type == type) {
-            waves_uris.push_back(wave.second.name);
+        if (wave.second->type == type) {
+            waves_uris.push_back(wave.second->name);
             succeed = true;
         }
     }
@@ -161,15 +163,16 @@ bool DatabaseManager::_find_waves_by_type(std::string& type, std::vector<std::st
     return succeed;
 }
 
-std::unique_ptr<DatabaseManager::_Wave> DatabaseManager::find_wave_by_name(std::string name)
+bool DatabaseManager::find_wave_by_name(std::string name, shared_ptr <DatabaseManager::_Wave>& wave_ptr)
 {
-    std::unique_ptr<DatabaseManager::_Wave> wave_ptr = nullptr;
+    bool found = false;
+    wave_ptr = nullptr;
     for (auto& wave:_connected_waves) {
-        if (wave.second.name == name) {
-            wave_ptr.reset(&wave.second);
+        if (wave.second->name == name) {
+            wave_ptr = wave.second;
         }
     }
-    return wave_ptr;
+    return found;
 }
 
 
