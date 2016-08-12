@@ -17,7 +17,7 @@ find_package(Boost REQUIRED)
 find_package(rostest REQUIRED)
 
 set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
-set(CMAKE_CXX_COMPILER /usr/local/bin/clang++)
+#set(CMAKE_CXX_COMPILER /usr/local/bin/clang++)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
