@@ -1,0 +1,53 @@
+# CAFER Travis CI test file
+# Using Trusty as the Ubuntu version used by Travis. All commands are executed with sudo enforced.
+sudo: required
+dist: trusty
+language: cpp
+
+# Who is notified in case of build success / failure and how
+notifications:
+  email:
+    recipients:
+      - doncieux@isir.upmc.fr
+      - mukhtar@isir.upmc.fr
+      - le_goff@isir.upmc.fr
+
+    on_success: change # always|never|change
+    on_failure: change
+  # email: false
+
+# Which branches are tested by Travis CI. A .travis.yml file must be present at the root of each of these branches.
+branches:
+  only:
+  - master
+
+# The test matrix: the test will be run once per defined compiler
+matrix:
+  include:
+    - compiler: gcc
+      env: CCC_CXX=g++-5
+    - compiler: gcc
+      env: CCC_CXX=g++-6
+    - compiler: clang
+      env: CCC_CXX=clang++-3.8
+
+before_install:
+  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+  - sudo apt-add-repository "deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.8 main"
+  - sudo apt-get update -qq
+  - sudo apt-get install g++-5 g++-6 clang-3.8 -y
+
+install: 
+  - sudo apt-get install ros-indigo-desktop
+  - sudo rosdep init
+  - rosdep update
+  - source /opt/ros/indigo/setup.bash
+
+script:
+  - mkdir build
+  - cd build
+  - cmake ../src -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../install -DCATKIN_DEVEL_PREFIX=../devel
+# Test if building CAFER works and running clang static code analyzer on top.
+  - scan-build -analyze-headers --enable-checker core -enable-checker unix -enable-checker cplusplus -enable-checker security -v -v -v -o scan_build_report make
+# Test if CAFER tests work and running clang static code analyzer on top.
+  - scan-build -analyze-headers --enable-checker core -enable-checker unix -enable-checker cplusplus -enable-checker security -v -v -v -o scan_build_report make run_tests
