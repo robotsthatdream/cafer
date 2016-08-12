@@ -42,19 +42,21 @@
 #include "ros/ros.h"
 #include "cafer_core/GetID.h"
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
-    std::unordered_map<std::string, uint32_t> map_ID;
+//    std::unordered_map<std::string, uint32_t> map_ID;
 
-    auto id_generator = [&map_ID](cafer_core::GetID::Request& req, cafer_core::GetID::Response& res)
+    uint32_t id_counter = 0;
+
+    auto id_generator = [&id_counter](cafer_core::GetID::Request& req, cafer_core::GetID::Response& res)
     {
-        if (map_ID.find(req.name) == map_ID.end()) {
-            map_ID.emplace(req.name, 0);
-        }
-        else {
-            map_ID[req.name]++;
-        }
-        res.id = map_ID[req.name];
+//        if (map_ID.find(req.name) == map_ID.end()) {
+//            map_ID.emplace(req.name, 0);
+//        }
+//        else {
+//            map_ID[req.name]++;
+//        }
+        res.id = ++id_counter;
 
         ROS_INFO("ID request value received: %s", req.name.c_str());
         ROS_INFO("Assigned ID: %ld", static_cast<uint32_t>(res.id));

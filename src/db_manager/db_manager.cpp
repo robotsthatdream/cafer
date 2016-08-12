@@ -63,16 +63,17 @@ void DatabaseManager::_send_data()
         _signal_send_data_thread.wait(lock);
         //Thread notified: acquires _signal_process_mutex and resume.
 
+        db_manager_response.id = _requester_id;
         if (_find_waves_by_type(_data_request, waves_uris)) {
-            db_manager_response.id = requester_id;
             db_manager_response.type = static_cast<uint8_t>(Response::DATA);
             db_manager_response.data = waves_uris;
         }
         else {
-            db_manager_response.id = requester_id;
             db_manager_response.type = static_cast<uint8_t>(Response::ERROR);
-            db_manager_response.data[0] = "No wave of requested type: " + _data_request + " !";
+            db_manager_response.data.emplace_back(std::string("No wave of requested type: " + _data_request + " !"));
         }
+        _status_publisher->publish(db_manager_response);
+
     }
 }
 
@@ -89,10 +90,10 @@ void DatabaseManager::_request_cb(const cafer_core::DBManagerConstPtr& request_m
             break;
         case Request::REQUEST_DATA:
             ROS_INFO_STREAM("Received data request from Wave " << request_msg->id);
-            requester_id = request_msg->id;
-            _data_request = request_msg->data[0];
 
             _signal_send_data_mutex.lock();
+            _requester_id = request_msg->id;
+            _data_request = request_msg->data[0];
             _signal_send_data_thread.notify_one();
             _signal_send_data_mutex.unlock();
             break;

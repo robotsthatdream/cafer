@@ -104,7 +104,7 @@ namespace cafer_core {
             void _processing();
         };
 
-        uint32_t requester_id;
+        uint32_t _requester_id;
         std::string _data_request;
 
         cafer_core::shared_ptr<cafer_core::Publisher> _status_publisher;

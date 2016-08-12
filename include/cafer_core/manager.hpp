@@ -187,7 +187,7 @@ namespace cafer_core {
                 static_cast<DerivedClass<TData, DataContainer>*>(this)->add(*msg);
             };
 
-            _subcriber.reset(new Subscriber(ros_nh->subscribe<topic_tools::ShapeShifter>(topic, 10, add_callback)));
+            _subcriber.reset(new Subscriber(ros_nh->subscribe<topic_tools::ShapeShifter>(topic, 1000, add_callback)));
         }
 
         /**
@@ -235,13 +235,8 @@ namespace cafer_core {
          */
         void add(const topic_tools::ShapeShifter& msg)
         {
-            topic_tools::ShapeShifter msg_bis;
-            msg_bis = msg;
-
-            TData data(msg_bis);
-
             Base::_container_mutex.lock();
-            Base::_data_set.emplace(ros::Time::now().nsec, data);
+            Base::_data_set.emplace(ros::Time::now().nsec, TData(msg));
             Base::_container_mutex.unlock();
         }
 
@@ -313,7 +308,7 @@ namespace cafer_core {
         void add(const topic_tools::ShapeShifter& msg)
         {
             Base::_container_mutex.lock();
-            Base::_data_set.push_back(TData(msg));
+            Base::_data_set.emplace_back(TData(msg));
             Base::_container_mutex.unlock();
         }
 
@@ -327,7 +322,6 @@ namespace cafer_core {
             std::unique_ptr<cafer_core::Data> data;
 
             Base::_container_mutex.lock();
-
             data.reset(new TData(Base::_data_set.front()));
             Base::_data_set.pop_front();
             Base::_container_mutex.unlock();

@@ -17,7 +17,7 @@ find_package(Boost COMPONENTS python filesystem REQUIRED)
 find_package(rostest REQUIRED)
 find_package(PythonLibs REQUIRED)
 
-#set(CMAKE_BUILD_TYPE Debug)
+# set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 # set(CMAKE_CXX_COMPILER /usr/local/bin/clang++)
 ## System dependencies are found with CMake's conventions
