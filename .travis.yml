@@ -11,6 +11,7 @@ notifications:
       - doncieux@isir.upmc.fr
       - mukhtar@isir.upmc.fr
       - le_goff@isir.upmc.fr
+      - carlos.maestre@isir.upmc.fr
 
     on_success: change # always|never|change
     on_failure: change
@@ -46,8 +47,8 @@ install:
 script:
   - mkdir build
   - cd build
-  - cmake ../src -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../install -DCATKIN_DEVEL_PREFIX=../devel
+  - scan-build cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../install -DCATKIN_DEVEL_PREFIX=../devel ../src
 # Test if building CAFER works and running clang static code analyzer on top.
-  - scan-build -analyze-headers --enable-checker core -enable-checker unix -enable-checker cplusplus -enable-checker security -v -v -v -o scan_build_report make
+  - scan-build -analyze-headers --enable-checker core -enable-checker unix -enable-checker cplusplus -enable-checker security -v -v -v -o scan_build_report make -j 8
 # Test if CAFER tests work and running clang static code analyzer on top.
   - scan-build -analyze-headers --enable-checker core -enable-checker unix -enable-checker cplusplus -enable-checker security -v -v -v -o scan_build_report make run_tests
