@@ -104,7 +104,7 @@ TEST(Component, cafer_core1)
     // send a terminate message to cc1
     ros::Publisher pub(cafer_core::ros_nh->advertise<cafer_core::Management>("component_test_management", 10));
     cafer_core::Management msg;
-    msg.type = cafer_core::LOCAL_CLIENT_DEATH;
+    msg.type = static_cast<uint8_t>(cafer_core::MgmtType::LOCAL_CLIENT_DEATH);
     msg.src_node = cafer_core::ros_nh->getNamespace();
     msg.src_id = -1;
     msg.dest_node = cafer_core::ros_nh->getNamespace();
