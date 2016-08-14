@@ -17,7 +17,7 @@ DatabaseManager::_WriteWorker::_WriteWorker(_Wave* parent)
 void DatabaseManager::_WriteWorker::_processing()
 {
     std::unique_lock<std::mutex> lock(_signal_process_mutex);
-    cafer_core::DBManager db_status_msg;
+    DBManager db_status_msg;
 
     db_status_msg.type = static_cast<uint8_t>(Response::STATUS_READY);
     db_status_msg.id = _wave->id;

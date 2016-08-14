@@ -10,8 +10,16 @@
 #include <topic_tools/shape_shifter.h>
 
 namespace cafer_core {
+    /**
+     * This interface defines how a type of data coming from a ROS message will be stored in a DatabaseManager object.
+     * It is a wrapper over a ROS message and must be implemented to be used as a Manager template parameter.
+     */
     class Data {
     public:
+        /**
+         * Constructs a new Data object from a ShaperShifter (generic) message.
+         * @param msg The ShapeShifter message to wrap over.
+         */
         Data(const topic_tools::ShapeShifter& msg)
         {
             uint8_t* data = new uint8_t[msg.size()];
@@ -28,6 +36,10 @@ namespace cafer_core {
             delete[] data;
         }
 
+        /**
+         * Copy constructor for the Data object.
+         * @param data The Data object to clone.
+         */
         Data(const Data& data)
         {
             uint8_t* data_buff = new uint8_t[data._stored_msg.size()];
@@ -49,11 +61,21 @@ namespace cafer_core {
         virtual ~Data()
         {}
 
+        /**
+         * Returns the wrapped  ShapeShifter message.
+         * @return The ShapeShifter message to return.
+         */
         const topic_tools::ShapeShifter& get_stored_msg() const
         {
             return _stored_msg;
         };
 
+        /**
+         * @brief Returns the data from the wrapped message as a map<string,string>.
+         * @details The map associates the name of the record where part of the data is stored
+         * and the part of the data itself as a string in the format defined by the user.
+         * @return The map associating record(s)'s name and piece(s) of data
+         */
         virtual std::map<std::string, std::string> get_serialized_data() const = 0;
 
     protected:

@@ -38,7 +38,6 @@ DatabaseManager::_Wave::_Wave(_Wave&& moved_wave) : id(moved_wave.id), name(move
     _write_worker.link_to_wave(this);
 }
 
-
 DatabaseManager::_Wave::_Wave(uint32_t id_, std::string& wave_name, Publisher* publisher) : id(id_), name(wave_name),
                                                                                             sequential(false),
                                                                                             fs_manager(this),

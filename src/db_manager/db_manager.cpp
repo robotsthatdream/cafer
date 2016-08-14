@@ -24,10 +24,10 @@ DatabaseManager::~DatabaseManager()
 void DatabaseManager::init()
 {
     //Publisher
-    _status_publisher.reset(new Publisher(ros_nh->advertise<cafer_core::DBManager>("status", 10)));
+    _status_publisher.reset(new Publisher(ros_nh->advertise<DBManager>("status", 10)));
     //Subscriber
     _request_subscriber.reset(new Subscriber(
-            ros_nh->subscribe<cafer_core::DBManager>("request", 10,
+            ros_nh->subscribe<DBManager>("request", 10,
                                                      boost::bind(&DatabaseManager::_request_cb, this,
                                                                  _1))));
 
@@ -53,7 +53,7 @@ void DatabaseManager::client_disconnect_from_ros()
 void DatabaseManager::_send_data()
 {
     std::unique_lock <std::mutex> lock(_signal_send_data_mutex);
-    cafer_core::DBManager db_manager_response;
+    DBManager db_manager_response;
     std::vector <std::string> waves_uris;
 
     //Processing loop
@@ -77,7 +77,7 @@ void DatabaseManager::_send_data()
     }
 }
 
-void DatabaseManager::_request_cb(const cafer_core::DBManagerConstPtr& request_msg)
+void DatabaseManager::_request_cb(const DBManagerConstPtr& request_msg)
 {
     switch (static_cast<Request>(request_msg->type)) {
         case Request::RECORD_DATA:
