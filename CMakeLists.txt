@@ -5,17 +5,21 @@ project(cafer_core)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  std_msgs
-  message_generation
-  roslib
-  tf
-)
-find_package(Boost COMPONENTS python REQUIRED)
+        roscpp
+        std_msgs
+        message_generation
+        roslib
+        tf
+        topic_tools
+        )
+find_package(Boost COMPONENTS python filesystem REQUIRED)
+
 find_package(rostest REQUIRED)
 find_package(PythonLibs REQUIRED)
 
+# set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+# set(CMAKE_CXX_COMPILER /usr/local/bin/clang++)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -51,28 +55,22 @@ catkin_python_setup()
 
 ## Generate messages in the 'msg' folder
 add_message_files(
-  FILES
-  Management.msg
-  manager_test.msg
+        FILES
+        DBManager.msg
+        Management.msg
+        manager_test.msg
 )
 
 ## Generate services in the 'srv' folder
 add_service_files(
-   FILES
-   GetID.srv
+        FILES
+        GetID.srv
 )
-
-## Generate actions in the 'action' folder
-# add_action_files(
-#   FILES
-#   Action1.action
-#   Action2.action
-# )
 
 #Generate added messages and services with any dependencies listed here
 generate_messages(
-   DEPENDENCIES
-   std_msgs
+        DEPENDENCIES
+        std_msgs
 )
 
 ###################################
@@ -85,10 +83,10 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES cafer_core
-  CATKIN_DEPENDS roscpp std_msgs message_runtime roslib
-  DEPENDS system_lib
+        INCLUDE_DIRS include
+        LIBRARIES cafer_core
+        CATKIN_DEPENDS roscpp std_msgs message_runtime roslib topic_tools
+        DEPENDS system_lib
 )
 
 ###########
@@ -96,7 +94,7 @@ catkin_package(
 ###########
 
 include_directories(
-  include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${rostest_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS}
+        include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${rostest_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS}
 )
 #link_directories($ENV{HOME}/git/libfastsim/build/src /usr/lib/i386-linux-gnu)
 
@@ -104,15 +102,16 @@ add_executable(getid src/getid.cpp)
 target_link_libraries(getid ${catkin_LIBRARIES})
 add_dependencies(getid cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
-add_library(cafer_core src/component.cpp)
+add_library(cafer_core src/component.cpp src/db_manager/db_manager.cpp src/db_manager/_db_filesystem.cpp src/db_manager/_wave.cpp src/db_manager/_write_worker.cpp)
 target_link_libraries(cafer_core tbb ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PYTHON_LIBRARIES})
+
 add_dependencies(cafer_core cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 # Python wrapper SHARED library that wraps the CPP component
 add_library(component SHARED src/component.cpp)
 target_link_libraries(component tbb ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 add_dependencies(component cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-set_target_properties( component PROPERTIES PREFIX "" )
+set_target_properties(component PROPERTIES PREFIX "")
 
 install(TARGETS ${PROJECT_NAME}
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -141,49 +140,56 @@ add_executable(manager_test_subscribe_node test/manager_test_subscribe_node.cpp)
 target_link_libraries(manager_test_subscribe_node ${catkin_LIBRARIES})
 add_dependencies(manager_test_subscribe_node cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
+#add_executable(manager_test_sub test/manager_test_subscribe.cpp)
+#target_link_libraries(manager_test_sub cafer_core ${catkin_LIBRARIES})
+#add_dependencies(manager_test_sub cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+
 add_executable(manager_component_test_node test/manager_component_test.cpp)
 target_link_libraries(manager_component_test_node cafer_core ${catkin_LIBRARIES})
 add_dependencies(manager_component_test_node cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
-if(CATKIN_ENABLE_TESTING)
-  find_package(rostest REQUIRED)
+if (CATKIN_ENABLE_TESTING)
+    find_package(rostest REQUIRED)
 
-  add_rostest_gtest(component_test test_launch/component_test.launch test/component_test.cpp)
-  target_link_libraries(component_test cafer_core ${catkin_LIBRARIES})
+    add_rostest_gtest(component_test test_launch/component_test.launch test/component_test.cpp)
+    target_link_libraries(component_test cafer_core ${catkin_LIBRARIES})
 
-  add_rostest_gtest(component_test_death test_launch/component_test_death.launch test/component_test_death.cpp)
-  target_link_libraries(component_test_death cafer_core ${catkin_LIBRARIES})
+    add_rostest_gtest(component_test_death test_launch/component_test_death.launch test/component_test_death.cpp)
+    target_link_libraries(component_test_death cafer_core ${catkin_LIBRARIES})
 
-  #add_rostest(test_launch/component_test_frequency10.launch)
+    #add_rostest(test_launch/component_test_frequency10.launch)
 
-  #add_rostest(test_launch/component_test_frequency20.launch)
+    #add_rostest(test_launch/component_test_frequency20.launch)
 
+    add_rostest_gtest(component_test_launch_death test_launch/component_test_launch_death.launch test/component_test_launch_death.cpp)
+    target_link_libraries(component_test_launch_death cafer_core ${catkin_LIBRARIES})
 
-  add_rostest_gtest(component_test_launch_death test_launch/component_test_launch_death.launch test/component_test_launch_death.cpp)
-  target_link_libraries(component_test_launch_death cafer_core ${catkin_LIBRARIES})
+    add_rostest_gtest(component_test_launch_death_tbb test_launch/component_test_launch_death_tbb.launch test/component_test_launch_death_tbb.cpp)
+    target_link_libraries(component_test_launch_death_tbb cafer_core tbb ${catkin_LIBRARIES})
 
-  add_rostest_gtest(component_test_launch_death_tbb test_launch/component_test_launch_death_tbb.launch test/component_test_launch_death_tbb.cpp)
-  target_link_libraries(component_test_launch_death_tbb cafer_core tbb ${catkin_LIBRARIES})
+    add_rostest_gtest(manager_test test_launch/manager_test.launch test/manager_test.cpp)
+    target_link_libraries(manager_test cafer_core tbb ${catkin_LIBRARIES})
 
-  add_rostest_gtest(manager_test test_launch/manager_test.launch test/manager_test.cpp)
-  target_link_libraries(manager_test cafer_core tbb ${catkin_LIBRARIES})
-  
-  add_rostest_gtest(manager_test_subscribe test_launch/manager_test_subscribe.launch test/manager_test.cpp)
-  target_link_libraries(manager_test_subscribe cafer_core tbb ${catkin_LIBRARIES})
+    #  add_rostest_gtest(manager_test_subscribe test_launch/manager_test_subscribe.launch test/manager_test.cpp)
+    #  target_link_libraries(manager_test_subscribe cafer_core tbb ${catkin_LIBRARIES})
 
-  add_rostest_gtest(manager_component_test test_launch/manager_component_test.launch test/manager_test.cpp)
-  target_link_libraries(manager_component_test cafer_core tbb ${catkin_LIBRARIES})
+    add_rostest_gtest(manager_component_test test_launch/manager_component_test.launch test/manager_test.cpp)
+    target_link_libraries(manager_component_test cafer_core tbb ${catkin_LIBRARIES})
 
-endif()
+endif ()
 
+#Examples
 add_executable(data_publisher_example example/data_publisher_example.cpp)
 target_link_libraries(data_publisher_example ${catkin_LIBRARIES})
 add_dependencies(data_publisher_example cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
-#Examples
-#add_executable(managermap_example example/managermap_example.cpp)
-#target_link_libraries(managermap_example cafer_core ${catkin_LIBRARIES})
-#add_dependencies(managermap_example cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_executable(data_manager_example example/data_manager_example.cpp)
+target_link_libraries(data_manager_example cafer_core ${catkin_LIBRARIES})
+add_dependencies(data_manager_example cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+
+add_executable(managermap_example example/managermap_example.cpp)
+target_link_libraries(managermap_example cafer_core ${catkin_LIBRARIES})
+add_dependencies(managermap_example cafer_core_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 add_executable(managerqueue_example example/managerqueue_example.cpp)
 target_link_libraries(managerqueue_example cafer_core ${catkin_LIBRARIES})

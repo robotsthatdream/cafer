@@ -40,7 +40,36 @@
 #include "cafer_core/cafer_core.hpp"
 #include "cafer_core/manager_test.h"
 
-int main(int argc, char **argv)
+class DummyData : public cafer_core::Data {
+    using cafer_core::Data::Data;
+
+public:
+    std::map<std::string, std::string> get_serialized_data() const override
+    {
+        std::stringstream data;
+        std::map<std::string, std::string> serialized_data;
+        cafer_core::shared_ptr<cafer_core::manager_test> msg;
+
+        msg = _stored_msg.instantiate<cafer_core::manager_test>();
+
+        data << "header: " << std::endl;
+        data << "  frame_id: " << msg->header.frame_id << std::endl;
+        data << "  seq: " << msg->header.seq << std::endl;
+        data << "  stamp: " << msg->header.stamp << std::endl;
+        data << "description: " << msg->description << std::endl;
+        data << "tags:" << std::endl;
+        for (uint32_t i = 0; i < msg->tags.size(); ++i) {
+            data << "  tag_" << i << ": " << msg->tags[i] << std::endl;
+        }
+        data << "content: " << msg->content << std::endl;
+
+        serialized_data["test_record"] = data.str();
+
+        return serialized_data;
+    }
+};
+
+int main(int argc, char** argv)
 {
 
 
@@ -48,10 +77,10 @@ int main(int argc, char **argv)
     cafer_core::init(argc, argv, "managerqueue_example");
 
     std::string topic;
-    cafer_core::ros_nh->getParam("/manager_ns/managerqueue_example/topic",topic);
+    cafer_core::ros_nh->getParam("/manager_ns/managerqueue_example/topic", topic);
 
     //create the data manager for the manager_test msg
-    cafer_core::ManagerQueue<cafer_core::manager_test> manager("example", "example1");
+    cafer_core::ManagerQueue<DummyData> manager;
 
     //listen to a specific topic
     manager.listen_to(topic);
@@ -62,25 +91,30 @@ int main(int argc, char **argv)
         ros::spinOnce();
     }
 
-    cafer_core::manager_test msg;
+    std::unique_ptr<cafer_core::Data> data;
 
     //and get the first message arrived
-    msg = manager.get();
+    data = manager.get();
 
-    ROS_INFO_STREAM( "Message info :\n"
-              << "   id : " << msg.header.seq << std::endl
-              << "   timestamp : " << msg.header.stamp << std::endl
-              << "   description : " << msg.description << std::endl
-              << "   content :" << msg.content << std::endl);
+    cafer_core::shared_ptr<cafer_core::manager_test> msg;
+
+    msg = data->get_stored_msg().instantiate<cafer_core::manager_test>();
+
+    ROS_INFO_STREAM("Message info :\n"
+                    << "   id : " << msg->header.seq << std::endl
+                    << "   timestamp : " << msg->header.stamp << std::endl
+                    << "   description : " << msg->description << std::endl
+                    << "   content :" << msg->content << std::endl);
 
     //and get the second message arrived
-    msg = manager.get();
+    data = manager.get();
+    msg = data->get_stored_msg().instantiate<cafer_core::manager_test>();
 
-    ROS_INFO_STREAM( "Message info :\n"
-              << "   id : " << msg.header.seq << std::endl
-              << "   timestamp : " << msg.header.stamp << std::endl
-              << "   description : " << msg.description << std::endl
-              << "   content :" << msg.content << std::endl);
+    ROS_INFO_STREAM("Message info :\n"
+                    << "   id : " << msg->header.seq << std::endl
+                    << "   timestamp : " << msg->header.stamp << std::endl
+                    << "   description : " << msg->description << std::endl
+                    << "   content :" << msg->content << std::endl);
 
     return 0;
 }

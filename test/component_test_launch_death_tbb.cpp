@@ -74,7 +74,7 @@ void test_launch_death(int i, bool local)
     os2 << "mgmt_ld_" << local << i;
     ROS_INFO_STREAM(
             "test_launch_death begin " << i << " mgmt_topic=" << os2.str() << " type=" << os1.str() << std::flush);
-    DummyClient cc(os2.str(), os1.str(), 30, true);
+    DummyClient cc(os2.str(), os1.str(), 30, "none", true);
 
     ROS_INFO_STREAM("Launch-death iteration with tbb: " << i << " mgmt_topic=" << os2.str() << " type=" << os1.str() <<
                     std::flush);

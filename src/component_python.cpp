@@ -41,7 +41,7 @@ using namespace boost::python;
 struct ComponentWrap : cafer_core::Component, wrapper<cafer_core::Component>
 {
 
-    ComponentWrap (std::string mgmt_topic, std::string _type, double freq, bool new_nodehandle) : Component(mgmt_topic, _type, freq, new_nodehandle) {}
+    ComponentWrap (std::string mgmt_topic, std::string _type, double freq, std::string uuid, bool new_nodehandle) : Component(mgmt_topic, _type, freq, uuid,new_nodehandle) {}
 
     void update() {}
 
@@ -51,16 +51,16 @@ struct ComponentWrap : cafer_core::Component, wrapper<cafer_core::Component>
 
     void init() {}
 
-    virtual bool is_initialized() 
+    virtual bool is_initialized()
     {
         if (override n = this->get_override("is_initialized"))
             return n();
         return Component::is_initialized();
     }
-    bool default_is_initialized() 
+    bool default_is_initialized()
     {
         return this->Component::is_initialized();
-    }   
+    }
 
 };
 
@@ -69,7 +69,7 @@ BOOST_PYTHON_MODULE(component)
     def("python_init", &cafer_core::python_init);
     def("python_get_node_name", &cafer_core::python_get_node_name);
 
-    class_<ComponentWrap, boost::noncopyable>("Component", init<std::string, std::string, double, bool>())        
+    class_<ComponentWrap, boost::noncopyable>("Component", init<std::string, std::string, double, std::string, bool>())
         .def("update", pure_virtual(&cafer_core::Component::update))
         .def("client_connect_to_ros", pure_virtual(&cafer_core::Component::client_connect_to_ros))
         .def("client_disconnect_from_ros", pure_virtual(&cafer_core::Component::client_disconnect_from_ros))
@@ -78,7 +78,7 @@ BOOST_PYTHON_MODULE(component)
 
         .def("python_get_created_nodes_number", &cafer_core::Component::python_get_created_nodes_number)
         .def("python_print_created_nodes_id", &cafer_core::Component::python_print_created_nodes_id)
-        .def("python_clients_status", &cafer_core::Component::python_clients_status)            
+        .def("python_clients_status", &cafer_core::Component::python_clients_status)
 
         .def("get_terminate", &cafer_core::Component::get_terminate)
         .def("get_type", &cafer_core::Component::get_type)
@@ -100,7 +100,7 @@ BOOST_PYTHON_MODULE(component)
         .def("get_namespace", &cafer_core::Component::get_namespace)
 
         // .def("get_created_nodes", &cafer_core::Component::get_created_nodes)
-        
+
         .def("kill_created_nodes", &cafer_core::Component::kill_created_nodes)
         .def("management_cb", &cafer_core::Component::management_cb)
         .def("ask_new_ack", &cafer_core::Component::ask_new_ack)

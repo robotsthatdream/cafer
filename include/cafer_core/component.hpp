@@ -38,6 +38,9 @@
 #ifndef _SFERES_CAFER_HPP
 #define _SFERES_CAFER_HPP
 
+#include <future>
+#include <thread>
+#include <chrono>
 #include <unordered_map>
 #include <functional>
 
@@ -49,27 +52,28 @@
 #include <ros/spinner.h>
 #include <ros/callback_queue.h>
 
-#include <boost/foreach.hpp>
-
-
 namespace cafer_core {
 
-    void init(int argc, char **argv, std::string node_name);
+    void init(int argc, char** argv, std::string node_name);
+
     void python_init(std::string node_name);
+
     std::string python_get_node_name();
     // std::string get_node_group(std::string namespace_base, std::string launch_file, double frequency);
     // void release_node_group(std::string namespace_base, std::string gr_namespace);
     // void kill_node_group(std::string namespace_base, std::string gr_namespace);
     // void kill_all_allocated_node_groups(void);
 
-    typedef enum {
-        CHG_FREQ = 0,  ///< changement of the ROS frequency
-        LOCAL_CLIENT_DEATH, ///< ask for the death of the component. It is local as a node may have several components and what is asked here is only the death of the component. It should be noted that it only sets a boolean attribute (terminate) to true. Its value has to be taken into accounf for anything to happen...
-        COMPLETE_NODE_DEATH, ///< ask for the whole node death (not just the component). It results in a ros:shutdown()
-        WATCHDOG, ///< watchdog message, to tell that the component is still alive
-        ACK_CREATION, ///< message to tell to a component that has required the creation of a node that the creation is complete. It also allows the creating component to get the id of the created component.
-        ASK_NEW_ACK ///< ask for acknowledgement to all nodes that are handled by this Component
-    } MgmtType;
+    /** Definition of message types
+    * - CHG_FREQ: changement of the ROS frequency
+    * - LOCAL_CLIENT_DEATH: ask for the death of the component. It is local as a node may have several components and what is asked here is only the death of the component. It should be noted that it only sets a boolean attribute (terminate) to true. Its value has to be taken into accounf for anything to happen...
+    * - COMPLETE_NODE_DEATH: ask for the whole node death (not just the component). It results in a ros:shutdown()
+    * - WATCHDOG: watchdog message, to tell that the component is still alive
+    * - ACK_CREATION: message to tell to a component that has required the creation of a node that the creation is complete. It also allows the creating component to get the id of the created component.
+    */
+    enum class MgmtType : uint8_t {
+        CHG_FREQ, LOCAL_CLIENT_DEATH, COMPLETE_NODE_DEATH, WATCHDOG, ACK_CREATION, ASK_NEW_ACK
+    };
 
     /**
      * @brief class ClientDescriptor. To describe a client by his namspace (ns), an id and a type
@@ -77,9 +81,10 @@ namespace cafer_core {
      */
     class ClientDescriptor {
     public:
+        uint64_t id;
         std::string ns;
-        long int id;
         std::string type;
+        std::string managed_uuid;
     };
 
     /**
@@ -91,7 +96,6 @@ namespace cafer_core {
     struct ClientDescriptorHasher {
         std::size_t operator()(const ClientDescriptor& cd) const
         {
-
             std::ostringstream oss;
             oss << cd.ns << "_" << cd.id;
             std::hash<std::string> string_hash;
@@ -112,8 +116,21 @@ namespace cafer_core {
      *  \li waits for initialization
      */
     class Component {
-
     public:
+        ClientDescriptor descriptor;
+
+        MapWatchDog_t map_watchdog;
+        /**< map in which is stored the last watchdog message received from each client connected to the management topic of this client */
+
+        CreatedNodes_t created_nodes;
+        /**< map in which are stored all nodes created by a call_launch_file. The key is the required namespace */
+        shared_ptr<NodeHandle> my_ros_nh;
+        shared_ptr<ros::CallbackQueue> my_ros_queue;
+
+        shared_ptr<Subscriber> management_s;
+        /**< subscriber to the management topic */
+        shared_ptr<Publisher> management_p;
+        /**<publisher to the management topic */
 
         /**
          * @brief constructor of Component
@@ -122,14 +139,16 @@ namespace cafer_core {
          * @param frequence of update. 10 by default.
          * @param true if a new nodehandle must be created. false by default
          */
-        Component(std::string mgmt_topic, std::string _type, double freq = 10, bool new_nodehandle = false);
+        Component(std::string mgmt_topic, std::string _type, double freq = 10, std::string uuid = "none",
+                  bool new_nodehandle = false);
 
-
-        ~Component(void)
+        /**
+         * Component destructor (specified virtual to allow deletion of a derived instance through a pointer of Component type).
+         */
+        virtual ~Component(void)
         {
             //disconnect_from_ros();
         }
-
 
         /**
          * @brief update
@@ -162,7 +181,6 @@ namespace cafer_core {
         virtual bool is_initialized()
         { return _is_init; }
 
-
         /**
          * Should the client terminate ? This needs to be taken into account in the user code */
         /**
@@ -177,15 +195,14 @@ namespace cafer_core {
          * @return the type of client.
          */
         std::string get_type(void) const
-        { return type; }
-
+        { return descriptor.type; }
 
         /**
          * @brief  Accessor to the client id (unique)
          * @return the id of client
          */
         long int get_id(void) const
-        { return id; }
+        { return descriptor.id; }
 
         /**
          * @brief this method inform if the subcriber, publisher or server are up or not.
@@ -226,21 +243,32 @@ namespace cafer_core {
         }
 
         /**
-         * @brief Call a launch file. Corresponding nodes are to be launched in a namespace namespace_base_XX where XX is a unique id (provided by the getid service). It will be connected to the management_topic topic (the same than this class if this argument equals "").
-         * @param name of the launch file
-         * @param base name of general namespace
-         * @param name of the management topic
-         * @return the namespace created for this Component
+         * Call a launch file. Corresponding nodes are to be launched in a namespace namespace_base_XX where XX is a unique id (provided by the getid service).
+         * It will be connected to the specified management topic or the instance's one if unspecified.
+         * @param launch_file Absolute path to the launch file used by ROSlaunch.
+         * @param namespace_base name of general namespace
+         * @param management_topic (Optional) The management topic to connect to.
+         * @param managed_uuid (Optional) The uuid generated by the caller to allow it to identify the created component.
+         * @return The namespace created for this Component
          */
-        std::string call_launch_file(std::string launch_file, std::string namespace_base,
-                                     std::string management_topic = "");
+        std::string
+        call_launch_file(std::string launch_file, std::string namespace_base, std::string management_topic = "",
+                         std::string managed_uuid = "");
 
+        /**
+         * Call launch file from a non CAFER package.
+         * @param launch_file Absolute path to the launch file used by ROSlaunch.
+         * @param subst_args (Optional) Map of args to substitute the values of the matching ones declared in the launch file.
+         * @return True if roslaunch call succeed, false otherwise.
+         */
+        bool call_external_launch_file(std::string launch_file,
+                                       const std::map<std::string, std::string>& subst_args = std::map<std::string, std::string>());
 
         /**
          * @brief Sleep: should be called by the user code once all the things that have to be done during one iteration of the loop have been done
          */
         void sleep(void)
-        {rate->sleep();}
+        { rate->sleep(); }
 
         /**
          * @brief encapsulation of ros::spinOnce()
@@ -255,7 +283,6 @@ namespace cafer_core {
          * @return number of client still up
          */
         unsigned int how_many_client_from_type(std::string _type, bool up_only = true);
-
 
         /**
          * @brief Get the ClientDescriptors of all clients connected to the same management topic and of a certain type
@@ -284,7 +311,6 @@ namespace cafer_core {
             return is_it_recent_enough(get_watchdog(ns, id));
         }
 
-
         /**
          * @brief  Waits until the client is up (it needs to be on the same management topic)
          * @param namespace of client
@@ -302,14 +328,14 @@ namespace cafer_core {
          * @return
          */
         std::string get_namespace(void) const
-        {return my_ros_nh->getNamespace();}
+        { return my_ros_nh->getNamespace(); }
 
         /**
          * @brief Gets the created_nodes
          * @return
          */
         CreatedNodes_t& get_created_nodes(void)
-        {return created_nodes;}
+        { return created_nodes; }
 
         /**
          * @brief Gets the created_nodes
@@ -317,7 +343,7 @@ namespace cafer_core {
          * @return
          */
         std::vector<ClientDescriptor>& get_created_nodes(std::string created_ns)
-        {return created_nodes[created_ns];}
+        { return created_nodes[created_ns]; }
 
         /**
          * @brief kill all nodes created by this component
@@ -346,7 +372,7 @@ namespace cafer_core {
          * @param id of checked client
          * @param type of checked client
          */
-        void update_watchdog(std::string ns, long int id, std::string _type);
+        void update_watchdog(std::string ns, long int id, std::string _type, std::string _uuid);
 
         /**
          * @brief Get the time of the last watchdog message for a particular client
@@ -391,26 +417,10 @@ namespace cafer_core {
          * @brief wrapper for the Python API - check if the created clients are up
          */
 
-        bool python_clients_status(std::string type);        
-
-    public:
-        MapWatchDog_t map_watchdog;
-        /**< map in which is stored the last watchdog message received from each client connected to the management topic of this client */
-
-        CreatedNodes_t created_nodes;
-        /**< map in which are stored all nodes created by a call_launch_file. The key is the required namespace */
-        shared_ptr<NodeHandle> my_ros_nh;
-        shared_ptr<ros::CallbackQueue> my_ros_queue;
-
-
-        shared_ptr<Subscriber> management_s;
-        /**< subscriber to the management topic */
-        shared_ptr<Publisher> management_p;
-        /**<publisher to the management topic */
+        bool python_clients_status(std::string type);
 
     protected :
-        int id;
-        std::string type;
+
         int creator_id;
         std::string creator_ns;
         std::string created_ns;
@@ -423,10 +433,14 @@ namespace cafer_core {
         shared_ptr<ros::Timer> watchdog;
         /**< Watchdog */
 
-
-
         bool _is_init = false;
         bool _is_connected_to_ros = false;
+
+        bool find_by_id(uint32_t& id_, ClientDescriptor& descriptor);
+
+        bool find_by_name(std::string& name, ClientDescriptor& descriptor);
+
+        bool find_by_uuid(std::string& uuid, ClientDescriptor& descriptor);
 
     };
 
