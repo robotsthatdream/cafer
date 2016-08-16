@@ -33,30 +33,42 @@ matrix:
       env: CCC_CXX=clang++-3.8
 
 before_install:
-  #Add ROS related repositories
+  # Add ROS related repositories
   - sudo add-apt-repository restricted
   - sudo add-apt-repository universe
   - sudo add-apt-repository multiverse
   - sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
   - sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 0xB01FA116
-  #Add toolchains repositories
+  # Add toolchains repositories
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
   - sudo apt-add-repository "deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.8 main"
   - wget -O - http://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
+  # Install toochains
   - sudo apt-get update -qq
   - sudo apt-get install g++-5 g++-6 clang-3.8 -y
   - export PATH=$PATH:/usr/share/clang/scan-build-3.8/bin/
-
-install: 
+  # Install ROS
   - sudo apt-get install ros-indigo-desktop
   - sudo rosdep init
   - rosdep update
   - source /opt/ros/indigo/setup.bash
+  
+install:
+  - export CI_SOURCE_PATH=$(pwd)
+  - mkdir -p ~/catkin_ws/src
+  - cd ~/catkin_ws/src
+  - catkin_init_workspace
+  # Create the devel/setup.bash (run catkin_make with an empty workspace) and source it to set the path variables.
+  - cd ~/catkin_ws
+  - catkin_make
+  - source devel/setup.bash
+  # Add the package under integration to the workspace using a symlink.
+  - cd ~/catkin_ws/src
+  - ln -s $CI_SOURCE_PATH .
 
 script:
-  - mkdir build
-  - cd build
-  - scan-build cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../install -DCATKIN_DEVEL_PREFIX=../devel ..
+  - cd ../ && mkdir build && cd build
+  - scan-build cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../install -DCATKIN_DEVEL_PREFIX=../devel ../src
 # Test if building CAFER works and running clang static code analyzer on top.
   - scan-build -analyze-headers -enable-checker core -enable-checker unix -enable-checker cplusplus -enable-checker security -v -o scan_build_report make -j 8
 # Test if CAFER tests work and running clang static code analyzer on top.
