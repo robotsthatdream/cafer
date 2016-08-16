@@ -1,4 +1,4 @@
-CAFER
+CAFER [![Build Status](https://travis-ci.org/robotsthatdream/cafer.svg?branch=master)](https://travis-ci.org/robotsthatdream/cafer)
 =====
 
 This is the source code of the CAFER framework, to be used within the DREAM project (http://www.robotsthatdream.eu/). This project aims to enable robots to gain an open-ended understanding of the world over long periods of time, with alternating periods of experience and sleep, based on a cognitive architecture that exploits sleep.
