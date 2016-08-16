@@ -45,6 +45,8 @@ before_install:
   - wget -O - http://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
   - sudo apt-get update -qq
   - sudo apt-get install g++-5 g++-6 clang-3.8 -y
+  - export PATH=$PATH:/usr/share/clang/scan-build-3.8/bin/
+  - scan-build -h
 
 install: 
   - sudo apt-get install ros-indigo-desktop
