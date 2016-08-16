@@ -34,9 +34,6 @@ matrix:
 
 before_install:
   # Add ROS related repositories
-  - sudo add-apt-repository restricted
-  - sudo add-apt-repository universe
-  - sudo add-apt-repository multiverse
   - sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
   - sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 0xB01FA116
   # Add toolchains repositories
@@ -52,6 +49,8 @@ before_install:
   - sudo rosdep init
   - rosdep update
   - source /opt/ros/indigo/setup.bash
+  # Install TBB dependency
+  - sudo apt-get install -y libtbb-dev
   
 install:
   - export CI_SOURCE_PATH=$(pwd)
