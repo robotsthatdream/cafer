@@ -46,7 +46,6 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install g++-5 g++-6 clang-3.8 -y
   - export PATH=$PATH:/usr/share/clang/scan-build-3.8/bin/
-  - scan-build -h
 
 install: 
   - sudo apt-get install ros-indigo-desktop
@@ -57,8 +56,8 @@ install:
 script:
   - mkdir build
   - cd build
-  - scan-build cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../install -DCATKIN_DEVEL_PREFIX=../devel ../src
+  - scan-build cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../install -DCATKIN_DEVEL_PREFIX=../devel ..
 # Test if building CAFER works and running clang static code analyzer on top.
-  - scan-build -analyze-headers --enable-checker core -enable-checker unix -enable-checker cplusplus -enable-checker security -v -v -v -o scan_build_report make -j 8
+  - scan-build -analyze-headers -enable-checker core -enable-checker unix -enable-checker cplusplus -enable-checker security -v -v -v -o scan_build_report make -j 8
 # Test if CAFER tests work and running clang static code analyzer on top.
-  - scan-build -analyze-headers --enable-checker core -enable-checker unix -enable-checker cplusplus -enable-checker security -v -v -v -o scan_build_report make run_tests
+  - scan-build -analyze-headers -enable-checker core -enable-checker unix -enable-checker cplusplus -enable-checker security -v -v -v -o scan_build_report make run_tests
