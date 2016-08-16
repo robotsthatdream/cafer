@@ -26,11 +26,11 @@ branches:
 matrix:
   include:
     - compiler: gcc
-      env: CCC_CXX=g++-5
+      env: CCC_CXX=g++-5 CCC_CC=gcc-5
     - compiler: gcc
-      env: CCC_CXX=g++-6
+      env: CCC_CXX=g++-6 CCC_CC=gcc-6
     - compiler: clang
-      env: CCC_CXX=clang++-3.8
+      env: CCC_CXX=clang++-3.8 CCC_CC=clang-3.8
 
 before_install:
   # Add ROS related repositories
@@ -69,6 +69,6 @@ script:
   - cd ../build
   - scan-build cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../install -DCATKIN_DEVEL_PREFIX=../devel ../src
 # Test if building CAFER works and running clang static code analyzer on top.
-  - scan-build -analyze-headers -enable-checker core -enable-checker unix -enable-checker cplusplus -enable-checker security -v -o scan_build_report make -j 8
+  - scan-build --use-cc=/usr/bin/$(CCC_CC) --use-c++=/usr/bin/$(CCC_CXX) -analyze-headers -enable-checker core -enable-checker unix -enable-checker cplusplus -enable-checker security -v -o scan_build_report make -j 8
 # Test if CAFER tests work and running clang static code analyzer on top.
-  - scan-build -analyze-headers -enable-checker core -enable-checker unix -enable-checker cplusplus -enable-checker security -v -o scan_build_report make run_tests
+  - scan-build --use-cc=/usr/bin/$(CCC_CC) --use-c++=/usr/bin/$(CCC_CXX) -analyze-headers -enable-checker core -enable-checker unix -enable-checker cplusplus -enable-checker security -v -o scan_build_report make run_tests
