@@ -305,7 +305,7 @@ namespace cafer_core {
     public:
 
         /**
-         * @brief add a data object to the container of Manager
+         * @brief Adds a data object to the container of Manager
          * @param data the data object to add
          */
         void add(const topic_tools::ShapeShifter& msg)
