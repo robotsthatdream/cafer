@@ -45,10 +45,11 @@ before_install:
   - wget -O - http://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
   # Install toochains
   - sudo apt-get update -qq
-  - sudo apt-get install g++-5 g++-6 clang-3.8 -y
+  - sudo apt-get install -y g++-5 g++-6 clang-3.8
   - export PATH=$PATH:/usr/share/clang/scan-build-3.8/bin/
   # Install ROS
-  - sudo apt-get install ros-indigo-desktop
+  - sudo apt-get install -y ros-indigo-desktop
+  - sudo apt-get install -y python-catkin-pkg python-rosdep python-wstool ros-indigo-catkin
   - sudo rosdep init
   - rosdep update
   - source /opt/ros/indigo/setup.bash
