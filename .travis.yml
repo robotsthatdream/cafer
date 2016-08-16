@@ -33,6 +33,13 @@ matrix:
       env: CCC_CXX=clang++-3.8
 
 before_install:
+  #Add ROS related repositories
+  - sudo add-apt-repository restricted
+  - sudo add-apt-repository universe
+  - sudo add-apt-repository multiverse
+  - sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+  - sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 0xB01FA116
+  #Add toolchains repositories
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
   - sudo apt-add-repository "deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.8 main"
   - sudo apt-get update -qq
