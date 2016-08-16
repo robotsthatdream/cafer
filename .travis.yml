@@ -66,3 +66,4 @@ script:
   - scan-build --use-cc=/usr/bin/$CCC_CC --use-c++=/usr/bin/$CCC_CXX -analyze-headers -enable-checker core -enable-checker unix -enable-checker cplusplus -enable-checker security -v -o scan_build_report make -j 8
 # Test if CAFER tests work and running clang static code analyzer on top.
   - scan-build --use-cc=/usr/bin/$CCC_CC --use-c++=/usr/bin/$CCC_CXX -analyze-headers -enable-checker core -enable-checker unix -enable-checker cplusplus -enable-checker security -v -o scan_build_report make run_tests
+  - catkin_test_results test_results
