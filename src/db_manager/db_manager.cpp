@@ -27,9 +27,7 @@ void DatabaseManager::init()
     _status_publisher.reset(new Publisher(ros_nh->advertise<DBManager>("status", 10)));
     //Subscriber
     _request_subscriber.reset(new Subscriber(
-            ros_nh->subscribe<DBManager>("request", 10,
-                                         boost::bind(&DatabaseManager::_request_cb, this,
-                                                     _1))));
+            ros_nh->subscribe<DBManager>("request", 10, boost::bind(&DatabaseManager::_request_cb, this, _1))));
 
     _send_data_thread.reset(new std::thread(&DatabaseManager::_send_data, this));
 
@@ -100,6 +98,7 @@ void DatabaseManager::_request_cb(const DBManagerConstPtr& request_msg)
         case Request::ASK_STATUS:
             ROS_INFO_STREAM("Received status request from Wave " << request_msg->id);
             _status_request(request_msg->id);
+            break;
         default:
             ROS_WARN_STREAM("Received unknown request.");
     }
