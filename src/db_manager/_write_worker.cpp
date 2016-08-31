@@ -17,10 +17,6 @@ DatabaseManager::_WriteWorker::_WriteWorker(_Wave* parent)
 void DatabaseManager::_WriteWorker::_processing()
 {
     std::unique_lock<std::mutex> lock(_signal_process_mutex);
-    DBManager db_status_msg;
-
-    db_status_msg.type = static_cast<uint8_t>(Response::STATUS_READY);
-    db_status_msg.id = _wave->id;
 
     //Processing loop
     while (!_finish) {
@@ -29,11 +25,12 @@ void DatabaseManager::_WriteWorker::_processing()
         if (!_is_active && _wave->no_data_left()) {
             _wave->fs_manager.close_records();
 
-            _wave->status_publisher->publish(db_status_msg);
+            _wave->ready = true;
+
             //Release _signal_process_mutex and blocks the thread.
             _signal_processing_thread.wait(lock);
             //Thread notified: acquires _signal_process_mutex and resume.
-            if(!_finish) {
+            if (!_finish) {
                 ROS_INFO_STREAM("DB is now recording data from " << _wave->name);
             }
             _wave->fs_manager.new_records();

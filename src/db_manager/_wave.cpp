@@ -25,7 +25,6 @@ using namespace cafer_core;
 
 DatabaseManager::_Wave::_Wave(_Wave&& moved_wave) : id(moved_wave.id), name(moved_wave.name),
                                                     sequential(moved_wave.sequential),
-                                                    status_publisher(moved_wave.status_publisher.get()),
                                                     managers(std::move(moved_wave.managers)), fs_manager(this)
 {
     for (auto& topic:moved_wave.data_topics) {
@@ -38,10 +37,8 @@ DatabaseManager::_Wave::_Wave(_Wave&& moved_wave) : id(moved_wave.id), name(move
     _write_worker.link_to_wave(this);
 }
 
-DatabaseManager::_Wave::_Wave(uint32_t id_, std::string& wave_name, Publisher* publisher) : id(id_), name(wave_name),
-                                                                                            sequential(false),
-                                                                                            fs_manager(this),
-                                                                                            status_publisher(publisher)
+DatabaseManager::_Wave::_Wave(uint32_t id_, std::string& wave_name) : id(id_), name(wave_name), sequential(false),
+                                                                      ready(false), fs_manager(this)
 {
     std::string key;
     XmlRpc::XmlRpcValue wave_data;
@@ -64,6 +61,7 @@ DatabaseManager::_Wave::_Wave(uint32_t id_, std::string& wave_name, Publisher* p
     }
 
     _write_worker.link_to_wave(this);
+    ready = true;
 }
 
 void DatabaseManager::_Wave::add_manager(cafer_core::IManager* manager, std::string topic)

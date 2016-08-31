@@ -28,8 +28,8 @@ void DatabaseManager::init()
     //Subscriber
     _request_subscriber.reset(new Subscriber(
             ros_nh->subscribe<DBManager>("request", 10,
-                                                     boost::bind(&DatabaseManager::_request_cb, this,
-                                                                 _1))));
+                                         boost::bind(&DatabaseManager::_request_cb, this,
+                                                     _1))));
 
     _send_data_thread.reset(new std::thread(&DatabaseManager::_send_data, this));
 
@@ -52,9 +52,9 @@ void DatabaseManager::client_disconnect_from_ros()
 
 void DatabaseManager::_send_data()
 {
-    std::unique_lock <std::mutex> lock(_signal_send_data_mutex);
+    std::unique_lock<std::mutex> lock(_signal_send_data_mutex);
     DBManager db_manager_response;
-    std::vector <std::string> waves_uris;
+    std::vector<std::string> waves_uris;
 
     //Processing loop
     while (ros::ok()) {
@@ -97,6 +97,9 @@ void DatabaseManager::_request_cb(const DBManagerConstPtr& request_msg)
             _signal_send_data_thread.notify_one();
             _signal_send_data_mutex.unlock();
             break;
+        case Request::ASK_STATUS:
+            ROS_INFO_STREAM("Received status request from Wave " << request_msg->id);
+            _status_request(request_msg->id);
         default:
             ROS_WARN_STREAM("Received unknown request.");
     }
@@ -125,17 +128,38 @@ void DatabaseManager::_stop_recording(const uint32_t& id)
     }
 }
 
+void DatabaseManager::_status_request(const uint32_t& id)
+{
+    DBManager db_status_msg;
+    db_status_msg.id = id;
+
+    auto wave = _connected_waves.find(id);
+    if (wave == _connected_waves.end()) {
+        ROS_WARN_STREAM("Unable to find wave " << id);
+    }
+    else {
+        if (wave->second->ready) {
+            db_status_msg.type = static_cast<uint8_t>(Response::STATUS_READY);
+        }
+        else {
+            db_status_msg.type = static_cast<uint8_t>(Response::STATUS_ACTIVE);
+        }
+
+        _status_publisher->publish(db_status_msg);
+    }
+}
+
 bool DatabaseManager::add_wave(std::string name)
 {
     bool succeed = false;
     ClientDescriptor descriptor;
-    shared_ptr <_Wave> wave_ptr;
+    shared_ptr<_Wave> wave_ptr;
 
     if (find_by_name(name, descriptor)) {
         auto wave_it = _connected_waves.find(descriptor.id);
 
         if (wave_it == _connected_waves.end()) {
-            wave_ptr.reset(new _Wave(descriptor.id, name, _status_publisher.get()));
+            wave_ptr.reset(new _Wave(descriptor.id, name));
             _connected_waves.emplace(descriptor.id, wave_ptr);
             succeed = true;
         }
@@ -150,7 +174,7 @@ bool DatabaseManager::add_wave(std::string name)
     return succeed;
 }
 
-bool DatabaseManager::_find_waves_by_type(std::string& type, std::vector <std::string>& waves_uris)
+bool DatabaseManager::_find_waves_by_type(std::string& type, std::vector<std::string>& waves_uris)
 {
     bool succeed = false;
 
@@ -164,7 +188,7 @@ bool DatabaseManager::_find_waves_by_type(std::string& type, std::vector <std::s
     return succeed;
 }
 
-bool DatabaseManager::find_wave_by_name(std::string name, shared_ptr <DatabaseManager::_Wave>& wave_ptr)
+bool DatabaseManager::find_wave_by_name(std::string name, shared_ptr<DatabaseManager::_Wave>& wave_ptr)
 {
     bool found = false;
     wave_ptr = nullptr;

@@ -31,7 +31,7 @@ namespace cafer_core {
          * An enum representing request values handled by the Database Manager.
          */
         enum class Request : uint8_t {
-            RECORD_DATA, STOP_RECORDING, REQUEST_DATA
+            RECORD_DATA, STOP_RECORDING, REQUEST_DATA, ASK_STATUS
         };
 
         /**
@@ -203,6 +203,12 @@ namespace cafer_core {
         void _stop_recording(const uint32_t& id);
 
         /**
+         * Sends the DatabaseManager status to the requesting wave.
+         * @param id Id of the wave.
+         */
+        void _status_request(const uint32_t& id);
+
+        /**
          * Search in the _connected_waves map for waves of the matching type.
          * @param type The type of the wave as defined in CAFER interface.
          * @param waves_uris A vector of strings to be filled with the found waves' URIs (ROS namespaces).
@@ -222,12 +228,12 @@ namespace cafer_core {
             const std::string name;
             std::string type;
             bool sequential;
+            bool ready;
             std::map<std::string, std::string> data_topics;
             std::map<std::string, std::string> data_structure;
 
             _DBFileSystem fs_manager;
             std::vector<std::unique_ptr<cafer_core::IManager>> managers;
-            cafer_core::shared_ptr<cafer_core::Publisher> status_publisher;
 
             /**
              * Move constructor for the _Wave class.
@@ -241,7 +247,7 @@ namespace cafer_core {
              * @param wave_name The name of the wave to look for (absolute ROS node name).
              * @param publisher A pointer referring to the DatabaseManager _status_publisher.
              */
-            _Wave(uint32_t id_, std::string& wave_name, Publisher* publisher);
+            _Wave(uint32_t id_, std::string& wave_name);
 
             /**
              * Adds a manager to listen to a data topic.
