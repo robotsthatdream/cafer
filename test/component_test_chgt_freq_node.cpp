@@ -52,7 +52,7 @@ int main(int argc, char **argv)
     sleep(3);
 
     cafer_core::Management msg;
-    msg.type = cafer_core::CHG_FREQ;
+    msg.type = static_cast<int8_t>(cafer_core::MgmtType::CHG_FREQ);
     msg.src_node = "";
     msg.src_id = -1;
     msg.dest_node = "all";

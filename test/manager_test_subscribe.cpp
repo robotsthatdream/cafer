@@ -39,13 +39,16 @@
 #include <ros/ros.h>
 #include <gtest/gtest.h>
 
-#include "cafer_core.hpp"
+#include "cafer_core/cafer_core.hpp"
 #include "cafer_core/manager_test.h"
 
 TEST(Manager, ManagerMap_subscribe)
 {
+
+    std::string topic;
+    cafer_core::ros_nh->getParam("manager_test_ns/manager_test_subscribe/topic",topic);
     cafer_core::ManagerMap<cafer_core::manager_test> manager("test", "test2");
-    manager.ListenTo("manager_test");
+    manager.listen_to(topic);
 
     while (manager.data_size() < 10) {
         ros::spinOnce();

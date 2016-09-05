@@ -1,8 +1,0 @@
-#goal definition
-bool write_data
----
-#result definition
-bool status
----
-#feedback definition
-uint8 progress

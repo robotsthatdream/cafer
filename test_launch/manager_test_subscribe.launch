@@ -1,4 +1,9 @@
 <launch>
-  <node name="manager_test" pkg="cafer_core" type="manager_test_subscribe_node" ns="manager_test_ns" />
-  <test test-name="manager_test_subscribe" pkg="cafer_core" type="manager_test_subscribe" name="manager_test2" ns="manager_test_ns"/>
+  <arg name="topic" default="/manager_test"/>
+  <node name="manager_test" pkg="cafer_core" type="manager_test_subscribe_node" ns="manager_ns">
+      <param name="topic" type="string" value="$(arg topic)"/>
+  </node>
+  <test test-name="manager_test_subscribe" pkg="cafer_core" type="manager_test_sub" name="manager_test2" ns="manager_ns">
+      <param name="topic" type="string" value="$(arg topic)"/>
+  </test>
 </launch>

@@ -45,22 +45,39 @@
 #include <mutex>
 #include <unordered_map>
 #include <deque>
+#include <type_traits>
 
-#include <ros/ros.h>
 #include <std_msgs/Time.h>
 #include <std_msgs/Header.h>
 
 #include "cafer_core/component.hpp"
+#include "cafer_core/data.hpp"
 
 namespace cafer_core {
+    /**
+     * This namespace shall not be accessed by users, it is meant to hide some implementation details.
+     */
+    namespace _details {
+        template<typename TData>
+        using Map=std::unordered_map<uint32_t, TData>;
 
-/**
- *@brief class Manager<Msg, DataContainer, DerivedClass>
- * A data manager to handle ROS messages (like images, features or policies).
- */
-    template<typename Msg, typename DataContainer, typename DerivedClass>
-    class ManagerBase {
+        template<typename TData>
+        using Queue=std::deque<TData>;
+    }
+
+    /**
+     * class Manager<TData, DataContainer, DerivedClass> \n
+     * A data manager to handle ROS messages (like images, features or policies).
+     */
+    class IManager {
     public:
+
+        IManager() : _id(0), _name(""), _description(""), _type("")
+        {
+            //init random number generator for random access
+            std::seed_seq seed = {std::time(0)};
+            _gen.seed(seed);
+        }
 
         /**
          * @brief Manager constructor
@@ -68,18 +85,22 @@ namespace cafer_core {
          * @param name of the manager
          * @param description a short description of the manager (optionnal)
          */
-        ManagerBase(std::string data_topic, std::string type = "", std::string name = "", std::string description = "")
-                :
-                _type(type), _name(name), _description(description), _data_topic(data_topic)
+        IManager(std::string data_topic_param, std::string type = "", std::string name = "",
+                 std::string description = "")
+                : _name(name), _description(description), _type(type)
         {
+            //Retrieve data_topic from ROS parameter
+            ros_nh->getParam(data_topic_param, _data_topic);
             //init random number generator for random access
             std::seed_seq seed = {std::time(0)};
             _gen.seed(seed);
         }
 
-        ManagerBase(ManagerBase&& manager) = default;
+        IManager(IManager&& manager) = default;
 
-        ManagerBase(const ManagerBase& manager) = delete;
+        IManager(const IManager& manager) = delete;
+
+        virtual ~IManager() = default;
 
         void disconnect_from_ros()
         {
@@ -99,28 +120,81 @@ namespace cafer_core {
         void operator<<(const std::string& topic)
         {
             _data_topic = topic;
-            listen_to(topic);
+        }
+
+        /**
+        * @brief Connects to the default topic and listen to it.
+        */
+        void listen_to()
+        {
+            if (!_data_topic.empty()) {
+                listen_to(_data_topic);
+            }
         }
 
         /**
          * @brief Connects to a specific topic and listen to it.
          * @param The topic to listen to.
          */
-        void listen_to(const std::string& topic = _data_topic)
+        virtual void listen_to(const std::string& topic) = 0;
+
+        /**
+        * @brief Returns the number of elements in the data container.
+        * @return The manager container's size.
+        */
+        virtual size_t data_size() = 0;
+
+        virtual std::unique_ptr<cafer_core::Data> get() = 0;
+
+    protected:
+
+        long int _id;
+        std::string _name;
+        std::string _description;
+        std::string _type;
+        std::string _data_topic;
+
+        std::unique_ptr<Subscriber> _subcriber;
+
+        std::mt19937 _gen;
+
+        //Mutex to protect the _data_set from concurrent access
+        std::mutex _container_mutex;
+    };
+
+    /**
+     * class Manager<TData, DataContainer, DerivedClass> \n
+     * A data manager to handle ROS messages (like images, features or policies).
+     */
+    template<typename TData, template<typename> class DataContainer,
+            template<typename, template<typename> class> class DerivedClass>
+    class ManagerBase : public IManager {
+        static_assert(std::is_base_of<cafer_core::Data, TData>::value,
+                      "The Data template argument should be derived from Data");
+    public:
+        using IManager::IManager;
+
+        virtual ~ManagerBase() = default;
+
+        /**
+         * @brief Connects to a specific topic and listen to it.
+         * @param The topic to listen to.
+         */
+        void listen_to(const std::string& topic) override
         {
-            auto add_callback = [](const shared_ptr<Msg>& msg)
+            auto add_callback = [this](const shared_ptr<const topic_tools::ShapeShifter>& msg)
             {
-                static_cast<DerivedClass *>(this)->add(*msg);
+                static_cast<DerivedClass<TData, DataContainer>*>(this)->add(*msg);
             };
 
-            _subcriber.reset(new ros::Subscriber<const shared_ptr<Msg>>(ros_nh->subscribe(topic, 10, add_callback)));
+            _subcriber.reset(new Subscriber(ros_nh->subscribe<topic_tools::ShapeShifter>(topic, 1000, add_callback)));
         }
 
         /**
         * @brief Returns the number of elements in the data container.
         * @return The manager container's size.
         */
-        size_t data_size()
+        size_t data_size() override
         {
             size_t _container_size;
             _container_mutex.lock();
@@ -129,70 +203,64 @@ namespace cafer_core {
             return _container_size;
         }
 
+        std::unique_ptr<cafer_core::Data> get() override
+        {
+            return static_cast<DerivedClass<TData, DataContainer>*>(this)->get();
+        }
+
     protected:
 
-        DataContainer _data_set;
-
-        long int _id;
-        std::string _name;
-        std::string _description;
-        std::string _type;
-        std::string _data_topic;
-
-        std::unique_ptr<ros::Subscriber> _subcriber;
-
-        std::mt19937 _gen;
-
-        //Mutex to protect the _data_set from concurrent access
-        std::mutex _container_mutex;
+        DataContainer<TData> _data_set;
     };
 
     //Declaring the Manager class, inheriting from ManagerBase.
-    template<typename Msg, typename DataContainer>
-    class Manager : public ManagerBase<Msg, DataContainer, Manager<Msg, DataContainer>> {
+    template<typename TData, template<typename> class DataContainer>
+    class Manager : public ManagerBase<TData, DataContainer, Manager> {
     };
 
     //Partial template specialization of the Manager class using unordered_map as container.
-    template<typename Msg>
-    class Manager<Msg, std::unordered_map<u_int32_t, Msg>>
-            : public ManagerBase<Msg, std::unordered_map<u_int32_t, Msg>, Manager<Msg, std::unordered_map<u_int32_t, Msg>>> {
-        //Defining Base as an alias for the template pattern.
-        using Base=ManagerBase<Msg, std::unordered_map<u_int32_t, Msg>, Manager<Msg, std::unordered_map<u_int32_t, Msg>>>;
+
+    template<typename TData>
+    class Manager<TData, _details::Map> : public ManagerBase<TData, _details::Map, Manager> {
+        //Defining Base as a private alias for the template pattern.
+        //Here the namespace ::cafer_core:: should be specified, depending on the compiler to find the Manager template.
+        using Base=ManagerBase<TData, _details::Map, ::cafer_core::Manager>;
         //Inheriting base class constructor
         using Base::Base;
     public:
 
         /**
-         * @brief add a msg to the container of Manager
-         * @param msg the message to add
+         * @brief add a data object to the container of Manager
+         * @param data the message to add
          */
-        void add(const Msg& msg)
+        void add(const topic_tools::ShapeShifter& msg)
         {
             Base::_container_mutex.lock();
-            Base::_data_set.emplace(msg.header.seq, msg);
+            Base::_data_set.emplace(ros::Time::now().nsec, TData(msg));
             Base::_container_mutex.unlock();
         }
 
         /**
-        * @brief Get an element from the data container.
+        * @brief Random access to an element from the data container.
         * @return The returned message/element.
         */
-        Msg get()
+        std::unique_ptr<cafer_core::Data> get()
         {
             std::uniform_int_distribution<> dist(0., Base::_data_set.size() - 1);
             Base::_container_mutex.lock();
             auto random_it = std::next(std::begin(Base::_data_set), dist(Base::_gen));
             Base::_container_mutex.unlock();
-            Msg res = random_it->second;
-            return res;
+            std::unique_ptr<cafer_core::Data> data(&random_it->second);
+
+            return data;
         }
 
         /**
          * @brief remove a element of the container of the manager
-         * @param id identifier of the msg to remove
+         * @param id identifier of the data to remove
          * @return should be 1 in success case and 0 otherwise.
          */
-        size_t remove(const u_int32_t& h)
+        size_t remove(const uint32_t& h)
         {
             size_t return_val;
             Base::_container_mutex.lock();
@@ -202,63 +270,72 @@ namespace cafer_core {
         }
 
         /**
-        * @brief search a precise msg by is identifier
-        * @param id identifier of the searched msg
+        * @brief search specific data by its identifier
+        * @param id identifier of the searched data object
         */
-        Msg search(const u_int32_t& id)
+        bool search(const u_int32_t& id, cafer_core::Data& data)
         {
-            Msg return_msg;
+            bool res;
             Base::_container_mutex.lock();
-            return_msg = Base::_data_set.find(id)->second;
+            auto it = Base::_data_set.find(id);
+            if (it == Base::_data_set.end()) {
+                res = false;
+            }
+            else {
+                res = true;
+                data = Base::_data_set.find(id)->second;
+            }
             Base::_container_mutex.unlock();
-            return return_msg;
+            return res;
         }
     };
 
     //Partial template specialization of the Manager class using deque as container.
-    template<typename Msg>
-    class Manager<Msg, std::deque<Msg>> : public ManagerBase<Msg, std::deque<Msg>, Manager<Msg, std::deque<Msg>>> {
-        //Defining Base as an alias for the template pattern.
-        using Base=ManagerBase<Msg, std::deque<Msg>, Manager<Msg, std::deque<Msg>>>;
+    template<typename TData>
+    class Manager<TData, _details::Queue> : public ManagerBase<TData, _details::Queue, Manager> {
+        //Defining Base as a private alias for the template pattern.
+        //Here the namespace ::cafer_core:: should be specified, depending on the compiler to find the Manager template.
+        using Base=ManagerBase<TData, _details::Queue, ::cafer_core::Manager>;
         //Inheriting base class constructor
         using Base::Base;
 
     public:
 
         /**
-         * @brief add a msg to the container of Manager
-         * @param msg the message to add
+         * @brief add a data object to the container of Manager
+         * @param data the data object to add
          */
-        void add(const Msg& msg)
+        void add(const topic_tools::ShapeShifter& msg)
         {
             Base::_container_mutex.lock();
-            Base::_data_set.push_back(msg);
+            Base::_data_set.emplace_back(TData(msg));
             Base::_container_mutex.unlock();
         }
 
         /**
         * @brief Get an element from the data container.
+        * Get return the element in the front of the queue and suppress it, i.e. return the first element added.
         * @return The returned message/element.
         */
-        Msg get()
+        std::unique_ptr<cafer_core::Data> get()
         {
-            Msg msg;
+            std::unique_ptr<cafer_core::Data> data;
 
             Base::_container_mutex.lock();
-            msg = Base::_data_set.front();
+            data.reset(new TData(Base::_data_set.front()));
             Base::_data_set.pop_front();
             Base::_container_mutex.unlock();
 
-            return msg;
+            return data;
         }
     };
 
     //Namespace aliases to simplify template usage.
-    template<typename Msg>
-    using ManagerMap=Manager<Msg, std::unordered_map<u_int32_t, Msg>>;
+    template<typename TData>
+    using ManagerMap=Manager<TData, _details::Map>;
 
-    template<typename Msg>
-    using ManagerQueue=Manager<Msg, std::deque<Msg>>;
+    template<typename TData>
+    using ManagerQueue=Manager<TData, _details::Queue>;
 }
 
 #endif //_MANAGER_HPP

@@ -1,15 +1,13 @@
 //
-// Created by phlf on 03/06/16.
+// Created by phlf on 07/07/16.
 //
 
-#ifndef CAFER_CORE_DB_MANAGER_HPP
-#define CAFER_CORE_DB_MANAGER_HPP
+#ifndef CAFER_CORE_DB_MANAGER_H
+#define CAFER_CORE_DB_MANAGER_H
 
 #include <ros/ros.h>
-
-#include "cafer_core/cafer_core.hpp"
-#include "cafer_core/WriteDataAction.h"
-#include "actionlib/server/simple_action_server.h"
+#include <cv_bridge/cv_bridge.h>
+#include <opencv2/opencv.hpp>
 
 #include <condition_variable>
 #include <thread>
@@ -18,303 +16,150 @@
 
 #include <boost/filesystem.hpp>
 
-using namespace cafer_core;
+#include "cafer_core/cafer_core.hpp"
 
-/**
- * Facilities for meta-programming
- */
-namespace mp_tools {
-
-    template<std::size_t I = 0, typename FuncT, typename... Tp>
-    inline typename std::enable_if<I == sizeof...(Tp), void>::type
-    for_each(std::tuple<Tp...>&, FuncT)
-    { }
-
-    template<std::size_t I = 0, typename FuncT, typename... Tp>
-    inline typename std::enable_if<I < sizeof...(Tp), void>::type
-    for_each(std::tuple<Tp...>& t, FuncT f)
-    {
-        f(std::get<I>(t));
-        for_each<I + 1, FuncT, Tp...>(t, f);
-    }
-
-    struct IsManagerEmpty {
-        template<typename T>
-        bool operator()(T& t) const
-        {
-            return t.data_size() == 0;
-        }
-    };
-
-    struct RetrieveData {
-        template<typename T>
-        void operator()(T& t) const
-        {
-            /*
-
-            dream_babbling::pose_goalActionFeedback trajectory_msg;
-            if (_joints_value_manager->data_size() != 0) {
-                trajectory_msg = _joints_value_manager->get();
-                if (!trajectory_msg.feedback.joints_positions.empty()) {
-                    fs_joints_data << "frame_" << trajectory_msg.header.stamp.sec + trajectory_msg.header.stamp.nsec <<
-                    ":" << std::endl;
-                    fs_joints_data << "  timestamp:" << std::endl;
-                    fs_joints_data << "    sec:  " << trajectory_msg.header.stamp.sec << std::endl;
-                    fs_joints_data << "    nsec:  " << trajectory_msg.header.stamp.nsec << std::endl;
-                    fs_joints_data << "  joints_values:" << std::endl;
-                    for (unsigned int i = 0; i < trajectory_msg.feedback.joints_positions.size(); i++) {
-                        fs_joints_data << "    joint_" << i << ":  " << trajectory_msg.feedback.joints_positions[i] <<
-                        std::endl;
-                    }
-                }
-            }
-
-            dream_babbling::rgbd_motion_data motion_msg;
-            if (_rgbd_motion_data_manager->data_size() != 0) {
-                motion_msg = _rgbd_motion_data_manager->get();
-
-                //Necessary as saving 16bits png is unknown to OpenCV...
-                depth = cv_bridge::toCvShare(motion_msg.depth, nullptr)->image;
-                depth = cv::Mat(depth.rows, depth.cols, CV_8UC4, depth.data);
-
-                if (!motion_msg.motion_rects.empty()) {
-                    fs_motion_data << "frame_" << motion_msg.header.stamp.sec + motion_msg.header.stamp.nsec << ":" <<
-                    std::endl;
-                    fs_motion_data << "  timestamp:" << std::endl;
-                    fs_motion_data << "    sec:  " << motion_msg.header.stamp.sec << std::endl;
-                    fs_motion_data << "    nsec:  " << motion_msg.header.stamp.nsec << std::endl;
-                    fs_motion_data << "  rects:" << std::endl;
-                    for (unsigned int i = 0; i < motion_msg.motion_rects.size(); i++) {
-                        fs_motion_data << "    rect_" << i << ":" << std::endl;
-                        fs_motion_data << "      x:  " << motion_msg.motion_rects[i].x << std::endl;
-                        fs_motion_data << "      y:  " << motion_msg.motion_rects[i].y << std::endl;
-                        fs_motion_data << "      width:  " << motion_msg.motion_rects[i].width << std::endl;
-                        fs_motion_data << "      height:  " << motion_msg.motion_rects[i].height << std::endl;
-                    }
-                }
-            }
-
-             imwrite(_fs_manager.iter_save_path() + "depth/" + std::to_string(motion_msg.header.stamp.sec) + "_" +
-                        std::to_string(motion_msg.header.stamp.nsec) + ".png", depth);
-
-             imwrite(_fs_manager.iter_save_path() + "rgb/" + std::to_string(motion_msg.header.stamp.sec) + "_" +
-                        std::to_string(motion_msg.header.stamp.nsec) + ".jpeg",
-                        cv_bridge::toCvShare(motion_msg.rgb, nullptr, "bgr8")->image);
-
-        };
-        */
-
-        }
-    };
-}
+#include <cafer_core/DBManager.h>
 
 namespace cafer_core {
-    class filesystem_manager {
+
+    class DatabaseManager : public cafer_core::Component {
     public:
-        filesystem_manager()
-        {
-            std::string ros_home;
-            ros::get_environment_variable(ros_home, "ROS_HOME");
-            _db_path = ros_home + "/" + ros::this_node::getNamespace() + "/db";
-        }
+        enum class Request : uint8_t {
+            RECORD_DATA, STOP_RECORDING, REQUEST_DATA
+        };
 
-        void add_new_iteration()
-        {
-            auto now = std::chrono::system_clock::now();
-            auto in_time_t = std::chrono::system_clock::to_time_t(now);
+        enum class Response : uint8_t {
+            STATUS_READY, STATUS_ACTIVE, ERROR, DATA
+        };
 
-            if (_experiment_path.empty()) {
-                std::stringstream ss;
-                ss << std::put_time(std::localtime(&in_time_t), "%F-%T-%Z");
-                _experiment_path = "experiment_" + ss.str();
-            }
-            if (_iter_path.empty()) {
-                _counter++;
-                _iter_path = "iteration_" + std::to_string(_counter);
-            }
+        class _Wave;
 
-            while (boost::filesystem::exists(_db_path / _experiment_path / _iter_path)) {
-                _counter++;
-                _iter_path = "iteration_" + std::to_string(_counter);
-            }
-            boost::filesystem::create_directories(
-                    _db_path / _experiment_path / _iter_path / _data_path / boost::filesystem::path("rgb"));
-            boost::filesystem::create_directories(
-                    _db_path / _experiment_path / _iter_path / _data_path / boost::filesystem::path("depth"));
-        }
-
-        const std::string iter_save_path() const
-        {
-            return (_db_path / _experiment_path / _iter_path / _data_path).string();
-        }
-
-    private:
-        unsigned int _counter = 0;
-        boost::filesystem::path _db_path;
-        boost::filesystem::path _iter_path;
-        boost::filesystem::path _experiment_path;
-        boost::filesystem::path _data_path = "motion/scene/";
-
-    };
-
-//At the moment no constraint exist on the type Ts. A compile-time static_assert check must be added in the future.
-    template<typename... Ts>
-    class DatabaseManager : public Component {
         using Component::Component;
 
+        ~DatabaseManager();
+
+        void init() override;
+
+        void client_connect_to_ros() override;
+
+        void client_disconnect_from_ros() override;
+
+        void update() override
+        {};
+
+        bool add_wave(std::string name);
+
+        bool find_wave_by_name(std::string name, shared_ptr<_Wave>& wave_ptr);
+
     private:
-        std::tuple<Ts ...> _objects;
-        std::array<std::ofstream, std::tuple_size<decltype(_objects)>::value> _ofstreams;
 
-        void write_data_cb()
-        {
-            //cafer_core::WriteDataFeedback feedback;
-            cafer_core::WriteDataResult result;
+        /**
+        * Class manipulating the filesystem.
+        */
+        class _DBFileSystem {
+        public:
+            _DBFileSystem(_Wave*);
 
-            //Listen to the data topics
-            client_connect_to_ros();
+            ~_DBFileSystem();
 
-            //Try to acquire _cv_mutex: wait for the processing thread to finish previous task.
-            _cv_mutex.lock();
-            //Accept the new goal
-            _write_data_action_server->acceptNewGoal();
+            void new_records();
 
-            //Let the processing thread process data
-            _is_active.store(true);
-            _condition_variable.notify_one();
-            _cv_mutex.unlock();
+            void close_records();
 
-            ROS_INFO("New data recording request accepted.");
-        }
+            void save_data(std::unique_ptr<cafer_core::Data>);
 
-        void preempt_cb()
-        {
-            //Stop listening to the data topics
-            client_disconnect_from_ros();
+        private:
+            _Wave* _wave;
 
-            //Set the server status to preempted
-            _is_active.store(false);
-        }
-
-        std::unique_ptr<actionlib::SimpleActionServer<cafer_core::WriteDataAction>> _write_data_action_server;
-
-        std::unique_ptr<std::thread> _processing_thread;
-        std::condition_variable _condition_variable;
-        std::mutex _cv_mutex;
-        std::atomic<bool> _is_active{false};
-
-        filesystem_manager _fs_manager;
-
-        void processing()
-        {
-            std::ofstream fs_motion_data, fs_joints_data;
-            std::unique_lock<std::mutex> lock(_cv_mutex);
-            bool are_managers_empty = true;
-
-            //Processing loop
-            for (; ;) {
-                //Wait for signal to process data if server is inactive/preempted and there is no data.
-                //The thread can be spuriously woken-up inconsequently.
-
-                if (!_is_active) {
-                    are_managers_empty &= mp_tools::for_each(_objects, mp_tools::IsManagerEmpty);
-                    if (are_managers_empty) {
-
-                        //Is server still active?
-                        if (_write_data_action_server->isActive()) {
-                            //Change server state and notify the client
-                            _write_data_action_server->setSucceeded();
-                        }
-
-                        //Release last opened filestreams
-                        for (auto& fs:_ofstreams) {
-                            if (fs.is_open()) {
-                                fs.close();
-                            }
-                        }
-
-                        ROS_INFO("DB manager is waiting.");
-                        //Release _cv_mutex and blocks the thread.
-                        _condition_variable.wait(lock);
-                        //Thread notified: acquires _cv_mutex and resume.
-                        ROS_INFO("DB manager is recording data.");
-
-                        _fs_manager.add_new_iteration();
+            uint32_t _counter = 0;
+            std::map<std::string, std::ofstream> _records;
+            boost::filesystem::path _ros_home;
 
 
-                        for (auto fs:_ofstreams) {
+        };
 
-                        }
-                        //TODO for each fs, open corresponding file
-                        /*
-                        fs_motion_data.open(_fs_manager.iter_save_path() + "motion_rects.yml", std::ios::out);
-                        fs_joints_data.open(_fs_manager.iter_save_path() + "joints_trajectories.yml", std::ios::out);
-                         */
-                    }
-                }
-                mp_tools::for_each(_objects, mp_tools::RetrieveData);
+        class _WriteWorker {
+        public:
+            _WriteWorker();
 
-            }
-        }
+            _WriteWorker(_Wave*);
+
+            ~_WriteWorker();
+
+            void awake_worker();
+
+            void pause_worker();
+
+            void link_to_wave(_Wave*);
+
+        private:
+            _Wave* _wave;
+
+            std::atomic<bool> _is_active{false};
+            std::atomic<bool> _finish{false};
+            std::unique_ptr<std::thread> _processing_thread;
+            std::condition_variable _signal_processing_thread;
+            std::mutex _signal_process_mutex;
+
+            void _processing();
+        };
+
+        uint32_t _requester_id;
+        std::string _data_request;
+
+        cafer_core::shared_ptr<cafer_core::Publisher> _status_publisher;
+        std::unique_ptr<cafer_core::Subscriber> _request_subscriber;
+
+        std::unique_ptr<std::thread> _send_data_thread;
+        std::condition_variable _signal_send_data_thread;
+        std::mutex _signal_send_data_mutex;
+
+        std::map<uint32_t, cafer_core::shared_ptr<_Wave>> _connected_waves;
+
+        void _request_cb(const cafer_core::DBManagerConstPtr& request_msg);
+
+        void _send_data();
+
+        void _record_data(const uint32_t& id);
+
+        void _stop_recording(const uint32_t& id);
+
+        bool _find_waves_by_type(std::string& type, std::vector<std::string>& waves_uris);
 
     public:
 
-        DatabaseManager()
-        { }
+        //It is necessary for this class to be in the public scope for static wave declaration.
+        class _Wave {
+        public:
+            uint32_t id;
+            const std::string name;
+            std::string type;
+            bool sequential;
+            std::map<std::string, std::string> data_topics;
+            std::map<std::string, std::string> data_structure;
 
-        template<std::size_t I>
-        auto get_object() -> decltype(std::get<I>(_objects))
-        {
-            return std::get<I>(_objects);
-        }
+            _DBFileSystem fs_manager;
+            std::vector<std::unique_ptr<cafer_core::IManager>> managers;
+            cafer_core::shared_ptr<cafer_core::Publisher> status_publisher;
 
-        ~DatabaseManager()
-        {
-            client_disconnect_from_ros();
-            _processing_thread->join();
-            _processing_thread.reset();
-            _rgbd_motion_data_manager.reset();
-            _joints_value_manager.reset();
-            _write_data_action_server.reset();
-        }
+            _Wave(_Wave&& moved_wave);
 
-        void init() override
-        {
-            _write_data_action_server.reset(
-                    new actionlib::SimpleActionServer<cafer_core::WriteDataAction>(*cafer_core::ros_nh,
-                                                                                   ros::this_node::getName(),
-                                                                                   false));
-            _write_data_action_server->registerGoalCallback(boost::bind(&DatabaseManager::write_data_cb, this));
-            _write_data_action_server->registerPreemptCallback(boost::bind(&DatabaseManager::preempt_cb, this));
+            _Wave(uint32_t id_, std::string&, Publisher*);
 
-            _processing_thread.reset(new std::thread(std::bind(&DatabaseManager::processing, this)));
+            void add_manager(cafer_core::IManager* manager, std::string topic = "");
 
-            _write_data_action_server->start();
+            bool no_data_left();
 
-            _is_init = true;
-        }
+            void connect();
 
-        void client_connect_to_ros() override
-        {
-            std::string motion_detector_topic_name;
-            std::string joints_topic_name;
+            void disconnect();
 
-            //TODO this level of knowledge should be handled by the managers
-            cafer_core::ros_nh->getParam("/dream_babbling/motion_detector_topic", motion_detector_topic_name);
-            cafer_core::ros_nh->getParam("/dream_babbling/robot_controller_feedback_topic", joints_topic_name);
+        private:
+            _WriteWorker _write_worker;
 
-            //TODO for each manager listen to topic
-        }
+        };
 
-        void client_disconnect_from_ros() override
-        {
-            //TODO for each manager disconnect from ros
-        }
-
-        void update() override
-        { };
     };
-
 }
 
-#endif //CAFER_CORE_DB_MANAGER_HPP
+#endif //CAFER_CORE_DB_MANAGER_H

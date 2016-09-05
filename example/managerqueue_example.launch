@@ -1,0 +1,10 @@
+<launch>
+  <arg name="topic" default="/manager_test"/>
+
+  <node name="manager_test" pkg="cafer_core" type="manager_test_subscribe_node" ns="manager_ns">
+    <param name="topic" type="string" value="$(arg topic)"/>
+  </node>
+  <node name="managerqueue_example" pkg="cafer_core" type="managerqueue_example" ns="manager_ns" output="screen">
+    <param name="topic" type="string" value="$(arg topic)"/>
+  </node>
+</launch>

@@ -69,46 +69,52 @@ public:
     }
 };
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
 
+
     //initiate the cafer core
-    cafer_core::init(0, NULL, "manager_test_subcribe");
+    cafer_core::init(argc, argv, "managerqueue_example");
+
+    std::string topic;
+    cafer_core::ros_nh->getParam("/manager_ns/managerqueue_example/topic", topic);
 
     //create the data manager for the manager_test msg
-    cafer_core::ManagerMap<DummyData> manager;
+    cafer_core::ManagerQueue<DummyData> manager;
 
-    //you can create a message
-    cafer_core::manager_test msg1;
-    std_msgs::Header header;
-    header.seq = 1;
-    header.stamp = ros::Time(2.0);
-    header.frame_id = "0";
+    //listen to a specific topic
+    manager.listen_to(topic);
 
-    msg1.header = header;
-    msg1.description = "I am a message";
-    msg1.tags = {"t", "d", "e"};
-    msg1.content = "this is not a content";
-
-    //and add it to the data manager
-    //manager.add(msg1);
-
-    //and get it with the random access getter
-    //manager.get();
-
-    //you can search it
-    //manager.search(1);
-
-    //you can remove it
-    //manager.remove(1);
-
-    //you can also subscribe to a topic to save some data from a external source
-    manager<<("fake_topic");
 
     //listen until manager have 10 messages in his data set
     while (manager.data_size() < 10) {
         ros::spinOnce();
     }
+
+    std::unique_ptr<cafer_core::Data> data;
+
+    //and get the first message arrived
+    data = manager.get();
+
+    cafer_core::shared_ptr<cafer_core::manager_test> msg;
+
+    msg = data->get_stored_msg().instantiate<cafer_core::manager_test>();
+
+    ROS_INFO_STREAM("Message info :\n"
+                    << "   id : " << msg->header.seq << std::endl
+                    << "   timestamp : " << msg->header.stamp << std::endl
+                    << "   description : " << msg->description << std::endl
+                    << "   content :" << msg->content << std::endl);
+
+    //and get the second message arrived
+    data = manager.get();
+    msg = data->get_stored_msg().instantiate<cafer_core::manager_test>();
+
+    ROS_INFO_STREAM("Message info :\n"
+                    << "   id : " << msg->header.seq << std::endl
+                    << "   timestamp : " << msg->header.stamp << std::endl
+                    << "   description : " << msg->description << std::endl
+                    << "   content :" << msg->content << std::endl);
 
     return 0;
 }

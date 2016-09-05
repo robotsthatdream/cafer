@@ -48,31 +48,39 @@ int main(int argc, char **argv)
 
     ros::NodeHandle nh;
 
-    ros::Publisher pub = nh.advertise<cafer_core::manager_test>("manager_test", 1);
+    std::string topic;
+    nh.getParam("/manager_ns/manager_test/topic",topic);
+
+    ros::Publisher pub = nh.advertise<cafer_core::manager_test>(topic, 1);
 
     std::mt19937 gen;
     std::seed_seq seed = {std::time(0)};
 
     gen.seed(seed);
 
+    int cpt = 0;
+
     while (ros::ok()) {
 
         cafer_core::manager_test msg;
         std_msgs::Header header;
+        std::stringstream stream;
+        stream << cpt;
 
-        header.seq = gen();
+        header.seq = cpt;
         header.stamp = ros::Time(gen());
         header.frame_id = "0";
 
         msg.header = header;
-        msg.description = "I am a message";
+        msg.description = "I am the message " + stream.str();
         msg.tags = {"t", "d", "e"};
-        msg.content = "this is not a content";
+        msg.content = "this is not a content, but i am the " + stream.str() + "eme";
 
 
         pub.publish(msg);
 
         ros::spinOnce();
+        cpt++;
     }
 
     return 0;
