@@ -1,0 +1,57 @@
+# CAFER Travis CI test file
+# Using Trusty as the Ubuntu version used by Travis. All commands are executed with sudo enforced.
+sudo: required
+dist: trusty
+language: generic
+
+# Who is notified in case of build success / failure and how
+notifications:
+  email: false
+
+# Which branches are tested by Travis CI. A .travis.yml file must be present at the root of each of these branches.
+branches:
+  only:
+  - master
+
+# The test matrix: the test will be run once per defined compiler
+matrix:
+  include:
+    - env: CCC_CXX=g++-5 CCC_CC=gcc-5
+    - env: CCC_CXX=g++-6 CCC_CC=gcc-6
+    - env: CCC_CXX=clang++-3.8 CCC_CC=clang-3.8
+
+before_install:
+  # Add ROS related repositories
+  - sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+  - sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 0xB01FA116
+  # Add toolchains repositories
+  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+  - sudo apt-add-repository "deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.8 main"
+  - wget -O - http://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
+  # Install toochains
+  - sudo apt-get update -qq
+  - sudo apt-get install -y g++-5 g++-6 clang-3.8
+  - export PATH=$PATH:/usr/share/clang/scan-build-3.8/bin/
+  # Install ROS
+  - sudo apt-get install -y ros-indigo-desktop
+  - sudo rosdep init
+  - rosdep update
+  - source /opt/ros/indigo/setup.bash
+  # Install TBB dependency
+  - sudo apt-get install -y libtbb-dev
+  
+install:
+  - export CI_SOURCE_PATH=$(pwd)
+  - mkdir -p ~/catkin_ws/src
+  - cd ~/catkin_ws/src
+  - catkin_init_workspace
+  - ln -s $CI_SOURCE_PATH .
+
+script:
+  - cd ../ && mkdir build && cd build/
+  - scan-build cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../install -DCATKIN_DEVEL_PREFIX=../devel ../src
+# Test if building CAFER works and running clang static code analyzer on top.
+  - scan-build --use-cc=/usr/bin/$CCC_CC --use-c++=/usr/bin/$CCC_CXX -enable-checker core -enable-checker unix -enable-checker cplusplus -enable-checker security -v -o scan_build_report make -j 8
+# Test if CAFER tests work and running clang static code analyzer on top.
+  - scan-build --use-cc=/usr/bin/$CCC_CC --use-c++=/usr/bin/$CCC_CXX -enable-checker core -enable-checker unix -enable-checker cplusplus -enable-checker security -v -o scan_build_report make run_tests
+  - catkin_test_results test_results
