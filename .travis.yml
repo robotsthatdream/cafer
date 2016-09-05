@@ -25,12 +25,9 @@ branches:
 # The test matrix: the test will be run once per defined compiler
 matrix:
   include:
-    - compiler: gcc
-      env: CCC_CXX=g++-5 CCC_CC=gcc-5
-    - compiler: gcc
-      env: CCC_CXX=g++-6 CCC_CC=gcc-6
-    - compiler: clang
-      env: CCC_CXX=clang++-3.8 CCC_CC=clang-3.8
+    - env: CCC_CXX=g++-5 CCC_CC=gcc-5
+    - env: CCC_CXX=g++-6 CCC_CC=gcc-6
+    - env: CCC_CXX=clang++-3.8 CCC_CC=clang-3.8
 
 before_install:
   # Add ROS related repositories
