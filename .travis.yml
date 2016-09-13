@@ -6,7 +6,6 @@ language: generic
 
 # Who is notified in case of build success / failure and how
 notifications:
-  email:
     recipients:
       - doncieux@isir.upmc.fr
       - mukhtar@isir.upmc.fr
