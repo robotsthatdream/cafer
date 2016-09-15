@@ -117,8 +117,11 @@ Component::Component(std::string mgmt_topic, std::string _type, double freq, std
     }
     if (mgmt_topic == "") {
         std::string default_value = "default_" + descriptor.type;
-        my_ros_nh->param("management_topic", mgmt_topic, default_value);
+        my_ros_nh->setParam("management_topic", default_value);
+        mgmt_topic = default_value;
     }
+    _mgmt_topic=my_ros_nh->resolveName(mgmt_topic);
+
     ROS_INFO_STREAM("Creating a component connected to management_topic: " << mgmt_topic << " type=" << _type);
 
     management_p.reset(new Publisher(my_ros_nh->advertise<cafer_core::Management>(mgmt_topic.c_str(), 1000)));
@@ -179,7 +182,7 @@ Component::call_launch_file(std::string launch_file, std::string namespace_base,
     clients = my_ros_nh->serviceClient<cafer_core::GetID>("/cafer_core/get_id");
 
     if (clients.call(id_msg)) {
-        created_namespace = "/" + namespace_base;//+ "_" + std::to_string(id_msg.response.id);
+        created_namespace = namespace_base;//+ "_" + std::to_string(id_msg.response.id);
         ns = "ns:=" + created_namespace;
 
         osf << "frequency:=" << 1. / rate->expectedCycleTime().toSec()
