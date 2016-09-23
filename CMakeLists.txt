@@ -170,8 +170,8 @@ if (CATKIN_ENABLE_TESTING)
     add_rostest_gtest(component_test_launch_death test_launch/component_test_launch_death.launch test/component_test_launch_death.cpp)
     target_link_libraries(component_test_launch_death cafer_core ${catkin_LIBRARIES})
 
-    add_rostest_gtest(component_test_launch_death_tbb test_launch/component_test_launch_death_tbb.launch test/component_test_launch_death_tbb.cpp)
-    target_link_libraries(component_test_launch_death_tbb cafer_core tbb ${catkin_LIBRARIES})
+    #add_rostest_gtest(component_test_launch_death_tbb test_launch/component_test_launch_death_tbb.launch test/component_test_launch_death_tbb.cpp)
+    #target_link_libraries(component_test_launch_death_tbb cafer_core tbb ${catkin_LIBRARIES})
 
     add_rostest_gtest(manager_test test_launch/manager_test.launch test/manager_test.cpp)
     target_link_libraries(manager_test cafer_core tbb ${catkin_LIBRARIES})
@@ -179,8 +179,8 @@ if (CATKIN_ENABLE_TESTING)
     #  add_rostest_gtest(manager_test_subscribe test_launch/manager_test_subscribe.launch test/manager_test.cpp)
     #  target_link_libraries(manager_test_subscribe cafer_core tbb ${catkin_LIBRARIES})
 
-    add_rostest_gtest(manager_component_test test_launch/manager_component_test.launch test/manager_test.cpp)
-    target_link_libraries(manager_component_test cafer_core tbb ${catkin_LIBRARIES})
+    # add_rostest_gtest(manager_component_test test_launch/manager_component_test.launch test/manager_test.cpp)
+    # target_link_libraries(manager_component_test cafer_core tbb ${catkin_LIBRARIES})
 
 endif ()
 

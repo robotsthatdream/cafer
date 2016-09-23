@@ -210,14 +210,14 @@ TEST(Manager, ManagerQueue_concurrrency)
 
     std::thread consumer_thread([&manager]()
                                 {
-                                    for (unsigned int i = 0; i < 10000; ++i) {
+                                    for (unsigned int i = 0; i < 100000; ++i) {
                                         if (manager.data_size() > 0) {
                                             manager.get();
                                         }
                                     }
                                 });
 
-    for (unsigned int i = 0; i < 1000; ++i) {
+    for (unsigned int i = 0; i < 10000; ++i) {
         manager.add(dummy_msg);
     }
 
