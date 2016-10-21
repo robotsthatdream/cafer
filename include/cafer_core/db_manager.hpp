@@ -6,8 +6,6 @@
 #define CAFER_CORE_DB_MANAGER_H
 
 #include <ros/ros.h>
-#include <cv_bridge/cv_bridge.h>
-#include <opencv2/opencv.hpp>
 
 #include <condition_variable>
 #include <thread>
