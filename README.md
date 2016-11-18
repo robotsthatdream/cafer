@@ -30,9 +30,24 @@ Get started
 How to build and configure CAFER
 --------------------------------
 
+1- Compilers Compatibility 
+
+First make sure your gcc and g++ are above version 5. You can check for the version simply by:
+```
+gcc --version
+g++ --version
+```
+Then if they are not above 5 you can fix that as follows:
+```
+sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+sudo apt-get update
+sudo apt-get install gcc-5 g++-5
+
+sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 60 --slave /usr/bin/g++ g++ /usr/bin/g++-5
+```
 In the following, we assume that your catkin workspace is ~/catkin_ws.
 
-1- If you don't have a catkin workspace:
+2- If you don't have a catkin workspace:
 ```
 mkdir -p ~/catkin_ws/src
 cd  ~/catkin_ws/src
@@ -44,7 +59,7 @@ echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
 source ~/.bashrc
 ```
 
-2- Install CAFER at the right place
+3- Install CAFER at the right place
 
 Move the CAFER directory to ~/catkin_ws/src (or create a symbolic link pointing to it).
 Example, assuming that you have cloned CAFER into ~/git:
@@ -53,7 +68,7 @@ cd  ~/catkin_ws/src
 ln -s ~/git/cafer
 ```
 
-3- Compile CAFER
+4- Compile CAFER
 As CAFER is a catkin workspace, to build the project you must simply do :
 ```
 cd ~/catkin_ws
@@ -69,14 +84,14 @@ catkin_make install
 ```
 It will install in ~/{YOUR_GIT_FOLDER}/cafer/install/
 
-4- Configure the Python wrapper
+5- Configure the Python wrapper
 
 ```
 cd  ~/catkin_ws/src/cafer/example_python/
 ln -s ~/catkin_ws/devel/lib/component.so
 ```
 
-5- Test CAFER
+6- Test CAFER
 
 CAFER comes with some tests. Some require up to several minutes to run. That is normal.
 
@@ -89,6 +104,41 @@ Or (for a more concise output):
 ```
 cd ~/catkin_ws
 catkin_make test
+```
+
+7- Testing Connection of Two waves
+
+In this test there is one wave that simply launch one node which publishes, periodically, a "hellow world" message. Then there is the database manager node which its interaction with the first wave is defined as listening to this topic and recording it for 5 second each iteration. 
+Then there is a second wave that simply accesses asks the database manager to access those data stored by the first wave and print number of lines in each file stored.
+
+To run the test you need to follow these steps, assuming you have cafer installed as indicated above:
+
+A- Clone the necessary packages:
+```
+cd ~/catkin_ws/src
+git clone https://github.com/ghanimmukhtar/example_publisher_wave_cafer.git 
+git clone https://github.com/ghanimmukhtar/simple_publisher.git
+git clone https://github.com/ghanimmukhtar/example_sub_pub_db_cafer.git
+git clone https://github.com/ghanimmukhtar/example_subscriber_wave_cafer.git
+```
+B- Compile everything:
+```
+cd ~/catkin_ws
+catkin_make
+```
+C- Make a directory with the name "ros_hame" which will be the database storage location:
+```
+mkdir -p ~/ros_home
+```
+D- Set ROS_HOME environment variable to point to "ros_home":
+```
+export ROS_HOME=~/ros_home
+```
+E- Launch cafer core, then wave 1, then wave 2 and finally the database manager:
+```
+roslaunch cafer_core cafer.launch
+roslaunch example_publisher_wave_cafer Supervisor_wave_1.launch
+roslaunch examplroslaunch example_sub_pub_db_cafer db_manager.launche_subscriber_wave_cafer subscriber_wave_supervisor.launch
 ```
 
 Further information 
