@@ -116,7 +116,7 @@ Component::Component(std::string mgmt_topic, std::string _type, double freq, std
         my_ros_queue.reset();
     }
     if (mgmt_topic == "") {
-        std::string default_value = "default_" + descriptor.type;
+        std::string default_value = "default_" + _descriptor.type;
         my_ros_nh->setParam("management_topic", default_value);
         mgmt_topic = default_value;
     }
@@ -135,15 +135,15 @@ Component::Component(std::string mgmt_topic, std::string _type, double freq, std
     v.request.name = "component_id";
     static ros::ServiceClient sclient = my_ros_nh->serviceClient<cafer_core::GetID>("/cafer_core/get_id");
     if (sclient.call(v)) {
-        descriptor.id = v.response.id;
+        _descriptor.id = v.response.id;
     }
     else {
         ROS_ERROR_STREAM("Failed to call service get_id. my namespace is: " << my_ros_nh->getNamespace());
-        descriptor.id = -1;
+        _descriptor.id = -1;
     }
-    descriptor.ns = my_ros_nh->getNamespace();
-    descriptor.type = _type;
-    descriptor.managed_uuid = uuid;
+    _descriptor.ns = my_ros_nh->getNamespace();
+    _descriptor.type = _type;
+    _descriptor.managed_uuid = uuid;
 
     //If this component has been created through a launch file, retrieve the launch file parameters.
     my_ros_nh->param("creator_id", creator_id, -1);
@@ -482,14 +482,14 @@ void Component::watchdog_cb(const ros::TimerEvent& event)
     //ROS_INFO_STREAM("watchdog_cb, management topic="<<management_p->getTopic()<<" nb connected="<<management_p->getNumSubscribers()<<std::flush);
     cafer_core::Management msg;
     msg.type = static_cast<uint8_t>(MgmtType::WATCHDOG);
-    msg.src_node = descriptor.ns;
+    msg.src_node = _descriptor.ns;
     msg.src_id = get_id();
     msg.src_type = get_type();
     msg.dest_node = "all";
     msg.dest_id = -1;
     msg.data_int = 0;
     msg.data_flt = 0;
-    msg.data_str = descriptor.managed_uuid;
+    msg.data_str = _descriptor.managed_uuid;
     management_p->publish(msg);
 }
 

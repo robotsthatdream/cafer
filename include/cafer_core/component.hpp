@@ -117,7 +117,6 @@ namespace cafer_core {
      */
     class Component {
     public:
-        ClientDescriptor descriptor;
 
         MapWatchDog_t map_watchdog;
         /**< map in which is stored the last watchdog message received from each client connected to the management topic of this client */
@@ -195,14 +194,14 @@ namespace cafer_core {
          * @return the type of client.
          */
         std::string get_type(void) const
-        { return descriptor.type; }
+        { return _descriptor.type; }
 
         /**
          * @brief  Accessor to the client id (unique)
          * @return the id of client
          */
         long int get_id(void) const
-        { return descriptor.id; }
+        { return _descriptor.id; }
 
         /**
          * @brief this method inform if the subcriber, publisher or server are up or not.
@@ -426,6 +425,8 @@ namespace cafer_core {
         std::string created_ns;
         std::string _mgmt_topic;
         bool terminate;
+
+        ClientDescriptor _descriptor;
         /**< did we receive the order to stop the client ?*/
 
         shared_ptr<ros::Rate> rate;

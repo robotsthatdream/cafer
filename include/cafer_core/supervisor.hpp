@@ -4,7 +4,6 @@
 
 #include <ros/ros.h>
 #include <ros/package.h>
-#include "../include/globals.h"
 #include <cafer_core/DBManager.h>
 #include "cafer_core/cafer_core.hpp"
 #include "cafer_core/Management.h"
@@ -13,13 +12,12 @@
 #include <chrono>
 #include <random>
 
-namespace cc = cafer_core;
-
-class Supervisor : public cc::Component {
+namespace cafer_core {
+class Supervisor : public Component {
 public:
 
-    Supervisor(std::string mgmt_topic, std::string _type, double freq)
-            : Component(mgmt_topic, _type, freq), db_done_recording(false), _start_time(std::chrono::steady_clock::now()), _id_counter(0)
+    Supervisor(std::string mgmt_topic, std::string _type, double freq,std::string uuid)
+            : Component(mgmt_topic, _type, freq, uuid), db_done_recording(false), _start_time(std::chrono::steady_clock::now()), _id_counter(0)
     {
 
     }
@@ -30,18 +28,18 @@ public:
         client_disconnect_from_ros();
     }
 
-    virtual void database_manager_cb(const cc::DBManagerConstPtr& status_msg) = 0;
+    virtual void database_manager_cb(const DBManagerConstPtr& status_msg) = 0;
 
 
     void client_connect_to_ros() override
     {   
-        cc::ros_nh->getParam(ros::this_node::getNamespace(), wave_param);
+        ros_nh->getParam(ros::this_node::getNamespace(), wave_param);
 
-        _pub_db_manager.reset(new cc::Publisher(cc::ros_nh->advertise<cafer_core::DBManager>("/cafer_core/db_manager_node/request", 10)));
-        _sub_db_manager.reset(new cc::Subscriber(cc::ros_nh->subscribe<cafer_core::DBManager>("/cafer_core/db_manager_node/status", 10,
+        _pub_db_manager.reset(new Publisher(ros_nh->advertise<cafer_core::DBManager>("/cafer_core/db_manager_node/request", 10)));
+        _sub_db_manager.reset(new Subscriber(ros_nh->subscribe<cafer_core::DBManager>("/cafer_core/db_manager_node/status", 10,
                                                  boost::bind(&Supervisor::database_manager_cb, this, _1))));
 
-        cc::ros_nh->getParam("components", _components);
+        ros_nh->getParam("components", _components);
 
         for (auto& packages:_components) {
             for (auto& package:packages.second) {
@@ -54,7 +52,7 @@ public:
 
     void client_disconnect_from_ros() override
     {
-        cc::ClientDescriptor descriptor;
+        ClientDescriptor descriptor;
         std::string uuid;
 
         for (const auto& comp: uuid_launched_components) {
@@ -73,19 +71,20 @@ public:
 
     bool is_initialized() override
     {
-        return cc::Component::is_initialized();
+        return Component::is_initialized();
     }
 
     XmlRpc::XmlRpcValue wave_param;
 
 protected:
-    std::unique_ptr<cc::Publisher> _pub_db_manager;
-    std::unique_ptr<cc::Subscriber> _sub_db_manager;
+    std::unique_ptr<Publisher> _pub_db_manager;
+    std::unique_ptr<Subscriber> _sub_db_manager;
     bool db_done_recording;
+    std::map<std::string, std::string> uuid_launched_components;
+
 private:
     std::vector<std::string> _launch_files_called;
     std::chrono::steady_clock::time_point _start_time;
-    std::map<std::string, std::string> uuid_launched_components;
     uint32_t _id_counter;
     XmlRpc::XmlRpcValue _components;
 
@@ -118,7 +117,7 @@ private:
                                 uuid_launched_components[uuid] = launch_file_path;
                             }
                             else {
-                                ROS_ERROR_STREAM("Failed to launch " << node.second["launch"] << "!");
+                                ROS_ERROR_STREAM("Failed to launch " << static_cast<std::string>(node.second["launch"]) << "!");
                             }
                         }
                     }
@@ -176,3 +175,4 @@ private:
     }
 
 };
+}

@@ -42,5 +42,6 @@
 #include "cafer_core/component.hpp"
 #include "cafer_core/manager.hpp"
 #include "cafer_core/db_manager.hpp"
+#include "cafer_core/supervisor.hpp"
 
 #endif //_CAFER_CORE_HPP
