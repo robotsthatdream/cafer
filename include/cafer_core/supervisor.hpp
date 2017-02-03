@@ -2,11 +2,15 @@
 //phlf on
 //20/05/16.
 
+#ifndef SUPERVISOR_HPP
+#define SUPERVISOR_HPP
+
 #include <ros/ros.h>
 #include <ros/package.h>
+#include "db_manager.hpp"
+#include "component.hpp"
+#include "manager.hpp"
 #include <cafer_core/DBManager.h>
-#include "cafer_core/cafer_core.hpp"
-#include "cafer_core/Management.h"
 
 #include <thread>
 #include <chrono>
@@ -35,8 +39,8 @@ public:
     {   
         ros_nh->getParam(ros::this_node::getNamespace(), wave_param);
 
-        _pub_db_manager.reset(new Publisher(ros_nh->advertise<cafer_core::DBManager>("/cafer_core/db_manager_node/request", 10)));
-        _sub_db_manager.reset(new Subscriber(ros_nh->subscribe<cafer_core::DBManager>("/cafer_core/db_manager_node/status", 10,
+        _pub_db_manager.reset(new Publisher(ros_nh->advertise<DBManager>("/cafer_core/db_manager_node/request", 10)));
+        _sub_db_manager.reset(new Subscriber(ros_nh->subscribe<DBManager>("/cafer_core/db_manager_node/status", 10,
                                                  boost::bind(&Supervisor::database_manager_cb, this, _1))));
 
         ros_nh->getParam("components", _components);
@@ -176,3 +180,5 @@ private:
 
 };
 }
+
+#endif //SUPERVISOR_HPP

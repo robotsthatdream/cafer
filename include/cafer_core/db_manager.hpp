@@ -11,19 +11,22 @@
 #include <thread>
 #include <atomic>
 #include <fstream>
+#include <memory>
 
 #include <boost/filesystem.hpp>
 
-#include "cafer_core/cafer_core.hpp"
-
 #include <cafer_core/DBManager.h>
+
+#include "component.hpp"
+#include "data.hpp"
+#include "manager.hpp"
 
 namespace cafer_core {
 
     /**
      * A class representing a Database Manager object acting as a long-term memory.
      */
-    class DatabaseManager : public cafer_core::Component {
+    class DatabaseManager : public Component {
     public:
         /**
          * An enum representing request values handled by the Database Manager.
@@ -42,6 +45,9 @@ namespace cafer_core {
         class _Wave;
 
         using Component::Component;
+
+        typedef std::shared_ptr<DatabaseManager> Ptr;
+        typedef std::shared_ptr<const DatabaseManager> ConstPtr;
 
         /**
          * Wait for the _send_data_thread to terminate and destroys the object.
@@ -113,6 +119,7 @@ namespace cafer_core {
             std::map<std::string, std::ofstream> _records;
             boost::filesystem::path _ros_home;
 
+            std::string _save_metadata(XmlRpc::XmlRpcValue &metadata);
 
         };
 
