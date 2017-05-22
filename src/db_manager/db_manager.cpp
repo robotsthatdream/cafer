@@ -112,8 +112,12 @@ void DatabaseManager::_record_data(const uint32_t& id)
         ROS_WARN_STREAM("Unable to find wave " << id);
     }
     else {
+      if (wave->second->ready) {
         wave->second->connect();
+        wave->second->ready = false;
+      }
     }
+
 }
 
 void DatabaseManager::_stop_recording(const uint32_t& id)
@@ -198,5 +202,3 @@ bool DatabaseManager::find_wave_by_name(std::string name, shared_ptr<DatabaseMan
     }
     return found;
 }
-
-
