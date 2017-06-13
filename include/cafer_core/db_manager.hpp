@@ -68,6 +68,7 @@ namespace cafer_core {
          * @param name The name of the wave to add. It must matches an actual absolute(including ns) ROS node name.
          */
         bool add_wave(std::string name);
+        bool add_wave(const uint32_t& id, std::string name);
 
         /**
          * Search in the _connected_waves map for a wave with the matching name.

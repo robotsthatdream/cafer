@@ -82,7 +82,7 @@ void DatabaseManager::_request_cb(const DBManagerConstPtr& request_msg)
         case Request::RECORD_DATA:
             ROS_INFO_STREAM("Received record request from Wave " << request_msg->id);
             if(!_record_data(request_msg->id)){
-                while(!add_wave(request_msg->name)){
+                while(!add_wave(request_msg->id,request_msg->name)){
                     spin();
                     update();
                     sleep();
@@ -92,7 +92,7 @@ void DatabaseManager::_request_cb(const DBManagerConstPtr& request_msg)
         case Request::STOP_RECORDING:
             ROS_INFO_STREAM("Received stop recording request from Wave " << request_msg->id);
             if(!_stop_recording(request_msg->id)){
-                while(!add_wave(request_msg->name)){
+                while(!add_wave(request_msg->id,request_msg->name)){
                     spin();
                     update();
                     sleep();
@@ -111,7 +111,7 @@ void DatabaseManager::_request_cb(const DBManagerConstPtr& request_msg)
         case Request::ASK_STATUS:
             ROS_INFO_STREAM("Received status request from Wave " << request_msg->id);
             if(!_status_request(request_msg->id)){
-                while(!add_wave(request_msg->name)){
+                while(!add_wave(request_msg->id,request_msg->name)){
                     spin();
                     update();
                     sleep();
@@ -177,6 +177,28 @@ bool DatabaseManager::_status_request(const uint32_t& id)
         _status_publisher->publish(db_status_msg);
         return true;
     }
+}
+
+
+bool DatabaseManager::add_wave(const uint32_t& id, std::string name)
+{
+    bool succeed = false;
+    ClientDescriptor descriptor;
+    shared_ptr<_Wave> wave_ptr;
+
+    auto wave_it = _connected_waves.find(id);
+    if (wave_it == _connected_waves.end()) {
+        wave_ptr.reset(new _Wave(id, name));
+        _connected_waves.emplace(id, wave_ptr);
+        succeed = true;
+    }
+    else {
+        ROS_WARN_STREAM("The wave " << name << " is already linked to the DB_Manager!");
+        succeed = true;
+    }
+
+
+    return succeed;
 }
 
 bool DatabaseManager::add_wave(std::string name)
