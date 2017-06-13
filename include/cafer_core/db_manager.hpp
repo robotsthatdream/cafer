@@ -61,7 +61,7 @@ namespace cafer_core {
         void client_disconnect_from_ros() override;
 
         void update() override
-        {};
+        {}
 
         /**
          * Connects the DatabaseManager to a new wave.
@@ -171,7 +171,7 @@ namespace cafer_core {
 
             void _processing();
         };
-
+    protected:
         uint32_t _requester_id;
         std::string _data_request;
 
@@ -199,19 +199,19 @@ namespace cafer_core {
          * Records data of the requesting wave.
          * @param id Id of the wave.
          */
-        void _record_data(const uint32_t& id);
+        bool _record_data(const uint32_t& id);
 
         /**
          * Stops recording data of the requesting wave.
          * @param id Id of the wave.
          */
-        void _stop_recording(const uint32_t& id);
+        bool _stop_recording(const uint32_t& id);
 
         /**
          * Sends the DatabaseManager status to the requesting wave.
          * @param id Id of the wave.
          */
-        void _status_request(const uint32_t& id);
+        bool _status_request(const uint32_t& id);
 
         /**
          * Search in the _connected_waves map for waves of the matching type.

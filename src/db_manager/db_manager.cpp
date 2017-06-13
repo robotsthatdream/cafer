@@ -23,6 +23,11 @@ DatabaseManager::~DatabaseManager()
 
 void DatabaseManager::init()
 {
+    client_connect_to_ros();
+}
+
+void DatabaseManager::client_connect_to_ros()
+{
     //Publisher
     _status_publisher.reset(new Publisher(ros_nh->advertise<DBManager>("status", 10)));
     //Subscriber
@@ -32,13 +37,9 @@ void DatabaseManager::init()
     _send_data_thread.reset(new std::thread(&DatabaseManager::_send_data, this));
 
     _is_init = true;
-}
-
-void DatabaseManager::client_connect_to_ros()
-{
-    for (auto& wave:_connected_waves) {
-        wave.second->connect();
-    }
+//    for (auto& wave:_connected_waves) {
+//        wave.second->connect();
+//    }
 }
 
 void DatabaseManager::client_disconnect_from_ros()
@@ -80,11 +81,23 @@ void DatabaseManager::_request_cb(const DBManagerConstPtr& request_msg)
     switch (static_cast<Request>(request_msg->type)) {
         case Request::RECORD_DATA:
             ROS_INFO_STREAM("Received record request from Wave " << request_msg->id);
-            _record_data(request_msg->id);
+            if(!_record_data(request_msg->id)){
+                while(!add_wave(request_msg->name)){
+                    spin();
+                    update();
+                    sleep();
+                }
+            }
             break;
         case Request::STOP_RECORDING:
             ROS_INFO_STREAM("Received stop recording request from Wave " << request_msg->id);
-            _stop_recording(request_msg->id);
+            if(!_stop_recording(request_msg->id)){
+                while(!add_wave(request_msg->name)){
+                    spin();
+                    update();
+                    sleep();
+                }
+            }
             break;
         case Request::REQUEST_DATA:
             ROS_INFO_STREAM("Received data request from Wave " << request_msg->id);
@@ -97,44 +110,57 @@ void DatabaseManager::_request_cb(const DBManagerConstPtr& request_msg)
             break;
         case Request::ASK_STATUS:
             ROS_INFO_STREAM("Received status request from Wave " << request_msg->id);
-            _status_request(request_msg->id);
+            if(!_status_request(request_msg->id)){
+                while(!add_wave(request_msg->name)){
+                    spin();
+                    update();
+                    sleep();
+                }
+            }
             break;
         default:
             ROS_WARN_STREAM("Received unknown request.");
     }
 }
 
-void DatabaseManager::_record_data(const uint32_t& id)
+bool DatabaseManager::_record_data(const uint32_t& id)
 {
     //TODO: In a dynamic scenario call add_waves() for new waves that connect to the DB Manager.
+
     auto wave = _connected_waves.find(id);
     if (wave == _connected_waves.end()) {
         ROS_WARN_STREAM("Unable to find wave " << id);
+        return false;
     }
     else {
         wave->second->connect();
+        return true;
     }
 }
 
-void DatabaseManager::_stop_recording(const uint32_t& id)
+bool DatabaseManager::_stop_recording(const uint32_t& id)
 {
     auto wave = _connected_waves.find(id);
     if (wave == _connected_waves.end()) {
         ROS_WARN_STREAM("Unable to find wave " << id);
+        return false;
     }
     else {
         wave->second->disconnect();
+        return true;
     }
 }
 
-void DatabaseManager::_status_request(const uint32_t& id)
+bool DatabaseManager::_status_request(const uint32_t& id)
 {
     DBManager db_status_msg;
     db_status_msg.id = id;
 
     auto wave = _connected_waves.find(id);
+
     if (wave == _connected_waves.end()) {
         ROS_WARN_STREAM("Unable to find wave " << id);
+        return false;
     }
     else {
         if (wave->second->ready) {
@@ -145,6 +171,7 @@ void DatabaseManager::_status_request(const uint32_t& id)
         }
 
         _status_publisher->publish(db_status_msg);
+        return true;
     }
 }
 
@@ -164,6 +191,7 @@ bool DatabaseManager::add_wave(std::string name)
         }
         else {
             ROS_WARN_STREAM("The wave " << name << " is already linked to the DB_Manager!");
+            succeed = true;
         }
     }
     else {
