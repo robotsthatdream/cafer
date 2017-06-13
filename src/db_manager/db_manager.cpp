@@ -133,9 +133,13 @@ bool DatabaseManager::_record_data(const uint32_t& id)
         return false;
     }
     else {
+      if (wave->second->ready) {
         wave->second->connect();
+        wave->second->ready = false;
         return true;
+      }
     }
+
 }
 
 bool DatabaseManager::_stop_recording(const uint32_t& id)
@@ -226,5 +230,3 @@ bool DatabaseManager::find_wave_by_name(std::string name, shared_ptr<DatabaseMan
     }
     return found;
 }
-
-
