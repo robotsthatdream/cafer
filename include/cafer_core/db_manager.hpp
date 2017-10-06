@@ -32,7 +32,7 @@ namespace cafer_core {
          * An enum representing request values handled by the Database Manager.
          */
         enum class Request : uint8_t {
-            RECORD_DATA, STOP_RECORDING, REQUEST_DATA, ASK_STATUS
+            RECORD_DATA, STOP_RECORDING, REQUEST_DATA, ASK_STATUS, NEW_ITER
         };
 
         /**
@@ -209,6 +209,13 @@ namespace cafer_core {
         bool _stop_recording(const uint32_t& id);
 
         /**
+         * @brief new iteration is coming.
+         * @param id
+         * @return false if wave does not exist
+         */
+        bool _new_iter(const uint32_t& id);
+
+        /**
          * Sends the DatabaseManager status to the requesting wave.
          * @param id Id of the wave.
          */
@@ -235,6 +242,7 @@ namespace cafer_core {
             std::string type;
             bool sequential;
             bool ready;
+            double start_time = 0.0f;
             std::map<std::string, std::string> data_topics;
             std::map<std::string, std::string> data_structure;
 

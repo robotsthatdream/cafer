@@ -99,6 +99,16 @@ void DatabaseManager::_request_cb(const DBManagerConstPtr& request_msg)
                 }
             }
             break;
+        case Request::NEW_ITER:
+            ROS_INFO_STREAM("Received new iteration request from Wave " << request_msg->id);
+            if(!_new_iter(request_msg->id)){
+                while(!add_wave(request_msg->id,request_msg->name)){
+                    spin();
+                    update();
+                    sleep();
+                }
+            }
+            break;
         case Request::REQUEST_DATA:
             ROS_INFO_STREAM("Received data request from Wave " << request_msg->id);
 
@@ -153,6 +163,18 @@ bool DatabaseManager::_stop_recording(const uint32_t& id)
         wave->second->disconnect();
         return true;
     }
+}
+
+bool DatabaseManager::_new_iter(const uint32_t& id){
+    auto wave = _connected_waves.find(id);
+    if(wave == _connected_waves.end()){
+        ROS_WARN_STREAM("Unable to find wave " << id);
+        return false;
+    }
+
+    wave->second->start_time = ros::Time::now().nsec;
+
+    return true;
 }
 
 bool DatabaseManager::_status_request(const uint32_t& id)

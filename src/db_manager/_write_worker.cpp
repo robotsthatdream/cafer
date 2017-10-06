@@ -19,10 +19,12 @@ void DatabaseManager::_WriteWorker::_processing()
     std::unique_lock<std::mutex> lock(_signal_process_mutex);
 
     //Processing loop
+    double last_time = 0.0;
+    bool new_start = false;
     while (!_finish) {
         //Wait for signal to process data if server is inactive/preempted and there is no data.
         //The thread can be spuriously woken-up inconsequently.
-        if (!_is_active && _wave->no_data_left()) {
+        if ((!_is_active && _wave->no_data_left()) || (new_start && last_time > _wave->start_time)) {
             _wave->fs_manager.close_records();
 
             _wave->ready = true;
@@ -34,12 +36,18 @@ void DatabaseManager::_WriteWorker::_processing()
                 ROS_INFO_STREAM("DB is now recording data from " << _wave->name);
             }
             _wave->fs_manager.new_records();
+            new_start = false;
         }
+
         for (auto& manager:_wave->managers) {
             if (manager->data_size() != 0) {
+
+                last_time = manager->get_time();
                 _wave->fs_manager.save_data(manager->get());
             }
+
         }
+        new_start = last_time < _wave->start_time;
     }
 }
 

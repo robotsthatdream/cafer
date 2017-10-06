@@ -25,7 +25,8 @@ using namespace cafer_core;
 
 DatabaseManager::_Wave::_Wave(_Wave&& moved_wave) : id(moved_wave.id), name(moved_wave.name),
                                                     sequential(moved_wave.sequential),
-                                                    managers(std::move(moved_wave.managers)), fs_manager(this)
+                                                    managers(std::move(moved_wave.managers)), fs_manager(this),
+                                                    start_time(moved_wave.start_time)
 {
     for (auto& topic:moved_wave.data_topics) {
         data_topics[topic.first] = static_cast<std::string>(topic.second);
@@ -62,6 +63,7 @@ DatabaseManager::_Wave::_Wave(uint32_t id_, std::string& wave_name) : id(id_), n
 
     _write_worker.link_to_wave(this);
     ready = true;
+    start_time = ros::Time::now().nsec;
 }
 
 void DatabaseManager::_Wave::add_manager(cafer_core::IManager* manager, std::string topic)

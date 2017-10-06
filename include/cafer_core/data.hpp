@@ -40,7 +40,7 @@ namespace cafer_core {
          * Copy constructor for the Data object.
          * @param data The Data object to clone.
          */
-        Data(const Data& data)
+        Data(const Data& data) : _stored_time(data._stored_time)
         {
             uint8_t* data_buff = new uint8_t[data._stored_msg.size()];
 
@@ -68,7 +68,7 @@ namespace cafer_core {
         const topic_tools::ShapeShifter& get_stored_msg() const
         {
             return _stored_msg;
-        };
+        }
 
         /**
          * @brief Returns the data from the wrapped message as a map<string,string>.
@@ -77,9 +77,12 @@ namespace cafer_core {
          * @return The map associating record(s)'s name and piece(s) of data
          */
         virtual std::map<std::string, std::string> get_serialized_data() const = 0;
+        void set_stored_time(double t){_stored_time = t;}
+        double get_stored_time(){return _stored_time;}
 
     protected:
         topic_tools::ShapeShifter _stored_msg;
+        double _stored_time = 0.0f;
     };
 }
 #endif //CAFER_CORE_DATA_HPP

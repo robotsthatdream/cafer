@@ -149,6 +149,8 @@ namespace cafer_core {
 
         virtual std::unique_ptr<cafer_core::Data> get() = 0;
 
+        virtual double get_time() = 0;
+
     protected:
 
         long int _id;
@@ -259,6 +261,12 @@ namespace cafer_core {
         }
 
         /**
+         * @brief TO DO
+         * @return
+         */
+        double get_time(){return 0;}
+
+        /**
          * @brief remove a element of the container of the manager
          * @param id identifier of the data to remove
          * @return should be 1 in success case and 0 otherwise.
@@ -331,6 +339,15 @@ namespace cafer_core {
 
             return data;
         }
+
+        /**
+         * @brief get front data arrival time
+         * @return
+         */
+        double get_time(){
+            return Base::_data_set.front().get_stored_time();
+        }
+
     };
 
     //TODO: fix this class to use Data interface and ShapeShifter messages
@@ -374,6 +391,12 @@ namespace cafer_core {
             Base::_container_mutex.unlock();
             return res;
         }
+
+        /**
+         * @brief TO DO
+         * @return
+         */
+        double get_time(){return 0;}
 
     };
 
