@@ -139,7 +139,8 @@ bool DatabaseManager::_record_data(const uint32_t& id)
         return true;
       }
     }
-
+    
+    return false;
 }
 
 bool DatabaseManager::_stop_recording(const uint32_t& id)
